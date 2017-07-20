@@ -11,7 +11,7 @@ class SimpliSafeSystem(object):
     Represents a SimpliSafe alarm system.
     """
 
-    def __init__(self, api_interface, location_id, state):
+    def __init__(self, api_interface, location_id, state=None):
         """
         Alarm object.
 
@@ -39,41 +39,62 @@ class SimpliSafeSystem(object):
         Return the current temperature of the system.
         Will return null if API doesn't return an int.
         """
-        api_temp = self.sensors.get("freeze").get("temp")
         try:
+            api_temp = self.sensors.get("freeze").get("temp")
             return int(api_temp)
-        except ValueError:
+        except:
+            _LOGGER.error("Could not get current temperature")
             return None
 
     def carbon_monoxide(self):
         """
         Current state of CO sensor.
         """
-        return self.sensors.get("recent_co").get("text")
+        try:
+            return self.sensors.get("recent_co").get("text")
+        except:
+            _LOGGER.error("Could not get carbon monoxide detector state")
+            return None
 
     def flood(self):
         """
         Current state of flood sensor.
         """
-        return self.sensors.get("recent_flood").get("text")
+        try:
+            return self.sensors.get("recent_flood").get("text")
+        except:
+            _LOGGER.error("Could not get flood detector state")
+            return None
 
     def fire(self):
         """
         Current state of fire detector.
         """
-        return self.sensors.get("recent_fire").get("text")
+        try:
+            return self.sensors.get("recent_fire").get("text")
+        except:
+            _LOGGER.error("Could not get smoke detector state")
+            return None
 
     def alarm(self):
         """
         Current state of recent alarm.
         """
-        return self.sensors.get("recent_alarm").get("text")
+        try:
+            return self.sensors.get("recent_alarm").get("text")
+        except:
+            _LOGGER.error("Could not get last alarm state")
+            return None
 
     def last_event(self):
         """
         Return the last event sent by the system.
         """
-        return self.events.get("events")[0].get("event_desc")
+        try:
+            return self.events.get("events")[0].get("event_desc")
+        except:
+            _LOGGER.error("Could not get last event")
+            return None
 
     def update(self, retry=True):
         """

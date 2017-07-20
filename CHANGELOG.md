@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.0.3
+
+- Added protection against incorrect data from SimpliSafe back-end
+
 ## 1.0.2
 - Return status of login corrected spelling of credentials
 

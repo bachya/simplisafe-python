@@ -107,9 +107,7 @@ class SimpliSafeSystem(object):
             dashboard = self.api.get_state(self.location_id, "dashboard")
             self.sensors = dashboard["location"]["monitoring"]
             self.events = self.api.get_state(self.location_id, "events")
-            locations = self.api.get_locations()
-            location = locations.get('locations').get(self.location_id)
-            self.system_state = location.get('system_state')
+            self.system_state = dashboard["location"]["system"].get('state')
         except ValueError:
             if retry:
                 _LOGGER.error("Invalid response from API. Attempting to log in again.")

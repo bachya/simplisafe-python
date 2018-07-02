@@ -3,12 +3,30 @@ Access to the SimpliSafe API.
 """
 import uuid
 import logging
+import json
 
 import requests
 
-from simplipy.system import SimpliSafeSystem
+# from simplipy.system import SimpliSafeSystem
 
 _LOGGER = logging.getLogger(__name__)
+
+BASE_URL = "https://api.simplisafe.com/v1/"
+# Requires BasicAuth
+TOKEN_URL = BASE_URL + "api/token"
+AUTH_CHECK_URL = BASE_URL + "api/authCheck"
+USERS_SUBSCRIPTIONS_URL = BASE_URL + "users/{}/subscriptions?activeOnly=true"
+SUBSCRIPTION_URL = BASE_URL + "subscriptions/{}/"
+
+DEVICE_ID = "ANDROID; UserAgent=unknown Android SDK built for x86; Serial=unknown; ID=e36659c47cce2843;:"
+USER_AGENT = "SimpliSafe Android App Build 20207"
+CONTENT_TYPE = "application/json; charset=UTF-8"
+
+HEADERS = {"User-Agent": USER_AGENT, "Content-Type": CONTENT_TYPE}
+OAUTH_HEADERS = HEADERS
+
+BASIC_AUTH_STRING = "NWYwNmY1YzktMDJkOS00ZDY2LTg3ZmUtZWRiZWQ2N2ZiMDE0LjIwMjA3LmFuZHJvaWQuc2ltcGxpc2FmZS5jb206"
+BASIC_AUTH_HEADERS = HEADERS
 
 
 class SimpliSafeApiInterface(object):
@@ -16,126 +34,148 @@ class SimpliSafeApiInterface(object):
     Object used for talking to the SimpliSafe API.
     """
 
-    def __init__(self):
+    def __init__(self, username, password, basic_auth=None):
         """
         Create the interface to the API.
         """
-        self.base_url = "https://simplisafe.com/mobile"
-        self.session = requests.session()
-        self.session_id = None
-        self.uid = None
-        self.username = None
-        self.password = None
+        self.username = username
+        self.password = password
+        self.access_token = None
+        self.refresh_token = None
+        self.user_id = None
+        self.sids = {}
+        if basic_auth is not None:
+            BASIC_AUTH_HEADERS["Authorization"] = "Basic " + basic_auth
+        else:
+            BASIC_AUTH_HEADERS["Authorization"] = "Basic " + BASIC_AUTH_STRING
+        if self._get_token() and self._get_user_id() and self._get_subscriptions():
+        	_LOGGER.info("Setup complete")
+        else:
+        	_LOGGER.error("Failed to complete setup")
 
-    def login(self):
+    def _get_token(self):
         """
-        Log into the API using a session.
+        Get an Oauth token from the API.
         """
 
         login_data = {
-            'name': self.username,
-            'pass': self.password,
-            'device_name': 'simplisafe-python',
-            'device_uuid': str(uuid.uuid1()),
-            'version': '1100',
-            'no_persist': '1',
-            'XDEBUG_SESSION_START': 'session_name',
+            'device_id': DEVICE_ID,
+            'grant_type': "password",
+            'username': self.username,
+            'password': self.password
         }
 
-        url_string = "{}/login/".format(self.base_url)
 
-        response = self.session.post(url_string, data=login_data)
-        if response.json()["return_code"] != 1:
+        response = requests.post(TOKEN_URL, data=json.dumps(login_data),
+                                 headers=BASIC_AUTH_HEADERS, verify=False)
+        _LOGGER.debug(response.content)
+        print(response.status_code)
+        if response.status_code != 200:
             _LOGGER.error("Invalid username or password")
             return False
-        response_object = response.json()
+        try:
+            _json = response.json()
+        except ValueError:
+            _LOGGER.error("Failed to decode JSON")
+            return False
 
-        self.session_id = response_object['session']
-        self.uid = response_object['uid']
+        self.access_token = _json.get("access_token")
+        self.refresh_token = _json.get("refresh_token")
 
         _LOGGER.info("Logged into SimpliSafe")
         return True
 
-    def logout(self):
-        """
-        Log out of the API.
-        """
-        _LOGGER.info("Logging out of SimpliSafe")
-        url_string = "{}/logout".format(self.base_url)
-        self.session.post(url_string)
+    def _get_user_id(self):
+        """Get user ID."""
 
-    def set_device_state(self, location_id, state):
+        OAUTH_HEADERS["Authorization"] = "Bearer {}".format(self.access_token)
+        print(str(OAUTH_HEADERS))
+
+        response = requests.get(AUTH_CHECK_URL, headers=OAUTH_HEADERS, verify=False)
+        _LOGGER.debug(response.content)
+        if response.status_code != 200:
+            _LOGGER.error("Failed to get user ID")
+        try:
+            _json = response.json()
+        except ValueError:
+            _LOGGER.error("Failed to decode JSON")
+            return False
+
+        self.user_id = _json.get("userId")
+        return True
+
+
+    def _get_subscriptions(self):
+        """Get a list of a sids."""
+
+        response = requests.get(USERS_SUBSCRIPTIONS_URL.format(self.user_id), headers=OAUTH_HEADERS, verify=False)
+        _LOGGER.debug(response.content)
+        if response.status_code != 200:
+            _LOGGER.error("Failed to get subscriptions")
+        try:
+            _json = response.json()
+        except ValueError:
+            _LOGGER.error("Failed to decode JSON")
+            return False
+
+        self.sids = _json.get("subscriptions")
+
+
+    def set_system_state(self, location_id, state):
         """
-        Set the state of the alaram system.
+        Set the state of the alarm system.
 
         Args:
-            location_id (str): The location id to change the state of.
+            location_id (int): The location id to change the state of.
             state (str): The state to set. One of ['home', 'away', 'off']
-        Returns (dictionary): Dictionary of the response JSON
+        Returns (boolean): True or False (Was the command successful)
         """
-        url_string = "{}/{}/sid/{}/set-state".format(self.base_url,
-                                                                            self.uid,
-                                                                            location_id)
 
-        state_data = {
-            'state': state,
-            'mobile': '1',
-            'no_persist': '0',
-            'XDEBUG_SESSION_START': 'session_name',
-        }
+        _url = SUBSCRIPTION_URL.format(location_id) + "/state?state=" + state
 
-        response = self.session.post(url_string, data=state_data)
-        return response.json()
+        response = requests.post(_url, verify=False)
+        _LOGGER.debug(response.content)
+        for subscription in self.sids:
+            if subscription["sid"] == location_id:
+                _log_string = "Failed to set {} state to {}".format(subscription["location"]["street1"], state)
+        if response.status_code != 200:
+            _LOGGER.error(_log_string)
+            return False
+        try:
+            _json = response.json()
+        except ValueError:
+            _LOGGER.error("Failed to decode JSON")
+            return False
 
-    def get_locations(self):
+        if _json.get("success"):
+            return True
+        else:
+            _log_string = _log_string + " " + _json.get("reason")
+            _LOGGER.error(_log_string)
+            return False
+
+    def get_system_state(self, location_id):
         """
-        Gets the locations from the API.
-
-        Returns (dictionary): Dictionary of JSON of the locations on
-                              the account.
-        """
-        url_string = "{}/{}/locations".format(self.base_url,
-                                              self.uid)
-        response = self.session.post(url_string)
-        return response.json()
-
-    def get_state(self, location_id, path):
-        """
-        Create the PubNub connection object.
+        Get the location_id's current system state.
 
         Args:
             location_id (str): The id of the location
-            path (str): The end of the URL, what state to pull.
-                        One of ['events', 'dashboard']
-        Returns: (dictionary): Dictionary of response from endpoint
+        Returns: (dictionary): System
         """
-        url_string = "{}/{}/sid/{}/{}".format(self.base_url,
-                                              self.uid,
-                                              location_id,
-                                              path)
-        response = self.session.post(url_string)
-        return response.json()
-
-    def set_credentials(self, username, password):
-        """
-        Sets the global variables used for authentication to the API.
-        """
-        self.username = username
-        self.password = password
-        return self.login()
+        for subscription in self.sids:
+            if subscription["sid"] == location_id:
+                return subscription["location"]["system"]
 
 
 def get_systems(api_interface):
     """
     Gets the locations from the API and returns objects for each.
 
-    Returns (list): Returns a list of SimpliSafeSystem objects.
+    Returns (dictions): Returns a diction of SimpliSafeSystem objects.
     """
-    locations = []
+    systems = {}
 
-    json_locations = api_interface.get_locations()
-    location_list = list(json_locations.get('locations'))
-    for location in location_list:
-        state = json_locations.get('locations')[location].get('system_state')
-        locations.append(SimpliSafeSystem(api_interface, location, state))
-    return locations
+    for subscription in api_interface.sids:
+        systems[subscription["sid"]] = api_interface.get_system_state(subscription["sid"])
+
+    return systems

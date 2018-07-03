@@ -5,89 +5,45 @@ import logging
 
 _LOGGER = logging.getLogger(__name__)
 
+from simplipy.sensor import SimpliSafeSensor
+
 
 class SimpliSafeSystem(object):
     """
     Represents a SimpliSafe alarm system.
     """
 
-    def __init__(self, api_interface, location_id, state=None):
+    def __init__(self, api_interface, system_dict, sensor_list):
         """
         Alarm object.
 
         Args:
             api_interfce (object): The API object to handle communication
                                    to and from the API.
-            location_id (str): The location id to change the state of.
-            state (str): The the initial state of the system.
+            system_dict (dict): The system's current state.
         """
         self.api = api_interface
-        self.location_id = location_id
-        self.session_id = None
-        self.uid = None
-        self.system_state = state
-        self.update()
+        self.location_id = system_dict["sid"]
+        self.state = system_dict["alarmState"]
+        self.alarm_active = system_dict["isAlarming"]
+        self.temperature = system_dict["temperature"]
+        self.sensors = []
+        for sensor in sensor_list:
+            if bool(sensor):
+                self.sensors.append(SimpliSafeSensor(api_interface, sensor))
 
     def state(self):
         """
         Return the current state of the system. (str)
         """
-        return self.system_state
+        return self.state
 
     def temperature(self):
         """
         Return the current temperature of the system.
-        Will return null if API doesn't return an int.
         """
-        try:
-            api_temp = self.sensors.get("freeze").get("temp")
-            if api_temp != "?":
-                return int(api_temp)
-            else:
-                return None
-        except:
-            _LOGGER.error("Could not get current temperature")
-            return None
+        return self.temperature
 
-    def carbon_monoxide(self):
-        """
-        Current state of CO sensor.
-        """
-        try:
-            return self.sensors.get("recent_co").get("text")
-        except:
-            _LOGGER.error("Could not get carbon monoxide detector state")
-            return None
-
-    def flood(self):
-        """
-        Current state of flood sensor.
-        """
-        try:
-            return self.sensors.get("recent_flood").get("text")
-        except:
-            _LOGGER.error("Could not get flood detector state")
-            return None
-
-    def fire(self):
-        """
-        Current state of fire detector.
-        """
-        try:
-            return self.sensors.get("recent_fire").get("text")
-        except:
-            _LOGGER.error("Could not get smoke detector state")
-            return None
-
-    def alarm(self):
-        """
-        Current state of recent alarm.
-        """
-        try:
-            return self.sensors.get("recent_alarm").get("text")
-        except:
-            _LOGGER.error("Could not get last alarm state")
-            return None
 
     def last_event(self):
         """
@@ -103,25 +59,27 @@ class SimpliSafeSystem(object):
         """
         Fetch all of the latest states from the API.
         """
-        try:
-            dashboard = self.api.get_state(self.location_id, "dashboard")
-            self.sensors = dashboard["location"]["monitoring"]
-            self.events = self.api.get_state(self.location_id, "events")
-            self.system_state = dashboard["location"]["system"].get('state')
-        except ValueError:
-            if retry:
-                _LOGGER.error("Invalid response from API. Attempting to log in again.")
-                self.api.login()
-                self.update(False)
+        self.api._get_subscriptions()
+        response = self.api._get_system_state()
+        self.location_id = response["sid"]
+        self.state = response["alarmState"]
+        self.alarm_active = response["isAlarming"]
+        self.temperature = response["temperature"]
 
     def set_state(self, state, retry=True):
         """
         Set the state of the alarm system.
         """
-        try:
-            self.api.set_device_state(self.location_id, state)
-        except ValueError:
-            if retry:
-                _LOGGER.error("Invalid response from API. Attempting to log in again.")
-                self.api.login()
-                self.set_state(state, False)
+        if self.api.set_state(state):
+            _LOGGER.debug("Successfuly set alarm state")
+            self.update()
+        else:
+            _LOGGER.error("Failed to set alarm state, trying again")
+            self.api.set_state(state, False)
+
+    def get_sensors(self):
+        return self.sensors
+
+
+
+

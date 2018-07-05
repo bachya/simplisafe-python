@@ -68,7 +68,7 @@ class SimpliSafeApiInterface(object):
 
 
         response = requests.post(TOKEN_URL, data=json.dumps(login_data),
-                                 headers=BASIC_AUTH_HEADERS, verify=False)
+                                 headers=BASIC_AUTH_HEADERS)
         _LOGGER.debug(response.content)
         if response.status_code != 200:
             _LOGGER.error("Invalid username or password")
@@ -90,7 +90,7 @@ class SimpliSafeApiInterface(object):
 
         OAUTH_HEADERS["Authorization"] = "Bearer {}".format(self.access_token)
 
-        response = requests.get(AUTH_CHECK_URL, headers=OAUTH_HEADERS, verify=False)
+        response = requests.get(AUTH_CHECK_URL, headers=OAUTH_HEADERS)
         _LOGGER.debug(response.content)
         if response.status_code == 401:
             _LOGGER.error("Token expired, getting new token")
@@ -111,7 +111,7 @@ class SimpliSafeApiInterface(object):
     def _get_subscriptions(self):
         """Get a list of a sids."""
 
-        response = requests.get(USERS_SUBSCRIPTIONS_URL.format(self.user_id), headers=OAUTH_HEADERS, verify=False)
+        response = requests.get(USERS_SUBSCRIPTIONS_URL.format(self.user_id), headers=OAUTH_HEADERS)
         _LOGGER.debug(response.content)
         if response.status_code == 401:
             _LOGGER.error("Token expired, getting new token")
@@ -141,7 +141,7 @@ class SimpliSafeApiInterface(object):
 
         _url = SUBSCRIPTION_URL.format(location_id) + "/state?state=" + state
 
-        response = requests.post(_url, verify=False)
+        response = requests.post(_url)
         _LOGGER.debug(response.content)
         for subscription in self.sids:
             if subscription["sid"] == location_id:
@@ -182,7 +182,7 @@ class SimpliSafeApiInterface(object):
 
         _url = SUBSCRIPTION_URL.format(location_id) + "settings?settingsType=all&cached=" + str(cached)
 
-        response = requests.get(_url, headers=OAUTH_HEADERS, verify=False)
+        response = requests.get(_url, headers=OAUTH_HEADERS)
         _LOGGER.debug(response.content)
         if response.status_code == 401:
             _LOGGER.error("Token expired, getting new token")

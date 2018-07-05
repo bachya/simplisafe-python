@@ -5,8 +5,8 @@ import logging
 
 _LOGGER = logging.getLogger(__name__)
 
-# What is a 3?
-SYSTEM_TYPE_MAP = {1: "keypad", 2: "keychain", 4: "motion", 5: "open", 6: "glass break"}
+# Missing the following. (Temperature, Water leak, Carbon Monoxide, Camera?)
+SYSTEM_TYPE_MAP = {1: "keypad", 2: "keychain", 3: "panic button", 4: "motion", 5: "entry", 6: "glass break", 8: "smoke"}
 
 
 class SimpliSafeSensor(object):
@@ -31,6 +31,7 @@ class SimpliSafeSensor(object):
         self.battery = sensor_dict.get("battery")
         self.serial = sensor_dict["serial"]
         self.name = sensor_dict["name"]
+        # 255 = error?
         self.status = sensor_dict["sensorStatus"]
         self.data = sensor_dict["sensorData"]
         self.error = sensor_dict["error"]

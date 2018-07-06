@@ -16,7 +16,7 @@ TOKEN_URL = BASE_URL + "api/token"
 AUTH_CHECK_URL = BASE_URL + "api/authCheck"
 USERS_SUBSCRIPTIONS_URL = BASE_URL + "users/{}/subscriptions?activeOnly=true"
 SUBSCRIPTION_URL = BASE_URL + "subscriptions/{}/"
-V3_SENSORS_URL = BASE_URL + "/ss3/subscriptions/{}/sensors"
+V3_SENSORS_URL = BASE_URL + "/ss3/subscriptions/{}/"
 
 
 DEVICE_ID = "ANDROID; UserAgent=unknown Android SDK built for x86; Serial=unknown; ID=e36659c47cce2843;:"
@@ -190,7 +190,7 @@ class SimpliSafeApiInterface(object):
         if _version != 3:
             _url = SUBSCRIPTION_URL.format(location_id) + "settings?settingsType=all&cached=" + str(cached)
         else:
-            _url = V3_SENSORS_URL.format(location_id) + "/sensors?forceUpdate=" + str(not cached)
+            _url = V3_SENSORS_URL.format(location_id) + "sensors?forceUpdate=" + str(not cached)
 
         response = requests.get(_url, headers=OAUTH_HEADERS)
         _LOGGER.debug(response.content)

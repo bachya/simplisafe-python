@@ -5,8 +5,11 @@ import logging
 
 _LOGGER = logging.getLogger(__name__)
 
-# Missing the following. (Temperature, Water leak, Carbon Monoxide, Camera?)
-SYSTEM_TYPE_MAP = {1: "keypad", 2: "keychain", 3: "panic button", 4: "motion", 5: "entry", 6: "glass break", 8: "smoke"}
+# Assuming that water leak is 9...
+SYSTEM_TYPE_MAP = {1: "keypad", 2: "keychain", 3: "panic button",
+                   4: "motion", 5: "entry", 6: "glass break",
+                   7: "carbon monoxide", 8: "smoke", 9: "leak",
+                   10: "temperature"}
 
 
 class SimpliSafeSensor(object):

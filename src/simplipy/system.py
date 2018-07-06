@@ -27,6 +27,7 @@ class SimpliSafeSystem(object):
         self.state = system_dict["alarmState"]
         self.alarm_active = system_dict["isAlarming"]
         self.temperature = system_dict["temperature"]
+        self.version = system_dict["version"]
         self.sensors = []
         for sensor in sensor_list:
             if bool(sensor):

@@ -18,13 +18,14 @@ NAME = 'simplisafe-python'
 DESCRIPTION = 'A unofficial Python 3 library for SimpliSafe alarm systems'
 URL = 'https://github.com/w1ll1am23/simplisafe-python'
 EMAIL = ''
-AUTHOR = 'William Scanlon'
+AUTHOR = 'William Scanlon and Aaron Bach'
 REQUIRES_PYTHON = '>=3.5.0'
 VERSION = None
 
 # What packages are required for this module to be executed?
 REQUIRED = [  # type: ignore
-    'requests>=2.0'
+    'aiodns',
+    'aiohttp',
 ]
 
 # The rest you shouldn't have to touch too much :)

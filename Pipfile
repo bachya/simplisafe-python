@@ -13,4 +13,5 @@ twine = "*"
 
 [packages]
 
-requests = "*"
+aiodns = "*"
+aiohttp = "*"

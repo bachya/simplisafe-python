@@ -1,67 +1,93 @@
-"""
-SimpliSafe Alarm object.
-"""
+"""Define a SimpliSafe system (attached to a location)."""
 import logging
+from enum import Enum
 
-from simplipy.sensor import SimpliSafeSensor
-
+from .util.string import convert_to_underscore
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class SimpliSafeSystem(object):
-    """
-    Represents a SimpliSafe alarm system.
-    """
+class SystemStates(Enum):
+    """Define states that the system can be in."""
 
-    def __init__(self, api_interface, system_dict, sensor_list):
-        """
-        Alarm object.
+    away = 1
+    entry_delay = 2
+    exit_delay = 3
+    home = 4
+    off = 5
+    unknown = 5
 
-        Args:
-            api_interfce (object): The API object to handle communication
-                                   to and from the API.
-            system_dict (dict): The system's current state.
-        """
-        self.api = api_interface
-        self.location_id = system_dict["sid"]
-        self.state = system_dict["alarmState"]
-        self.alarm_active = system_dict["isAlarming"]
-        self.temperature = system_dict["temperature"]
-        self.version = system_dict["version"]
-        self.sensors = []
-        for sensor in sensor_list:
-            if bool(sensor):
-                self.sensors.append(SimpliSafeSensor(api_interface, sensor, system_dict["version"]))
 
-    def update(self):
-        """
-        Fetch all of the latest states from the API.
-        """
-        if self.api.get_subscriptions():
-            response = self.api.get_system_state(self.location_id)
-            if response:
-                self.state = response["alarmState"]
-                self.alarm_active = response["isAlarming"]
-                self.temperature = response["temperature"]
-            else:
-                _LOGGER.error("Empty system state, failed to update.")
-        else:
-            _LOGGER.error("Failed to get update.")
+class System:
+    """Define a system."""
 
-    def set_state(self, state, retry=True):
-        """
-        Set the state of the alarm system.
-        """
-        if self.api.set_system_state(self.location_id, state):
-            _LOGGER.debug("Successfuly set alarm state")
-            self.update()
-        else:
-            if retry:
-                _LOGGER.error("Failed to set alarm state, trying again")
-                self.set_state(state, False)
-            else:
-                _LOGGER.error("Failed to set alarm state after retry")
+    def __init__(self, client, location_info: dict) -> None:
+        """Initialize."""
+        self._alarm_going_off = location_info['system']['isAlarming']
+        self._client = client
+        self._serial_number = location_info['system']['serial']
+        self._system_id = location_info['sid']
+        self._version = location_info['system']['version']
 
-    def get_sensors(self):
-        return self.sensors
+        try:
+            raw_state = location_info['system']['alarmState']
+            self._state = SystemStates[convert_to_underscore(raw_state)]
+        except KeyError:
+            _LOGGER.error('Unknown alarm state: %s', raw_state)
+            self._state = SystemStates.unknown
+
+    @property
+    def alarm_going_off(self) -> Enum:
+        """Return whether the alarm is going off."""
+        return self._alarm_going_off
+
+    @property
+    def serial_number(self) -> Enum:
+        """Return the system's serial number."""
+        return self._serial_number
+
+    @property
+    def state(self) -> Enum:
+        """Return the current state of the system."""
+        return self._state
+
+    @property
+    def system_id(self) -> Enum:
+        """Return the system's ID."""
+        return self._system_id
+
+    @property
+    def version(self) -> Enum:
+        """Return the system's version."""
+        return self._version
+
+    async def get_events(
+            self, from_timestamp: int = None, num_events: int = None) -> dict:
+        """Get events with optional start time and number of events."""
+        params = {}
+        if from_timestamp:
+            params['fromTimestamp'] = from_timestamp
+        if num_events:
+            params['numEvents'] = num_events
+
+        return await self._client.request(
+            'get',
+            'subscriptions/{0}/events'.format(self._system_id),
+            params=params)
+
+    async def set_state(self, value: Enum) -> dict:
+        """Set the state of the system."""
+        return await self._client.request(
+            'post',
+            'subscriptions/{0}/state'.format(self._system_id),
+            params={'state': value.name})
+
+
+class SystemV2(System):
+    """Define a V2 (original) system."""
+    pass
+
+
+class SystemV3(System):
+    """Define a V3 (new) system."""
+    pass

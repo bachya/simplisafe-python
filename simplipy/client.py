@@ -5,7 +5,7 @@ from typing import List, Union
 from aiohttp import BasicAuth, ClientSession, client_exceptions
 
 from .errors import RequestError, TokenExpiredError
-from .system import System
+from .system import System, SystemV2, SystemV3
 
 DEFAULT_USER_AGENT = 'SimpliSafe/2105 CFNetwork/902.2 Darwin/17.7.0'
 DEFAULT_AUTH_USERNAME = 'a9c490a5-28c7-48c8-a8c3-1f1d7faa1394.2074.0.0.com.' \
@@ -32,7 +32,7 @@ class Client:
         """Request token data and parse it."""
 
         # Process access and refresh tokens:
-        token_resp = await self.request(
+        token_resp = await self._request(
             'post',
             'api/token',
             data=payload_data,
@@ -42,19 +42,7 @@ class Client:
             seconds=int(token_resp['expires_in']))
         self._refresh_token = token_resp['refresh_token']
 
-        # Process the user ID:
-        auth_check_resp = await self.request('get', 'api/authCheck')
-        self.user_id = auth_check_resp['userId']
-
-        # Retrieve the systems assigned to this user:
-        sub_resp = await self.request(
-            'get',
-            'users/{0}/subscriptions'.format(self.user_id),
-            params={'activeOnly': 'true'})
-        for system in sub_resp.get('subscriptions', []):
-            self.systems.append(System(self, system['location']))
-
-    async def request(
+    async def _request(
             self,
             method: str,
             endpoint: str,
@@ -99,6 +87,24 @@ class Client:
             'username': self._email,
             'password': password,
         })
+
+        # Process the user ID:
+        auth_check_resp = await self._request('get', 'api/authCheck')
+        self.user_id = auth_check_resp['userId']
+
+        # Retrieve the systems assigned to this user:
+        sub_resp = await self._request(
+            'get',
+            'users/{0}/subscriptions'.format(self.user_id),
+            params={'activeOnly': 'true'})
+        for system in sub_resp.get('subscriptions', []):
+            version = system['location']['system']['version']
+            if version == 2:
+                self.systems.append(
+                    SystemV2(self._request, system['location']))
+            elif version == 3:
+                self.systems.append(
+                    SystemV3(self._request, system['location']))
 
     async def authenticate_refresh_token(
             self, refresh_token: str = None) -> None:

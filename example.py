@@ -5,35 +5,29 @@ from aiohttp import ClientSession
 
 from simplipy import Client
 from simplipy.errors import SimplipyError
-from simplipy.system import SystemStates
 
 
-async def client_ss3(websession: ClientSession) -> None:
-    """Test a v3 SimpliSafe client."""
-    client = Client('bachya1208@gmail.com', websession)
-    await client.authenticate_password("VNm'e^0vacDuke8jTie7")
-
-    print('USER ID:')
-    print(client.user_id)
+async def client_ss2(websession: ClientSession) -> None:
+    """Test a v2 SimpliSafe client."""
     print()
+    print('CONNECTING TO CLIENT...')
+    client = Client('glorianne5@comcast.net', websession)
+    await client.authenticate_password("fddlupFELuPq3SzsJA6s")
 
-    print('NUMBER OF SYSTEMS:')
-    print(len(client.systems))
-    print()
+    print('User ID: {0}'.format(client.user_id))
+    print('Number of Systems: {0}'.format(len(client.systems)))
 
-    print('FIRST SYSTEM: PROPERTIES')
     system = client.systems[0]
-    print(system.__dict__)
-    print()
+    print('System #1 Properties: {0}'.format(system.__dict__))
 
-    print('FIRST SYSTEM: NUMBER OF EVENTS')
     events = await system.get_events()
-    print(len(events['events']))
-    print()
+    print('System #1 Number of Events: {0}'.format((len(events['events']))))
 
-    print('FIRST SYSTEM: SETTING TO "HOME"')
-    events = await system.set_state(SystemStates.home)
-    print(len(events['events']))
+    print()
+    print('UPDATING SENSOR VALUES...')
+    await system.update_sensors()
+    for sensor in system.sensors:
+        print(sensor.status)
 
 
 async def main() -> None:
@@ -45,7 +39,7 @@ async def main() -> None:
 async def run(websession: ClientSession):
     """Run."""
     try:
-        await client_ss3(websession)
+        await client_ss2(websession)
     except SimplipyError as err:
         print(err)
 

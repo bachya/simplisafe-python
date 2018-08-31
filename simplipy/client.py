@@ -28,11 +28,21 @@ class Client:
         self.systems = []  # type: List[System]
         self.user_id = None
 
+    @property
+    def access_token(self) -> Union[None, str]:
+        """Return the current access token."""
+        return self._access_token
+
+    @property
+    def refresh_token(self) -> Union[None, str]:
+        """Return the current refresh token."""
+        return self._refresh_token
+
     async def _authenticate(self, payload_data: dict) -> None:
         """Request token data and parse it."""
 
         # Process access and refresh tokens:
-        token_resp = await self._request(
+        token_resp = await self.request(
             'post',
             'api/token',
             data=payload_data,
@@ -42,7 +52,7 @@ class Client:
             seconds=int(token_resp['expires_in']))
         self._refresh_token = token_resp['refresh_token']
 
-    async def _request(
+    async def request(
             self,
             method: str,
             endpoint: str,
@@ -89,22 +99,19 @@ class Client:
         })
 
         # Process the user ID:
-        auth_check_resp = await self._request('get', 'api/authCheck')
+        auth_check_resp = await self.request('get', 'api/authCheck')
         self.user_id = auth_check_resp['userId']
 
         # Retrieve the systems assigned to this user:
-        sub_resp = await self._request(
-            'get',
-            'users/{0}/subscriptions'.format(self.user_id),
-            params={'activeOnly': 'true'})
-        for system in sub_resp.get('subscriptions', []):
+        subscription_resp = await self.update()
+        for system in subscription_resp['subscriptions']:
             version = system['location']['system']['version']
             if version == 2:
                 self.systems.append(
-                    SystemV2(self._request, system['location']))
+                    SystemV2(self, system['location']))
             elif version == 3:
                 self.systems.append(
-                    SystemV3(self._request, system['location']))
+                    SystemV3(self, system['location']))
 
     async def authenticate_refresh_token(
             self, refresh_token: str = None) -> None:
@@ -118,3 +125,10 @@ class Client:
             'refresh_token':
                 refresh_token if refresh_token else self._refresh_token,
         })
+
+    async def update(self) -> dict:
+        """Update all info connected to this client."""
+        return await self.request(
+            'get',
+            'users/{0}/subscriptions'.format(self.user_id),
+            params={'activeOnly': 'true'})

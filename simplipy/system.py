@@ -1,7 +1,7 @@
 """Define a SimpliSafe system (attached to a location)."""
 import logging
 from enum import Enum
-from typing import List
+from typing import Dict
 
 from .sensor import Sensor, SensorV2, SensorV3
 from .util.string import convert_to_underscore
@@ -23,14 +23,11 @@ class SystemStates(Enum):
 class System:
     """Define a system."""
 
-    def __init__(self, request, location_info: dict) -> None:
+    def __init__(self, client, location_info: dict) -> None:
         """Initialize."""
-        self._request = request
-        self.alarm_going_off = location_info['system']['isAlarming']
-        self.sensors = []  # type: List[Sensor]
-        self.serial_number = location_info['system']['serial']
-        self.system_id = location_info['sid']
-        self.version = location_info['system']['version']
+        self._client = client
+        self._location_info = location_info
+        self.sensors = {}  # type: Dict[str, Sensor]
 
         try:
             raw_state = location_info['system']['alarmState']
@@ -40,9 +37,29 @@ class System:
             self._state = SystemStates.unknown
 
     @property
+    def alarm_going_off(self) -> bool:
+        """Return whether the alarm is going off."""
+        return self._location_info['system']['isAlarming']
+
+    @property
+    def serial_number(self) -> str:
+        """Return the system's serial number."""
+        return self._location_info['system']['serial']
+
+    @property
     def state(self) -> Enum:
         """Return the current state of the system."""
         return self._state
+
+    @property
+    def system_id(self) -> int:
+        """Return the SimpliSafe identifier for this system."""
+        return self._location_info['sid']
+
+    @property
+    def version(self) -> int:
+        """Return the system version."""
+        return self._location_info['system']['version']
 
     async def get_events(
             self, from_timestamp: int = None, num_events: int = None) -> dict:
@@ -53,7 +70,7 @@ class System:
         if num_events:
             params['numEvents'] = num_events
 
-        return await self._request(
+        return await self._client.request(
             'get',
             'subscriptions/{0}/events'.format(self.system_id),
             params=params)
@@ -62,9 +79,15 @@ class System:
         """Raise if calling this undefined based method."""
         raise NotImplementedError()
 
-    async def update_sensors(self, cached: bool = True) -> None:
+    # pylint: disable=unused-argument
+    async def update(self, cached: bool = True) -> None:
         """Raise if calling this undefined based method."""
-        raise NotImplementedError()
+        subscription_resp = await self._client.update()
+        [location_info] = [
+            system['location'] for system in subscription_resp['subscriptions']
+            if system['sid'] == self.system_id
+        ]
+        self._location_info = location_info
 
 
 class SystemV2(System):
@@ -76,7 +99,7 @@ class SystemV2(System):
                      SystemStates.unknown):
             raise ValueError('Cannot set alarm state: {0}'.format(value.name))
 
-        resp = await self._request(
+        resp = await self._client.request(
             'post',
             'subscriptions/{0}/state'.format(self.system_id),
             params={'state': value.name})
@@ -86,9 +109,11 @@ class SystemV2(System):
 
         return resp
 
-    async def update_sensors(self, cached: bool = True) -> None:
-        """Update sensor data."""
-        sensor_resp = await self._request(
+    async def update(self, cached: bool = True) -> None:
+        """Update to the latest data (including sensors)."""
+        super().update(cached)
+
+        sensor_resp = await self._client.request(
             'get',
             'subscriptions/{0}/settings'.format(self.system_id),
             params={
@@ -96,11 +121,15 @@ class SystemV2(System):
                 'cached': str(cached).lower()
             })
 
-        self.sensors = []
         for sensor_data in sensor_resp['settings']['sensors']:
             if not sensor_data:
                 continue
-            self.sensors.append(SensorV2(sensor_data))
+
+            if sensor_data['serial'] in self.sensors:
+                sensor = self.sensors[sensor_data['serial']]
+                sensor.update()
+            else:
+                self.sensors[sensor_data['serial']] = SensorV2(sensor_data)
 
 
 class SystemV3(System):
@@ -112,7 +141,7 @@ class SystemV3(System):
                      SystemStates.unknown):
             raise ValueError('Cannot set alarm state: {0}'.format(value.name))
 
-        resp = await self._request(
+        resp = await self._client.request(
             'post', 'ss3/subscriptions/{0}/state/{1}'.format(
                 self.system_id, value.name))
 
@@ -123,15 +152,19 @@ class SystemV3(System):
 
     async def update_sensors(self, cached: bool = True) -> None:
         """Update sensor data."""
-        sensor_resp = await self._request(
+        super().update(cached)
+
+        sensor_resp = await self._client.request(
             'get',
             'ss3/subscriptions/{0}/sensors'.format(self.system_id),
-            params={
-                'forceUpdate': str(not cached).lower()
-            })
+            params={'forceUpdate': str(not cached).lower()})
 
-        self.sensors = []
         for sensor_data in sensor_resp['sensors']:
             if not sensor_data:
                 continue
-            self.sensors.append(SensorV3(sensor_data))
+
+            if sensor_data['serial'] in self.sensors:
+                sensor = self.sensors[sensor_data['serial']]
+                sensor.update()
+            else:
+                self.sensors[sensor_data['serial']] = SensorV3(sensor_data)

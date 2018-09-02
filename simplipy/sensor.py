@@ -6,7 +6,7 @@ from typing import Union
 _LOGGER = logging.getLogger(__name__)
 
 
-class SensorType(Enum):
+class SensorTypes(Enum):
     """Define sensor types."""
 
     keypad = 1
@@ -19,6 +19,8 @@ class SensorType(Enum):
     smoke = 8
     leak = 9
     temperature = 10
+    siren = 13
+    unknown = 99
 
 
 class Sensor:
@@ -29,9 +31,10 @@ class Sensor:
         self._sensor_data = sensor_data
 
         try:
-            self._type = SensorType(sensor_data['type'])
+            self._type = SensorTypes(sensor_data['type'])
         except ValueError:
             _LOGGER.error('Unknown sensor type: %s', self._sensor_data['type'])
+            self._type = SensorTypes.unknown
 
     @property
     def name(self) -> str:
@@ -44,9 +47,13 @@ class Sensor:
         return self._sensor_data['serial']
 
     @property
-    def type(self) -> SensorType:
+    def type(self) -> SensorTypes:
         """Return the sensor type."""
         return self._type
+
+    async def update(self, new_data: dict) -> None:
+        """Update the sensor with new data."""
+        self._sensor_data = new_data
 
 
 class SensorV2(Sensor):
@@ -73,7 +80,7 @@ class SensorV2(Sensor):
         return self._sensor_data['setting']
 
     @property
-    def status(self) -> int:
+    def triggered(self) -> int:
         """Return the current sensor state."""
         return self._sensor_data['sensorStatus']
 
@@ -104,10 +111,10 @@ class SensorV3(Sensor):
     @property
     def triggered(self) -> bool:
         """Return the sensor's status info."""
-        if self.type in (SensorType.motion, SensorType.entry,
-                         SensorType.glass_break, SensorType.carbon_monoxide,
-                         SensorType.smoke, SensorType.leak,
-                         SensorType.temperature):
+        if self.type in (SensorTypes.motion, SensorTypes.entry,
+                         SensorTypes.glass_break, SensorTypes.carbon_monoxide,
+                         SensorTypes.smoke, SensorTypes.leak,
+                         SensorTypes.temperature):
             return self._sensor_data['status'].get('triggered', False)
 
         return False
@@ -115,7 +122,7 @@ class SensorV3(Sensor):
     @property
     def temperature(self) -> Union[None, int]:
         """Return the sensor's status info."""
-        if self.type != SensorType.temperature:
+        if self.type != SensorTypes.temperature:
             raise ValueError(
                 'Non-temperature sensor cannot have a temperature')
 

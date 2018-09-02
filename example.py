@@ -3,45 +3,53 @@ import asyncio
 
 from aiohttp import ClientSession
 
-from simplipy import Client
+import simplipy
 from simplipy.errors import SimplipyError
 
 
-async def client_ss2(websession: ClientSession) -> None:
+async def exercise_client(
+        email: str, password: str, websession: ClientSession) -> None:
     """Test a v2 SimpliSafe client."""
+    print('{0}'.format(email))
+    print('========================')
+
+    systems = await simplipy.get_systems(email, password, websession)
+    for idx, system in enumerate(systems):
+        print()
+        print('System #{0}'.format(idx + 1))
+        print('------------------------')
+        print('Version: {0}'.format(system.version))
+        print('User ID: {0}'.format(system.account.user_id))
+        print('Access Token: {0}'.format(system.account.access_token))
+        print('Refresh Token: {0}'.format(system.account.refresh_token))
+
+        events = await system.get_events()
+        print('Number of Events: {0}'.format((len(events['events']))))
+
+        print()
+        print('Sensors:')
+        for serial, sensor in system.sensors.items():
+            print(
+                '{0}: {1} ({2}) -> {3}'.format(
+                    serial, sensor.name, sensor.type, sensor.triggered))
+
+        print()
+        print('Refreshing Access Token:')
+        await system.account.refresh_access_token()
+        print('Access Token: {0}'.format(system.account.access_token))
+        print('Refresh Token: {0}'.format(system.account.refresh_token))
+
     print()
-    print('CONNECTING TO CLIENT...')
-    client = Client('glorianne5@comcast.net', websession)
-    await client.authenticate_password("fddlupFELuPq3SzsJA6s")
-
-    print('User ID: {0}'.format(client.user_id))
-    print('Number of Systems: {0}'.format(len(client.systems)))
-
-    system = client.systems[0]
-    print('System #1 Properties: {0}'.format(system.__dict__))
-
-    events = await system.get_events()
-    print('System #1 Number of Events: {0}'.format((len(events['events']))))
-
-    print()
-    print('UPDATING SENSOR VALUES...')
-    await system.update_sensors()
-    for sensor in system.sensors:
-        print(sensor.status)
 
 
 async def main() -> None:
     """Create the aiohttp session and run the example."""
     async with ClientSession() as websession:
-        await run(websession)
-
-
-async def run(websession: ClientSession):
-    """Run."""
-    try:
-        await client_ss2(websession)
-    except SimplipyError as err:
-        print(err)
+        try:
+            print()
+            await exercise_client('<EMAIL>', '<PASSWORD>', websession)
+        except SimplipyError as err:
+            print(err)
 
 
 asyncio.get_event_loop().run_until_complete(main())

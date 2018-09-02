@@ -1,9 +1,9 @@
 """Define a SimpliSafe system (attached to a location)."""
 import logging
 from enum import Enum
-from typing import Dict
+from typing import Dict, Union
 
-from .sensor import Sensor, SensorV2, SensorV3
+from .sensor import SensorV2, SensorV3
 from .util.string import convert_to_underscore
 
 _LOGGER = logging.getLogger(__name__)
@@ -23,11 +23,11 @@ class SystemStates(Enum):
 class System:
     """Define a system."""
 
-    def __init__(self, client, location_info: dict) -> None:
+    def __init__(self, account, location_info: dict) -> None:
         """Initialize."""
-        self._client = client
         self._location_info = location_info
-        self.sensors = {}  # type: Dict[str, Sensor]
+        self.account = account
+        self.sensors = {}  # type: Dict[str, Union[SensorV2, SensorV3]]
 
         try:
             raw_state = location_info['system']['alarmState']
@@ -70,7 +70,7 @@ class System:
         if num_events:
             params['numEvents'] = num_events
 
-        return await self._client.request(
+        return await self.account.request(
             'get',
             'subscriptions/{0}/events'.format(self.system_id),
             params=params)
@@ -79,12 +79,18 @@ class System:
         """Raise if calling this undefined based method."""
         raise NotImplementedError()
 
-    # pylint: disable=unused-argument
-    async def update(self, cached: bool = True) -> None:
+    async def update(
+            self, refresh_location: bool = True, cached: bool = True) -> None:
         """Raise if calling this undefined based method."""
-        subscription_resp = await self._client.update()
+        raise NotImplementedError()
+
+    # pylint: disable=unused-argument
+    async def update_location_info(self) -> None:
+        """Raise if calling this undefined based method."""
+        subscription_resp = await self.account.get_subscription_data()
         [location_info] = [
-            system['location'] for system in subscription_resp['subscriptions']
+            system['location']
+            for system in subscription_resp['subscriptions']
             if system['sid'] == self.system_id
         ]
         self._location_info = location_info
@@ -99,7 +105,7 @@ class SystemV2(System):
                      SystemStates.unknown):
             raise ValueError('Cannot set alarm state: {0}'.format(value.name))
 
-        resp = await self._client.request(
+        resp = await self.account.request(
             'post',
             'subscriptions/{0}/state'.format(self.system_id),
             params={'state': value.name})
@@ -109,11 +115,13 @@ class SystemV2(System):
 
         return resp
 
-    async def update(self, cached: bool = True) -> None:
+    async def update(
+            self, refresh_location: bool = True, cached: bool = True) -> None:
         """Update to the latest data (including sensors)."""
-        super().update(cached)
+        if refresh_location:
+            self.update_location_info()
 
-        sensor_resp = await self._client.request(
+        sensor_resp = await self.account.request(
             'get',
             'subscriptions/{0}/settings'.format(self.system_id),
             params={
@@ -126,8 +134,7 @@ class SystemV2(System):
                 continue
 
             if sensor_data['serial'] in self.sensors:
-                sensor = self.sensors[sensor_data['serial']]
-                sensor.update()
+                self.sensors[sensor_data['serial']].update(sensor_data)
             else:
                 self.sensors[sensor_data['serial']] = SensorV2(sensor_data)
 
@@ -141,7 +148,7 @@ class SystemV3(System):
                      SystemStates.unknown):
             raise ValueError('Cannot set alarm state: {0}'.format(value.name))
 
-        resp = await self._client.request(
+        resp = await self.account.request(
             'post', 'ss3/subscriptions/{0}/state/{1}'.format(
                 self.system_id, value.name))
 
@@ -150,11 +157,13 @@ class SystemV3(System):
 
         return resp
 
-    async def update_sensors(self, cached: bool = True) -> None:
+    async def update(
+            self, refresh_location: bool = True, cached: bool = True) -> None:
         """Update sensor data."""
-        super().update(cached)
+        if refresh_location:
+            self.update_location_info()
 
-        sensor_resp = await self._client.request(
+        sensor_resp = await self.account.request(
             'get',
             'ss3/subscriptions/{0}/sensors'.format(self.system_id),
             params={'forceUpdate': str(not cached).lower()})
@@ -164,7 +173,6 @@ class SystemV3(System):
                 continue
 
             if sensor_data['serial'] in self.sensors:
-                sensor = self.sensors[sensor_data['serial']]
-                sensor.update()
+                self.sensors[sensor_data['serial']].update(sensor_data)
             else:
                 self.sensors[sensor_data['serial']] = SensorV3(sensor_data)

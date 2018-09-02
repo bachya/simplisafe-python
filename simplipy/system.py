@@ -17,7 +17,7 @@ class SystemStates(Enum):
     exit_delay = 3
     home = 4
     off = 5
-    unknown = 5
+    unknown = 99
 
 
 class System:
@@ -61,6 +61,20 @@ class System:
         """Return the system version."""
         return self._location_info['system']['version']
 
+    async def _set_state(self, value: SystemStates) -> None:
+        """Raise if calling this undefined based method."""
+        raise NotImplementedError()
+
+    async def _update_location_info(self) -> None:
+        """Raise if calling this undefined based method."""
+        subscription_resp = await self.account.get_subscription_data()
+        [location_info] = [
+            system['location']
+            for system in subscription_resp['subscriptions']
+            if system['sid'] == self.system_id
+        ]
+        self._location_info = location_info
+
     async def get_events(
             self, from_timestamp: int = None, num_events: int = None) -> dict:
         """Get events with optional start time and number of events."""
@@ -75,35 +89,31 @@ class System:
             'subscriptions/{0}/events'.format(self.system_id),
             params=params)
 
-    async def set_state(self, value: SystemStates) -> dict:
-        """Raise if calling this undefined based method."""
-        raise NotImplementedError()
+    async def set_away(self) -> None:
+        """Set the system in "Away" mode."""
+        await self._set_state(SystemStates.away)
+
+    async def set_home(self) -> None:
+        """Set the system in "Home" mode."""
+        await self._set_state(SystemStates.home)
+
+    async def set_off(self) -> None:
+        """Set the system in "Off" mode."""
+        await self._set_state(SystemStates.off)
 
     async def update(
             self, refresh_location: bool = True, cached: bool = True) -> None:
         """Raise if calling this undefined based method."""
         raise NotImplementedError()
 
-    # pylint: disable=unused-argument
-    async def update_location_info(self) -> None:
-        """Raise if calling this undefined based method."""
-        subscription_resp = await self.account.get_subscription_data()
-        [location_info] = [
-            system['location']
-            for system in subscription_resp['subscriptions']
-            if system['sid'] == self.system_id
-        ]
-        self._location_info = location_info
-
 
 class SystemV2(System):
     """Define a V2 (original) system."""
 
-    async def set_state(self, value: SystemStates) -> dict:
+    async def _set_state(self, value: SystemStates) -> None:
         """Set the state of the system."""
-        if value in (SystemStates.entry_delay, SystemStates.exit_delay,
-                     SystemStates.unknown):
-            raise ValueError('Cannot set alarm state: {0}'.format(value.name))
+        if self._state == value:
+            return
 
         resp = await self.account.request(
             'post',
@@ -111,15 +121,13 @@ class SystemV2(System):
             params={'state': value.name})
 
         if resp['success']:
-            self._state = value
-
-        return resp
+            self._state = SystemStates[resp['requestedState']]
 
     async def update(
             self, refresh_location: bool = True, cached: bool = True) -> None:
         """Update to the latest data (including sensors)."""
         if refresh_location:
-            self.update_location_info()
+            self._update_location_info()
 
         sensor_resp = await self.account.request(
             'get',
@@ -134,7 +142,8 @@ class SystemV2(System):
                 continue
 
             if sensor_data['serial'] in self.sensors:
-                self.sensors[sensor_data['serial']].update(sensor_data)
+                sensor = self.sensors[sensor_data['serial']]
+                sensor.sensor_data = sensor_data
             else:
                 self.sensors[sensor_data['serial']] = SensorV2(sensor_data)
 
@@ -142,26 +151,22 @@ class SystemV2(System):
 class SystemV3(System):
     """Define a V3 (new) system."""
 
-    async def set_state(self, value: SystemStates) -> dict:
+    async def _set_state(self, value: SystemStates) -> None:
         """Set the state of the system."""
-        if value in (SystemStates.entry_delay, SystemStates.exit_delay,
-                     SystemStates.unknown):
-            raise ValueError('Cannot set alarm state: {0}'.format(value.name))
+        if self._state == value:
+            return
 
         resp = await self.account.request(
             'post', 'ss3/subscriptions/{0}/state/{1}'.format(
                 self.system_id, value.name))
 
-        if resp['success']:
-            self._state = value
-
-        return resp
+        self._state = SystemStates[convert_to_underscore(resp['state'])]
 
     async def update(
             self, refresh_location: bool = True, cached: bool = True) -> None:
         """Update sensor data."""
         if refresh_location:
-            self.update_location_info()
+            self._update_location_info()
 
         sensor_resp = await self.account.request(
             'get',
@@ -173,6 +178,7 @@ class SystemV3(System):
                 continue
 
             if sensor_data['serial'] in self.sensors:
-                self.sensors[sensor_data['serial']].update(sensor_data)
+                sensor = self.sensors[sensor_data['serial']]
+                sensor.sensor_data = sensor_data
             else:
                 self.sensors[sensor_data['serial']] = SensorV3(sensor_data)

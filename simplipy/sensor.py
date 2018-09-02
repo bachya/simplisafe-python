@@ -28,32 +28,28 @@ class Sensor:
 
     def __init__(self, sensor_data: dict) -> None:
         """Initialize."""
-        self._sensor_data = sensor_data
+        self.sensor_data = sensor_data
 
         try:
             self._type = SensorTypes(sensor_data['type'])
         except ValueError:
-            _LOGGER.error('Unknown sensor type: %s', self._sensor_data['type'])
+            _LOGGER.error('Unknown sensor type: %s', self.sensor_data['type'])
             self._type = SensorTypes.unknown
 
     @property
     def name(self) -> str:
         """Return the sensor name."""
-        return self._sensor_data['name']
+        return self.sensor_data['name']
 
     @property
     def serial(self) -> str:
         """Return the serial number."""
-        return self._sensor_data['serial']
+        return self.sensor_data['serial']
 
     @property
     def type(self) -> SensorTypes:
         """Return the sensor type."""
         return self._type
-
-    async def update(self, new_data: dict) -> None:
-        """Update the sensor with new data."""
-        self._sensor_data = new_data
 
 
 class SensorV2(Sensor):
@@ -62,27 +58,27 @@ class SensorV2(Sensor):
     @property
     def data(self) -> int:
         """Return the sensor's current data."""
-        return self._sensor_data['sensorData']
+        return self.sensor_data['sensorData']
 
     @property
     def error(self) -> bool:
         """Return the sensor's error status."""
-        return self._sensor_data['error']
+        return self.sensor_data['error']
 
     @property
     def low_battery(self) -> bool:
         """Return whether the sensor's battery is low."""
-        return self._sensor_data.get('battery', 'ok') != 'ok'
+        return self.sensor_data.get('battery', 'ok') != 'ok'
 
     @property
     def settings(self) -> bool:
         """Return the sensor's settings."""
-        return self._sensor_data['setting']
+        return self.sensor_data['setting']
 
     @property
     def triggered(self) -> int:
         """Return the current sensor state."""
-        return self._sensor_data['sensorStatus']
+        return self.sensor_data['sensorStatus']
 
 
 class SensorV3(Sensor):
@@ -91,22 +87,22 @@ class SensorV3(Sensor):
     @property
     def error(self) -> bool:
         """Return the sensor's error status."""
-        return self._sensor_data['status'].get('malfunction', False)
+        return self.sensor_data['status'].get('malfunction', False)
 
     @property
     def low_battery(self) -> bool:
         """Return whether the sensor's battery is low."""
-        return self._sensor_data['flags']['lowBattery']
+        return self.sensor_data['flags']['lowBattery']
 
     @property
     def offline(self) -> bool:
         """Return whether the sensor is offline."""
-        return self._sensor_data['flags']['offline']
+        return self.sensor_data['flags']['offline']
 
     @property
     def settings(self) -> dict:
         """Return the sensor's settings."""
-        return self._sensor_data['setting']
+        return self.sensor_data['setting']
 
     @property
     def triggered(self) -> bool:
@@ -115,7 +111,7 @@ class SensorV3(Sensor):
                          SensorTypes.glass_break, SensorTypes.carbon_monoxide,
                          SensorTypes.smoke, SensorTypes.leak,
                          SensorTypes.temperature):
-            return self._sensor_data['status'].get('triggered', False)
+            return self.sensor_data['status'].get('triggered', False)
 
         return False
 
@@ -126,4 +122,4 @@ class SensorV3(Sensor):
             raise ValueError(
                 'Non-temperature sensor cannot have a temperature')
 
-        return self._sensor_data['status']['temperature']
+        return self.sensor_data['status']['temperature']

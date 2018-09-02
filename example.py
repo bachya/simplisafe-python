@@ -39,6 +39,15 @@ async def exercise_client(
         print('Access Token: {0}'.format(system.account.access_token))
         print('Refresh Token: {0}'.format(system.account.refresh_token))
 
+        print()
+        print('Setting System to "Home":')
+        await system.set_home()
+        await asyncio.sleep(5)
+
+        print()
+        print('Setting System to "Off":')
+        await system.set_off()
+
     print()
 
 
@@ -47,7 +56,7 @@ async def main() -> None:
     async with ClientSession() as websession:
         try:
             print()
-            await exercise_client('<EMAIL>', '<PASSWORD>', websession)
+            await exercise_client('EMAIL', 'PASSWORD', websession)
         except SimplipyError as err:
             print(err)
 

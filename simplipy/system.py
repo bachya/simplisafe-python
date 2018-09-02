@@ -47,7 +47,7 @@ class System:
         return self._location_info['system']['serial']
 
     @property
-    def state(self) -> Enum:
+    def state(self) -> SystemStates:
         """Return the current state of the system."""
         return self._state
 
@@ -174,9 +174,6 @@ class SystemV3(System):
             params={'forceUpdate': str(not cached).lower()})
 
         for sensor_data in sensor_resp['sensors']:
-            if not sensor_data:
-                continue
-
             if sensor_data['serial'] in self.sensors:
                 sensor = self.sensors[sensor_data['serial']]
                 sensor.sensor_data = sensor_data

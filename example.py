@@ -9,7 +9,7 @@ from simplipy.errors import SimplipyError
 
 async def exercise_client(
         email: str, password: str, websession: ClientSession) -> None:
-    """Test a v2 SimpliSafe client."""
+    """Test a SimpliSafe client (regardless of version)."""
     print('{0}'.format(email))
     print('========================')
 

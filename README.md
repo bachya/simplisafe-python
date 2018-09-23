@@ -43,7 +43,7 @@ pip install python-simplisafe
 
 # Usage
 
-## Getting Systems Associated with An Account
+## Getting Systems Associated with an Account
 
 `simplipy` starts within an
 [aiohttp](https://aiohttp.readthedocs.io/en/stable/) `ClientSession`:
@@ -55,7 +55,7 @@ from aiohttp import ClientSession
 
 
 async def main() -> None:
-    """Create the aiohttp session and run the example."""
+    """Create the aiohttp session and run."""
     async with ClientSession() as websession:
       # YOUR CODE HERE
 
@@ -63,7 +63,7 @@ async def main() -> None:
 asyncio.get_event_loop().run_until_complete(main())
 ```
 
-To get all SimpliSafe systems associated with an email address:
+To get all SimpliSafe systems associated with an account:
 
 ```python
 import asyncio
@@ -98,52 +98,59 @@ these objects, meaning the same properties and methods are available to both.
 ```python
 from simplypy import get_systems
 
-systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
-# >>> [simplipy.system.SystemV2]
 
-for system in systems:
-  # Return a reference to a SimpliSafe account object (detailed later):
-  primary_system.account
-  # >>> simplipy.account.SimpliSafe
+async def main() -> None:
+    """Create the aiohttp session and run."""
+    async with ClientSession() as websession:
+      systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
+      # >>> [simplipy.system.SystemV2]
 
-  # Return whether the alarm is currently going off:
-  primary_system.alarm_going_off
-  # >>> False
+      for system in systems:
+        # Return a reference to a SimpliSafe account object (detailed later):
+        primary_system.account
+        # >>> simplipy.account.SimpliSafe
 
-  # Return a list of sensors attached to this sytem:
-  primary_system.sensors
-  # >>> [simplipy.sensor.SensorV2, simplipy.sensor.SensorV2, ...]
+        # Return whether the alarm is currently going off:
+        primary_system.alarm_going_off
+        # >>> False
 
-  # Return the system's serial number:
-  primary_system.serial
-  # >>> 1234ABCD
+        # Return a list of sensors attached to this sytem:
+        primary_system.sensors
+        # >>> [simplipy.sensor.SensorV2, simplipy.sensor.SensorV2, ...]
 
-  # Return the current state of the system:
-  primary_system.state
-  # >>> simplipy.system.SystemStates.away
+        # Return the system's serial number:
+        primary_system.serial
+        # >>> 1234ABCD
 
-  # Return the SimpliSafe identifier for this system:
-  primary_system.system_id
-  # >>> 1234ABCD
+        # Return the current state of the system:
+        primary_system.state
+        # >>> simplipy.system.SystemStates.away
 
-  # Return the SimpliSafe version:
-  primary_system.version
-  # >>> 2
+        # Return the SimpliSafe identifier for this system:
+        primary_system.system_id
+        # >>> 1234ABCD
 
-  # Return a list of events for the system with an optional start timestamp and
-  # number of events - omitting these parameters will return all events (max of
-  # 50) stored in SimpliSafe's cloud:
-  await primary_system.get_events(from_timestamp=1534035861, num_events=2)
-  # >>> return {"numEvents": 2, "lastEventTimestamp": 1534035861, "events": [{...}]}
+        # Return the SimpliSafe version:
+        primary_system.version
+        # >>> 2
 
-  # Set the state of the system:
-  await primary_system.set_away()
-  await primary_system.set_home()
-  await primary_system.set_off()
+        # Return a list of events for the system with an optional start timestamp and
+        # number of events - omitting these parameters will return all events (max of
+        # 50) stored in SimpliSafe's cloud:
+        await primary_system.get_events(from_timestamp=1534035861, num_events=2)
+        # >>> return {"numEvents": 2, "lastEventTimestamp": 1534035861, "events": [{...}]}
 
-  # Get the latest values from the system; by default, include both system info
-  # and sensor info and use cached values (both can be overridden):
-  await primary_system.update(refresh_location=True, cached=True)
+        # Set the state of the system:
+        await primary_system.set_away()
+        await primary_system.set_home()
+        await primary_system.set_off()
+
+        # Get the latest values from the system; by default, include both system info
+        # and sensor info and use cached values (both can be overridden):
+        await primary_system.update(refresh_location=True, cached=True)
+
+
+asyncio.get_event_loop().run_until_complete(main())
 ```
 
 ### A Note on `system.update()`

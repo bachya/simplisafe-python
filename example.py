@@ -1,4 +1,4 @@
-"""Run an example script to quickly test."""
+"""Run an example script to quickly test any SimpliSafe system."""
 import asyncio
 
 from aiohttp import ClientSession

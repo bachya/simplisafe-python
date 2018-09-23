@@ -1,3 +1,7 @@
+ci:
+	pipenv run py.test --junitxml=report.xml
+coverage:
+	pipenv run py.test -s --verbose --cov-report term-missing --cov-report xml --cov=simplipy tests
 init:
 	pip install --upgrade pip pipenv
 	pipenv lock

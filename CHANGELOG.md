@@ -5,7 +5,9 @@
 - Added full test sweet (with 100% coverage)
 - Complete overhaul of documentation
 - Added Makefile with common tasks
+- Added Pipfile for dependency management
 - Added CodeClimate and CodeCov badging/tracking
+- Updated `setup.py` to common standard
 - Added contribution instructions
 - Added author recognition
 

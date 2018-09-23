@@ -84,7 +84,7 @@ asyncio.get_event_loop().run_until_complete(main())
 
 ## The `System` Object
 
-SimpliSafe `System` objects are used to retrieve data on and control the state
+`System` objects are used to retrieve data on and control the state
 of SimpliSafe systems. Two types of objects can be returned:
 
 * `SystemV2`: an object to control V2 (classic) SimpliSafe systems
@@ -96,10 +96,16 @@ these objects, meaning the same properties and methods are available to both.
 ### Properties and Methods
 
 ```python
+from simplypy import get_systems
+
 systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
 # >>> [simplipy.system.SystemV2]
 
 for system in systems:
+  # Return a reference to a SimpliSafe account object (detailed later):
+  primary_system.account
+  # >>> simplipy.account.SimpliSafe
+
   # Return whether the alarm is currently going off:
   primary_system.alarm_going_off
   # >>> False
@@ -152,7 +158,7 @@ There is one crucial difference between V2 and V3 systems when updating:
 
 ## The `Sensor` Object
 
-SimpliSafe `Sensor` objects provide information about the SimpliSafe sensor to
+`Sensor` objects provide information about the SimpliSafe sensor to
 which they relate.
 
 **NOTE:** Individual sensors cannot be updated directly; instead,
@@ -173,6 +179,8 @@ differences are outlined below.
 ### Base Properties
 
 ```python
+from simplypy import get_systems
+
 systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
 for system in systems:
   for sensor in system.sensors:
@@ -204,14 +212,16 @@ for system in systems:
 ### V2 Properties
 
 ```python
+from simplypy import get_systems
+
 systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
 for system in systems:
   for sensor in system.sensors:
-    # Return the sensor's data as a currently un-understood integer:
+    # Return the sensor's data as a currently non-understood integer:
     sensor.data
     # >>> 0
 
-    # Return the sensor's settings as a currently un-understood integer:
+    # Return the sensor's settings as a currently non-understood integer:
     sensor.settings
     # >>> 1
 ```
@@ -219,6 +229,8 @@ for system in systems:
 ### V3 Properties
 
 ```python
+from simplypy import get_systems
+
 systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
 for system in systems:
   for sensor in system.sensors:
@@ -235,6 +247,34 @@ for system in systems:
     # >>> 67
 ```
 
+## The `Account` Object
+
+Each `System` object has a reference to an `Account` object. This object
+contains properties and a method useful for authentication and account
+access.
+
+**VERY IMPORTANT NOTE:** the `Account` object contains references to
+SimpliSafe access and refresh tokens. **It is vitally important that you do
+not let these tokens leave your control.** If exposed, savvy attackers could
+use them to view and alter your system's state. **You have been warned; proper
+usage of these properties is solely your responsibility.**
+
+```python
+systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
+for system in systems:
+  # Return the current access token:
+  system.account.access_token
+  # >>> 7s9yasdh9aeu21211add
+
+  # Return the current refresh token:
+  system.account.refresh_token
+  # >>> 896sad86gudas87d6asd
+
+  # Return the SimpliSafe user ID associated with this account:
+  system.account.user_id
+  # >>> 1234567
+```
+
 # Errors/Exceptions
 
 `simplipy` exposes three useful error types:
@@ -247,3 +287,33 @@ for system in systems:
   token
 
 # Access and Refresh Tokens
+
+When `simplipy.get_systems()` is run, everything is set to make repeated
+authorized requests against the SimpliSafe cloud. At some point, however, the
+access token will expire and any future requests will raise
+`simplipy.errors.TokenExpiredError`.
+
+When this occurs, a new access token can easily be generated:
+
+```python
+await system.account.refresh_access_token()
+```
+
+This will use the "on-file" refresh token to request a new access token; once
+the call is complete, you're good to go.
+
+In some instances, it may be desirable to store the "on-file" refresh token for
+later use (for example, if your app/script/etc. stops and needs to restart at
+some indeterminate point in the future). In that case, the
+`refresh_access_token()` method can take an optional `refresh_token` parameter:
+
+```python
+await system.account.refresh_access_token(refresh_token='abcdefg987665')
+```
+
+Although no official documentation exists, basic testing appears to confirm the
+hypothesis that the refresh token is both long-lived and single-use. This means
+that theoretically, it should be possible to use it to create an access token
+long into the future. If `refresh_access_token()` should throw an error,
+however, the system object(s) will need to be recreated via
+`simplipy.get_systems`.

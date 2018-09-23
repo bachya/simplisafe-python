@@ -286,7 +286,7 @@ for system in systems:
 * `simplipy.errors.TokenExpiredError`: an error related to an expired access
   token
 
-# Access and Refresh Tokens
+# Refreshing the Access Token
 
 When `simplipy.get_systems()` is run, everything is set to make repeated
 authorized requests against the SimpliSafe cloud. At some point, however, the
@@ -317,3 +317,16 @@ that theoretically, it should be possible to use it to create an access token
 long into the future. If `refresh_access_token()` should throw an error,
 however, the system object(s) will need to be recreated via
 `simplipy.get_systems`.
+
+# Contributing
+
+1. [Check for open features/bugs](https://github.com/w1ll1am23/simplisafe-python/issues)
+  or [initiate a discussion on one](https://github.com/w1ll1am23/simplisafe-python/issues/new).
+2. [Fork the repository](https://github.com/w1ll1am23/simplisafe-python/fork).
+3. Install the dev environment: `make init`.
+4. Enter the virtual environment: `pipenv shell`
+5. Code your new feature or bug fix.
+6. Write a test that covers your new functionality.
+7. Run tests and ensure 100% code coverage: `make coverage`
+8. Add yourself to `AUTHORS.rst`.
+9. Submit a pull request!

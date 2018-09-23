@@ -77,7 +77,7 @@ async def main() -> None:
     """Create the aiohttp session and run."""
     async with ClientSession() as websession:
       systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
-      # >>> [<simplipy.system.SystemV2 object at 0x10661e3c8>, <simplipy.system.SystemV3 object at 0x8712abc23>]
+      # >>> [<simplipy.system.SystemV2 object at 0x10661e3c8>, ...]
 
 
 asyncio.get_event_loop().run_until_complete(main())
@@ -108,47 +108,47 @@ async def main() -> None:
 
       for system in systems:
         # Return a reference to a SimpliSafe account object (detailed later):
-        primary_system.account
+        system.account
         # >>> <simplipy.account.SimpliSafe object at 0x12aba2321>
 
         # Return whether the alarm is currently going off:
-        primary_system.alarm_going_off
+        system.alarm_going_off
         # >>> False
 
         # Return a list of sensors attached to this sytem:
-        primary_system.sensors
+        system.sensors
         # >>> [<simplipy.sensor.SensorV2 object at 0x10661e3c8>, ...]
 
         # Return the system's serial number:
-        primary_system.serial
+        system.serial
         # >>> 1234ABCD
 
         # Return the current state of the system:
-        primary_system.state
+        system.state
         # >>> simplipy.system.SystemStates.away
 
         # Return the SimpliSafe identifier for this system:
-        primary_system.system_id
+        system.system_id
         # >>> 1234ABCD
 
         # Return the SimpliSafe version:
-        primary_system.version
+        system.version
         # >>> 2
 
         # Return a list of events for the system with an optional start timestamp and
         # number of events - omitting these parameters will return all events (max of
         # 50) stored in SimpliSafe's cloud:
-        await primary_system.get_events(from_timestamp=1534035861, num_events=2)
+        await system.get_events(from_timestamp=1534035861, num_events=2)
         # >>> return {"numEvents": 2, "lastEventTimestamp": 1534035861, "events": [{...}]}
 
         # Set the state of the system:
-        await primary_system.set_away()
-        await primary_system.set_home()
-        await primary_system.set_off()
+        await system.set_away()
+        await system.set_home()
+        await system.set_off()
 
         # Get the latest values from the system; by default, include both system info
         # and sensor info and use cached values (both can be overridden):
-        await primary_system.update(refresh_location=True, cached=True)
+        await system.update(refresh_location=True, cached=True)
 
 
 asyncio.get_event_loop().run_until_complete(main())

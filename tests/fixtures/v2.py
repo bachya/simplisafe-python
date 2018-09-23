@@ -447,7 +447,7 @@ def v2_settings_json():
                 "error": False,
                 "battery": "ok"
             }, {
-                "type": 7,
+                "type": 42,
                 "serial": "974",
                 "setting": 63,
                 "instant": True,

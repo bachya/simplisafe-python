@@ -7,7 +7,7 @@ import aresponses
 import pytest
 
 from simplipy import get_systems
-from simplipy.errors import TokenExpiredError
+from simplipy.errors import RequestError, TokenExpiredError
 
 from .const import (
     TEST_ACCESS_TOKEN, TEST_EMAIL, TEST_PASSWORD, TEST_REFRESH_TOKEN,
@@ -18,7 +18,21 @@ from .fixtures.v3 import *
 
 
 @pytest.mark.asyncio
-async def test_expired_token_exception(api_token_json, event_loop, v2_server):
+async def test_bad_request(api_token_json, event_loop, v2_server):
+    """Test that the correct exception is raised when the token is expired."""
+    async with v2_server:
+        v2_server.add(
+            'api.simplisafe.com', '/v1/api/fakeEndpoint', 'get',
+            aresponses.Response(text='', status=404))
+
+        async with aiohttp.ClientSession(loop=event_loop) as websession:
+            [system] = await get_systems(TEST_EMAIL, TEST_PASSWORD, websession)
+            with pytest.raises(RequestError):
+                await system.account.request('get', 'api/fakeEndpoint')
+
+
+@pytest.mark.asyncio
+async def test_expired_token_exception(event_loop, v2_server):
     """Test that the correct exception is raised when the token is expired."""
     async with v2_server:
         v2_server.add(

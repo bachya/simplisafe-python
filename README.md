@@ -115,7 +115,7 @@ async def main() -> None:
         system.alarm_going_off
         # >>> False
 
-        # Return a list of sensors attached to this sytem:
+        # Return a list of sensors attached to this sytem (detailed later):
         system.sensors
         # >>> [<simplipy.sensor.SensorV2 object at 0x10661e3c8>, ...]
 
@@ -146,8 +146,8 @@ async def main() -> None:
         await system.set_home()
         await system.set_off()
 
-        # Get the latest values from the system; by default, include both system info
-        # and sensor info and use cached values (both can be overridden):
+        # Get the latest values from the system; by default, include a refresh
+        # of system info and use cached values (both can be overridden):
         await system.update(refresh_location=True, cached=True)
 
 
@@ -156,7 +156,7 @@ asyncio.get_event_loop().run_until_complete(main())
 
 ### A Note on `system.update()`
 
-There is one crucial difference between V2 and V3 systems when updating:
+There are two crucial differences between V2 and V3 systems when updating:
 
 * V2 systems, which use only 2G cell connectivity, will be slower to update
   than V3 systems when those V3 systems are connected to WiFi.
@@ -166,7 +166,7 @@ There is one crucial difference between V2 and V3 systems when updating:
 
 ## The `Sensor` Object
 
-`Sensor` objects provide information about the SimpliSafe sensor to
+`Sensor` objects provide information about the SimpliSafe sensors to
 which they relate.
 
 **NOTE:** Individual sensors cannot be updated directly; instead,
@@ -177,7 +177,7 @@ crucial to remember that sensor values are only as current as the last time
 Like their `System` cousins, two types of objects can be returned:
 
 * `SensorV2`: an object to view V2 (classic) SimpliSafe sensors
-* `SensorV3`: an object to view V3 (new) SimpliSafe sensors
+* `SensorV3`: an object to view V3 (new, released in 2018) SimpliSafe sensors
 
 Once again, `simplipy` provides a common interface to
 these objects; however, there are some properties that are either (a) specific
@@ -279,7 +279,7 @@ asyncio.get_event_loop().run_until_complete(main())
 ## The `Account` Object
 
 Each `System` object has a reference to an `Account` object. This object
-contains properties and a method useful for authentication and account
+contains properties and a method useful for authentication and ongoing
 access.
 
 **VERY IMPORTANT NOTE:** the `Account` object contains references to

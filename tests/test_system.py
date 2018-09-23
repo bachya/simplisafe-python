@@ -52,7 +52,7 @@ async def test_expired_token_exception(event_loop, v2_server):
 
 @pytest.mark.asyncio
 async def test_get_events(events_json, event_loop, v2_server):
-    """Test getting events from a v2 system."""
+    """Test getting events from a system."""
     async with v2_server:
         v2_server.add(
             'api.simplisafe.com',
@@ -68,7 +68,7 @@ async def test_get_events(events_json, event_loop, v2_server):
 
 @pytest.mark.asyncio
 async def test_get_systems_v2(event_loop, v2_server):
-    """Test the ability to get systems attached to an v2 account."""
+    """Test the ability to get systems attached to a v2 account."""
     async with v2_server:
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             systems = await get_systems(TEST_EMAIL, TEST_PASSWORD, websession)
@@ -83,7 +83,7 @@ async def test_get_systems_v2(event_loop, v2_server):
 
 @pytest.mark.asyncio
 async def test_get_systems_v3(event_loop, v3_server):
-    """Test the ability to get systems attached to an v3 account."""
+    """Test the ability to get systems attached to a v3 account."""
     async with v3_server:
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             systems = await get_systems(TEST_EMAIL, TEST_PASSWORD, websession)

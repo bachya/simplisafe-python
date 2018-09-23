@@ -55,7 +55,7 @@ def events_json():
             "eventCid": 1400,
             "zoneCid": "1",
             "sensorType": 1,
-            "sensorSerial": "1XYEB",
+            "sensorSerial": "456",
             "account": TEST_ACCOUNT_ID,
             "userId": TEST_USER_ID,
             "sid": TEST_SUBSCRIPTION_ID,

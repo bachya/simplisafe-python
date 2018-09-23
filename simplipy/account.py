@@ -29,7 +29,7 @@ async def get_systems(
     return await account._get_subscriptions()
 
 
-class SimpliSafe:  # pylint: disable=too-few-public-methods
+class SimpliSafe:
     """Define an "account" client."""
 
     def __init__(self, websession: ClientSession) -> None:

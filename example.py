@@ -28,10 +28,11 @@ async def exercise_client(
 
         print()
         print('Sensors:')
-        for serial, sensor in system.sensors.items():
+        for serial, sensor_attrs in system.sensors.items():
             print(
                 '{0}: {1} ({2}) -> {3}'.format(
-                    serial, sensor.name, sensor.type, sensor.triggered))
+                    serial, sensor_attrs.name, sensor_attrs.type,
+                    sensor_attrs.triggered))
 
         print()
         print('Refreshing Access Token:')

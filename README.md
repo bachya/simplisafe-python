@@ -195,12 +195,15 @@ async def main() -> None:
     async with ClientSession() as websession:
       systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
       for system in systems:
-        for sensor in system.sensors:
+        for serial, sensor_attrs in system.sensors.items():
           # Return the sensor's name:
           sensor.name
           # >>> Kitchen Window
 
-          # Return the sensor's serial number:
+          # Return the sensor's serial number (either through the index or
+          # through the property):
+          serial
+          # >>> 1234ABCD
           sensor.serial
           # >>> 1234ABCD
 
@@ -235,7 +238,7 @@ async def main() -> None:
     async with ClientSession() as websession:
       systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
       for system in systems:
-        for sensor in system.sensors:
+        for serial, sensor_attrs in system.sensors.items():
           # Return the sensor's data as a currently non-understood integer:
           sensor.data
           # >>> 0

@@ -4,6 +4,7 @@ verify_ssl = true
 
 [dev-packages]
 "flake8" = "*"
+aresponses = "*"
 codecov = "*"
 coverage = "*"
 detox = "*"
@@ -12,7 +13,6 @@ pytest-aiohttp = "*"
 pytest-cov = "*"
 tox = "*"
 twine = "*"
-aresponses = "*"
 
 [packages]
 aiodns = "*"

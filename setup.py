@@ -15,7 +15,7 @@ from setuptools import find_packages, setup, Command  # type: ignore
 
 # Package meta-data.
 NAME = 'simplisafe-python'
-DESCRIPTION = 'A unofficial Python 3 library for SimpliSafe alarm systems'
+DESCRIPTION = 'A Python3, async interface to the SimpliSafe API'
 URL = 'https://github.com/w1ll1am23/simplisafe-python'
 EMAIL = ''
 AUTHOR = 'William Scanlon and Aaron Bach'

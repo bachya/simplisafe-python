@@ -1,4 +1,4 @@
-# 🚨 simplipy: A Python3, `asyncio` interface to the SimpliSafe API
+# 🚨 simplipy: A Python3, async interface to the SimpliSafe API
 
 [![Travis CI](https://travis-ci.org/w1ll1am23/simplipy.svg?branch=master)](https://travis-ci.org/w1ll1am23/simplipy)
 [![PyPi](https://img.shields.io/pypi/v/simplipy.svg)](https://pypi.python.org/pypi/simplipy)
@@ -16,9 +16,9 @@ and more.
 **NOTE:** SimpliSafe has no official API; therefore, this library may stop
 working at any time without warning.
 
-**SPECIAL THANKS:** Original source was obtained from
-https://github.com/greencoder/simplipy; thanks to greencoder
-for all the hard work!
+**SPECIAL THANKS:** Original inspiration was obtained from
+https://github.com/greencoder/simplipy; thanks to Scott Newman for all the
+hard work!
 
 # PLEASE READ: Version 3.0.0 and Beyond
 

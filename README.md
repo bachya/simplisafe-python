@@ -41,7 +41,9 @@ If you wish to continue using the previous, synchronous version of
 pip install simplisafe-python
 ```
 
-# Usage: Getting Systems
+# Usage
+
+## Getting Systems Associated with An Account
 
 `simplisafe-python` starts within an
 [aiohttp](https://aiohttp.readthedocs.io/en/stable/) `ClientSession`:
@@ -80,7 +82,7 @@ async def main() -> None:
 asyncio.get_event_loop().run_until_complete(main())
 ```
 
-# Usage: SimpliSafe `System` Object
+## The `System` Object
 
 SimpliSafe `System` objects are used to retrieve data on and control the state
 of SimpliSafe systems. Two types of objects can be returned:
@@ -91,7 +93,7 @@ of SimpliSafe systems. Two types of objects can be returned:
 Despite the differences, `simplisafe-python` provides a common interface to
 these objects, meaning the same properties and methods are available to both.
 
-## Properties and Methods
+### Properties and Methods
 
 ```python
 systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
@@ -138,7 +140,7 @@ for system in systems:
   await primary_system.update(refresh_location=True, cached=True)
 ```
 
-## A Note on `system.update()`
+### A Note on `system.update()`
 
 There is one crucial difference between V2 and V3 systems when updating:
 
@@ -148,7 +150,7 @@ There is one crucial difference between V2 and V3 systems when updating:
   when the update completes; V3 systems will not. Unfortunately, this cannot
   currently be worked around.
 
-# Usage: SimpliSafe `Sensor` Object
+## The `Sensor` Object
 
 SimpliSafe `Sensor` objects provide information about the SimpliSafe sensor to
 which they relate.
@@ -168,7 +170,7 @@ these objects; however, there are some properties that are either (a) specific
 to one version or (b) return a different meaning based on the version. These
 differences are outlined below.
 
-## Base Properties
+### Base Properties
 
 ```python
 systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
@@ -198,6 +200,5 @@ for system in systems:
     sensor.triggered
     # >>> False
 ```
-
 
 # Errors/Exceptions

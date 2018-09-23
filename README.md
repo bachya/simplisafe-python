@@ -96,7 +96,7 @@ these objects, meaning the same properties and methods are available to both.
 ### Properties and Methods
 
 ```python
-from simplypy import get_systems
+from simplipy import get_systems
 
 
 async def main() -> None:
@@ -186,7 +186,7 @@ differences are outlined below.
 ### Base Properties
 
 ```python
-from simplypy import get_systems
+from simplipy import get_systems
 
 systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
 for system in systems:
@@ -219,7 +219,7 @@ for system in systems:
 ### V2 Properties
 
 ```python
-from simplypy import get_systems
+from simplipy import get_systems
 
 systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
 for system in systems:
@@ -236,7 +236,7 @@ for system in systems:
 ### V3 Properties
 
 ```python
-from simplypy import get_systems
+from simplipy import get_systems
 
 systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
 for system in systems:

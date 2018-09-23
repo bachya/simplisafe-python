@@ -1,14 +1,14 @@
-# 🚨 simplisafe-python: A Python3, asyncio interface to the SimpliSafe API
+# 🚨 simplipy: A Python3, asyncio interface to the SimpliSafe API
 
-[![Travis CI](https://travis-ci.org/w1ll1am23/simplisafe-python.svg?branch=master)](https://travis-ci.org/w1ll1am23/simplisafe-python)
-[![PyPi](https://img.shields.io/pypi/v/simplisafe-python.svg)](https://pypi.python.org/pypi/simplisafe-python)
-[![Version](https://img.shields.io/pypi/pyversions/simplisafe-python.svg)](https://pypi.python.org/pypi/simplisafe-python)
-[![License](https://img.shields.io/pypi/l/simplisafe-python.svg)](https://github.com/w1ll1am23/simplisafe-python/blob/master/LICENSE)
-[![Code Coverage](https://codecov.io/gh/w1ll1am23/simplisafe-python/branch/master/graph/badge.svg)](https://codecov.io/gh/w1ll1am23/simplisafe-python)
+[![Travis CI](https://travis-ci.org/w1ll1am23/simplipy.svg?branch=master)](https://travis-ci.org/w1ll1am23/simplipy)
+[![PyPi](https://img.shields.io/pypi/v/simplipy.svg)](https://pypi.python.org/pypi/simplipy)
+[![Version](https://img.shields.io/pypi/pyversions/simplipy.svg)](https://pypi.python.org/pypi/simplipy)
+[![License](https://img.shields.io/pypi/l/simplipy.svg)](https://github.com/w1ll1am23/simplipy/blob/master/LICENSE)
+[![Code Coverage](https://codecov.io/gh/w1ll1am23/simplipy/branch/master/graph/badge.svg)](https://codecov.io/gh/w1ll1am23/simplipy)
 [![Maintainability](https://api.codeclimate.com/v1/badges/af60d65b69d416136fc9/maintainability)](https://codeclimate.com/github/bachya/py17track/maintainability)
 [![Say Thanks](https://img.shields.io/badge/SayThanks-!-1EAEDB.svg)](https://saythanks.io/to/w1ll1am23)
 
-`simplisafe-python` (more simply referred to as `simplipy`) is a Python3,
+`simplisafe-python` (hereafter referred to as `simplipy`) is a Python3,
 asyncio-driven interface to the unofficial SimpliSafe API. With it, users can
 get data on their system (including available sensors), set the system state,
 and more.
@@ -17,12 +17,12 @@ and more.
 working at any time without warning.
 
 **SPECIAL THANKS:** Original source was obtained from
-https://github.com/greencoder/simplisafe-python; thanks to greencoder
+https://github.com/greencoder/simplipy; thanks to greencoder
 for all the hard work!
 
 # PLEASE READ: Version 3.0.0 and Beyond
 
-Version 3.0.0 of `simplisafe-python` makes several breaking, but necessary
+Version 3.0.0 of `simplipy` makes several breaking, but necessary
 changes:
 
 * Moves the underlying library from
@@ -32,20 +32,20 @@ changes:
 * Makes 3.5 the minimum version of Python required
 
 If you wish to continue using the previous, synchronous version of
-`simplisafe-python`, make sure to pin version 2.0.2.
+`simplipy`, make sure to pin version 2.0.2.
 
 
 # Installation
 
 ```python
-pip install simplisafe-python
+pip install simplipy
 ```
 
 # Usage
 
 ## Getting Systems Associated with An Account
 
-`simplisafe-python` starts within an
+`simplipy` starts within an
 [aiohttp](https://aiohttp.readthedocs.io/en/stable/) `ClientSession`:
 
 ```python
@@ -63,7 +63,7 @@ async def main() -> None:
 asyncio.get_event_loop().run_until_complete(main())
 ```
 
-Then, get all SimpliSafe systems associated with an email address:
+To get all SimpliSafe systems associated with an email address:
 
 ```python
 import asyncio
@@ -90,7 +90,7 @@ of SimpliSafe systems. Two types of objects can be returned:
 * `SystemV2`: an object to control V2 (classic) SimpliSafe systems
 * `SystemV3`: an object to control V3 (new, released in 2018) SimpliSafe systems
 
-Despite the differences, `simplisafe-python` provides a common interface to
+Despite the differences, `simplipy` provides a common interface to
 these objects, meaning the same properties and methods are available to both.
 
 ### Properties and Methods
@@ -165,7 +165,7 @@ Like their `System` cousins, two types of objects can be returned:
 * `SensorV2`: an object to view V2 (classic) SimpliSafe sensors
 * `SensorV3`: an object to view V3 (new) SimpliSafe sensors
 
-Once again, `simplisafe-python` provides a common interface to
+Once again, `simplipy` provides a common interface to
 these objects; however, there are some properties that are either (a) specific
 to one version or (b) return a different meaning based on the version. These
 differences are outlined below.
@@ -201,4 +201,49 @@ for system in systems:
     # >>> False
 ```
 
+### V2 Properties
+
+```python
+systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
+for system in systems:
+  for sensor in system.sensors:
+    # Return the sensor's data as a currently un-understood integer:
+    sensor.data
+    # >>> 0
+
+    # Return the sensor's settings as a currently un-understood integer:
+    sensor.settings
+    # >>> 1
+```
+
+### V3 Properties
+
+```python
+systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
+for system in systems:
+  for sensor in system.sensors:
+    # Return whether the sensor is offline:
+    sensor.offline
+    # >>> False
+
+    # Return a settings dictionary for the sensor:
+    sensor.settings
+    # >>> {"instantTrigger": False, "away2": 1, "away": 1, ...}
+
+    # For temperature sensors, return the current temperature:
+    sensor.temperature
+    # >>> 67
+```
+
 # Errors/Exceptions
+
+`simplipy` exposes three useful error types:
+
+* `simplipy.errors.SimplipyError`: a base error that all other `simplipy`
+  errors inherit from
+* `simplipy.errors.RequestError`: an error related to HTTP requests that return
+  something other than a `200` response code
+* `simplipy.errors.TokenExpiredError`: an error related to an expired access
+  token
+
+# Access and Refresh Tokens

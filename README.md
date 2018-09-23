@@ -74,10 +74,11 @@ from simplipy import get_systems
 
 
 async def main() -> None:
-    """Create the aiohttp session and run the example."""
+    """Create the aiohttp session and run."""
     async with ClientSession() as websession:
       systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
-      # >>> [simplipy.system.SystemV2, simplipy.system.SystemV3]
+      # >>> [<simplipy.system.SystemV2 object at 0x10661e3c8>, <simplipy.system.SystemV3 object at 0x8712abc23>]
+
 
 asyncio.get_event_loop().run_until_complete(main())
 ```
@@ -103,12 +104,12 @@ async def main() -> None:
     """Create the aiohttp session and run."""
     async with ClientSession() as websession:
       systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
-      # >>> [simplipy.system.SystemV2]
+      # >>> [<simplipy.system.SystemV2 object at 0x10661e3c8>]
 
       for system in systems:
         # Return a reference to a SimpliSafe account object (detailed later):
         primary_system.account
-        # >>> simplipy.account.SimpliSafe
+        # >>> <simplipy.account.SimpliSafe object at 0x12aba2321>
 
         # Return whether the alarm is currently going off:
         primary_system.alarm_going_off
@@ -116,7 +117,7 @@ async def main() -> None:
 
         # Return a list of sensors attached to this sytem:
         primary_system.sensors
-        # >>> [simplipy.sensor.SensorV2, simplipy.sensor.SensorV2, ...]
+        # >>> [<simplipy.sensor.SensorV2 object at 0x10661e3c8>, ...]
 
         # Return the system's serial number:
         primary_system.serial
@@ -188,32 +189,39 @@ differences are outlined below.
 ```python
 from simplipy import get_systems
 
-systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
-for system in systems:
-  for sensor in system.sensors:
-    # Return the sensor's name:
-    sensor.name
-    # >>> Kitchen Window
 
-    # Return the sensor's serial number:
-    sensor.serial
-    # >>> 1234ABCD
+async def main() -> None:
+    """Create the aiohttp session and run."""
+    async with ClientSession() as websession:
+      systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
+      for system in systems:
+        for sensor in system.sensors:
+          # Return the sensor's name:
+          sensor.name
+          # >>> Kitchen Window
 
-    # Return the sensor's type:
-    sensor.type
-    # >>> simplipy.sensor.SensorTypes.glass_break
+          # Return the sensor's serial number:
+          sensor.serial
+          # >>> 1234ABCD
 
-    # Return whether the sensor is in an error state:
-    sensor.error
-    # >>> False
+          # Return the sensor's type:
+          sensor.type
+          # >>> simplipy.sensor.SensorTypes.glass_break
 
-    # Return whether the sensor has a low battery:
-    sensor.low_battery
-    # >>> False
+          # Return whether the sensor is in an error state:
+          sensor.error
+          # >>> False
 
-    # Return whether the sensor has been triggered:
-    sensor.triggered
-    # >>> False
+          # Return whether the sensor has a low battery:
+          sensor.low_battery
+          # >>> False
+
+          # Return whether the sensor has been triggered:
+          sensor.triggered
+          # >>> False
+
+
+asyncio.get_event_loop().run_until_complete(main())
 ```
 
 ### V2 Properties
@@ -221,16 +229,23 @@ for system in systems:
 ```python
 from simplipy import get_systems
 
-systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
-for system in systems:
-  for sensor in system.sensors:
-    # Return the sensor's data as a currently non-understood integer:
-    sensor.data
-    # >>> 0
 
-    # Return the sensor's settings as a currently non-understood integer:
-    sensor.settings
-    # >>> 1
+async def main() -> None:
+    """Create the aiohttp session and run."""
+    async with ClientSession() as websession:
+      systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
+      for system in systems:
+        for sensor in system.sensors:
+          # Return the sensor's data as a currently non-understood integer:
+          sensor.data
+          # >>> 0
+
+          # Return the sensor's settings as a currently non-understood integer:
+          sensor.settings
+          # >>> 1
+
+
+asyncio.get_event_loop().run_until_complete(main())
 ```
 
 ### V3 Properties
@@ -238,20 +253,27 @@ for system in systems:
 ```python
 from simplipy import get_systems
 
-systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
-for system in systems:
-  for sensor in system.sensors:
-    # Return whether the sensor is offline:
-    sensor.offline
-    # >>> False
 
-    # Return a settings dictionary for the sensor:
-    sensor.settings
-    # >>> {"instantTrigger": False, "away2": 1, "away": 1, ...}
+async def main() -> None:
+    """Create the aiohttp session and run."""
+    async with ClientSession() as websession:
+      systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
+      for system in systems:
+        for sensor in system.sensors:
+          # Return whether the sensor is offline:
+          sensor.offline
+          # >>> False
 
-    # For temperature sensors, return the current temperature:
-    sensor.temperature
-    # >>> 67
+          # Return a settings dictionary for the sensor:
+          sensor.settings
+          # >>> {"instantTrigger": False, "away2": 1, "away": 1, ...}
+
+          # For temperature sensors, return the current temperature:
+          sensor.temperature
+          # >>> 67
+
+
+asyncio.get_event_loop().run_until_complete(main())
 ```
 
 ## The `Account` Object
@@ -267,19 +289,28 @@ use them to view and alter your system's state. **You have been warned; proper
 usage of these properties is solely your responsibility.**
 
 ```python
-systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
-for system in systems:
-  # Return the current access token:
-  system.account.access_token
-  # >>> 7s9yasdh9aeu21211add
+from simplipy import get_systems
 
-  # Return the current refresh token:
-  system.account.refresh_token
-  # >>> 896sad86gudas87d6asd
 
-  # Return the SimpliSafe user ID associated with this account:
-  system.account.user_id
-  # >>> 1234567
+async def main() -> None:
+    """Create the aiohttp session and run."""
+    async with ClientSession() as websession:
+      systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
+      for system in systems:
+        # Return the current access token:
+        system.account.access_token
+        # >>> 7s9yasdh9aeu21211add
+
+        # Return the current refresh token:
+        system.account.refresh_token
+        # >>> 896sad86gudas87d6asd
+
+        # Return the SimpliSafe user ID associated with this account:
+        system.account.user_id
+        # >>> 1234567
+
+
+asyncio.get_event_loop().run_until_complete(main())
 ```
 
 # Errors/Exceptions

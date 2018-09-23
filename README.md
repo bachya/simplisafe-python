@@ -80,67 +80,124 @@ async def main() -> None:
 asyncio.get_event_loop().run_until_complete(main())
 ```
 
-# Usage: SimpliSafe System Object
+# Usage: SimpliSafe `System` Object
 
-`simplipy.get_systems` returns a list of SimpliSafe `System` objects. Two types
-of objects can be returned:
+SimpliSafe `System` objects are used to retrieve data on and control the state
+of SimpliSafe systems. Two types of objects can be returned:
 
 * `SystemV2`: an object to control V2 (classic) SimpliSafe systems
-* `SystemV3`: an object to control V3 (new) SimpliSafe systems
+* `SystemV3`: an object to control V3 (new, released in 2018) SimpliSafe systems
 
 Despite the differences, `simplisafe-python` provides a common interface to
 these objects, meaning the same properties and methods are available to both.
 
-## Base Properties and Methods
+## Properties and Methods
 
 ```python
 systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
 # >>> [simplipy.system.SystemV2]
 
-primary_system = systems[0]
+for system in systems:
+  # Return whether the alarm is currently going off:
+  primary_system.alarm_going_off
+  # >>> False
 
-# Return whether the alarm is currently going off:
-primary_system.alarm_going_off
-# >>> False
+  # Return a list of sensors attached to this sytem:
+  primary_system.sensors
+  # >>> [simplipy.sensor.SensorV2, simplipy.sensor.SensorV2, ...]
 
-# Return the system's serial number:
-primary_system.serial
-# >>> 1234ABCD
+  # Return the system's serial number:
+  primary_system.serial
+  # >>> 1234ABCD
 
-# Return the current state of the system:
-primary_system.state
-# >>> simplipy.system.SystemStates.away
+  # Return the current state of the system:
+  primary_system.state
+  # >>> simplipy.system.SystemStates.away
 
-# Return the SimpliSafe identifier for this system:
-primary_system.system_id
-# >>> 1234ABCD
+  # Return the SimpliSafe identifier for this system:
+  primary_system.system_id
+  # >>> 1234ABCD
 
-# Return the SimpliSafe version:
-primary_system.version
-# >>> 2
+  # Return the SimpliSafe version:
+  primary_system.version
+  # >>> 2
 
-# Return a list of events for the system with an optional start timestamp and
-# number of events - omitting these parameters will return all events (max of
-# 50) stored in SimpliSafe's cloud:
-await primary_system.get_events(from_timestamp=1534035861, num_events=2)
-# >>> return {"numEvents": 2, "lastEventTimestamp": 1534035861, "events": [{...}]}
+  # Return a list of events for the system with an optional start timestamp and
+  # number of events - omitting these parameters will return all events (max of
+  # 50) stored in SimpliSafe's cloud:
+  await primary_system.get_events(from_timestamp=1534035861, num_events=2)
+  # >>> return {"numEvents": 2, "lastEventTimestamp": 1534035861, "events": [{...}]}
 
-# Set the state of the system:
-await primary_system.set_away()
-await primary_system.set_home()
-await primary_system.set_off()
+  # Set the state of the system:
+  await primary_system.set_away()
+  await primary_system.set_home()
+  await primary_system.set_off()
 
-# Get the latest values from the system; by default, include both system info
-# and sensor info and use cached values (both can be overridden):
-await primary_system.update(refresh_location=True, cached=True)
+  # Get the latest values from the system; by default, include both system info
+  # and sensor info and use cached values (both can be overridden):
+  await primary_system.update(refresh_location=True, cached=True)
 ```
 
-### A Note on Updating
+## A Note on `system.update()`
 
 There is one crucial difference between V2 and V3 systems when updating:
 
-* V2 systems, which only use 2G cell connectivity, will be slower to update
+* V2 systems, which use only 2G cell connectivity, will be slower to update
   than V3 systems when those V3 systems are connected to WiFi.
 * V2 systems will audibly announce, "Your settings have been synchronized."
   when the update completes; V3 systems will not. Unfortunately, this cannot
   currently be worked around.
+
+# Usage: SimpliSafe `Sensor` Object
+
+SimpliSafe `Sensor` objects provide information about the SimpliSafe sensor to
+which they relate.
+
+**NOTE:** Individual sensors cannot be updated directly; instead,
+the `update()` method on their parent `System` object should be used. It is
+crucial to remember that sensor values are only as current as the last time
+`system.update()` was called.
+
+Like their `System` cousins, two types of objects can be returned:
+
+* `SensorV2`: an object to view V2 (classic) SimpliSafe sensors
+* `SensorV3`: an object to view V3 (new) SimpliSafe sensors
+
+Once again, `simplisafe-python` provides a common interface to
+these objects; however, there are some properties that are either (a) specific
+to one version or (b) return a different meaning based on the version. These
+differences are outlined below.
+
+## Base Properties
+
+```python
+systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
+for system in systems:
+  for sensor in system.sensors:
+    # Return the sensor's name:
+    sensor.name
+    # >>> Kitchen Window
+
+    # Return the sensor's serial number:
+    sensor.serial
+    # >>> 1234ABCD
+
+    # Return the sensor's type:
+    sensor.type
+    # >>> simplipy.sensor.SensorTypes.glass_break
+
+    # Return whether the sensor is in an error state:
+    sensor.error
+    # >>> False
+
+    # Return whether the sensor has a low battery:
+    sensor.low_battery
+    # >>> False
+
+    # Return whether the sensor has been triggered:
+    sensor.triggered
+    # >>> False
+```
+
+
+# Errors/Exceptions

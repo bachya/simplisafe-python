@@ -42,7 +42,7 @@ class System:
         return self._location_info['system']['isAlarming']
 
     @property
-    def serial_number(self) -> str:
+    def serial(self) -> str:
         """Return the system's serial number."""
         return self._location_info['system']['serial']
 
@@ -66,7 +66,7 @@ class System:
         raise NotImplementedError()
 
     async def _update_location_info(self) -> None:
-        """Raise if calling this undefined based method."""
+        """Update information on the system."""
         subscription_resp = await self.account.get_subscription_data()
         [location_info] = [
             system['location']
@@ -84,10 +84,12 @@ class System:
         if num_events:
             params['numEvents'] = num_events
 
-        return await self.account.request(
+        resp = await self.account.request(
             'get',
             'subscriptions/{0}/events'.format(self.system_id),
             params=params)
+
+        return resp['events']
 
     async def set_away(self) -> None:
         """Set the system in "Away" mode."""
@@ -127,7 +129,7 @@ class SystemV2(System):
             self, refresh_location: bool = True, cached: bool = True) -> None:
         """Update to the latest data (including sensors)."""
         if refresh_location:
-            self._update_location_info()
+            await self._update_location_info()
 
         sensor_resp = await self.account.request(
             'get',
@@ -166,7 +168,7 @@ class SystemV3(System):
             self, refresh_location: bool = True, cached: bool = True) -> None:
         """Update sensor data."""
         if refresh_location:
-            self._update_location_info()
+            await self._update_location_info()
 
         sensor_resp = await self.account.request(
             'get',

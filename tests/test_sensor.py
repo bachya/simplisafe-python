@@ -26,7 +26,7 @@ async def test_properties_base(event_loop, v2_server):
 
 @pytest.mark.asyncio
 async def test_properties_v2(event_loop, v2_server):
-    """Test that base sensor properties are created properly."""
+    """Test that v2 sensor properties are created properly."""
     async with v2_server:
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             [system] = await get_systems(TEST_EMAIL, TEST_PASSWORD, websession)
@@ -41,7 +41,7 @@ async def test_properties_v2(event_loop, v2_server):
 
 @pytest.mark.asyncio
 async def test_properties_v3(event_loop, v3_server):
-    """Test that base sensor properties are created properly."""
+    """Test that v3 sensor properties are created properly."""
     async with v3_server:
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             [system] = await get_systems(TEST_EMAIL, TEST_PASSWORD, websession)
@@ -59,6 +59,8 @@ async def test_properties_v3(event_loop, v3_server):
             temperature_sensor = system.sensors['320']
             assert temperature_sensor.temperature == 67
 
+            # Ensure that attempting to access the temperature attribute of a
+            # non-temperature sensor throws an error:
             with pytest.raises(ValueError):
                 assert siren.temperature == 42
 

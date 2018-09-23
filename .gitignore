@@ -1,2 +1,4 @@
+.coverage
 .mypy_cache
 Pipfile.lock
+coverage.xml

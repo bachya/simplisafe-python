@@ -5,7 +5,8 @@ import aresponses
 import pytest
 
 from ..const import (
-    TEST_SUBSCRIPTION_ID, TEST_SYSTEM_ID, TEST_SYSTEM_SERIAL_NO, TEST_USER_ID)
+    TEST_ACCOUNT_ID, TEST_SUBSCRIPTION_ID, TEST_SYSTEM_ID,
+    TEST_SYSTEM_SERIAL_NO, TEST_USER_ID)
 
 
 @pytest.fixture()
@@ -38,7 +39,7 @@ def v3_server(
 def v3_sensors_json():
     """Return a /v1/ss3/subscriptions/<SUBSCRIPTION_ID>/sensors response."""
     return {
-        "account": "00022053",
+        "account": TEST_ACCOUNT_ID,
         "success": True,
         "sensors": [{
             "type": 5,
@@ -403,6 +404,42 @@ def v3_sensors_json():
 
 
 @pytest.fixture()
+def v3_state_away_json():
+    """Return a /v1/ss3/subscriptions/<SUBSCRIPTION_ID>/state/away."""
+    return {
+        "success": True,
+        "reason": None,
+        "state": "AWAY",
+        "lastUpdated": 1534725096,
+        "exitDelay": 120
+    }
+
+
+@pytest.fixture()
+def v3_state_home_json():
+    """Return a /v1/ss3/subscriptions/<SUBSCRIPTION_ID>/state/home."""
+    return {
+        "success": True,
+        "reason": None,
+        "state": "HOME",
+        "lastUpdated": 1534725096,
+        "exitDelay": 120
+    }
+
+
+@pytest.fixture()
+def v3_state_off_json():
+    """Return a /v1/ss3/subscriptions/<SUBSCRIPTION_ID>/state/off."""
+    return {
+        "success": True,
+        "reason": None,
+        "state": "OFF",
+        "lastUpdated": 1534725096,
+        "exitDelay": 120
+    }
+
+
+@pytest.fixture()
 def v3_subscriptions_json():
     """Return a /v1/users/USER_ID/subscriptions response."""
     return {
@@ -416,7 +453,7 @@ def v3_subscriptions_json():
             "location": {
                 "sid": TEST_SYSTEM_ID,
                 "uid": TEST_USER_ID,
-                "account": "12345",
+                "account": TEST_ACCOUNT_ID,
                 "street1": "1234 Main Street",
                 "street2": "",
                 "locationName": "",

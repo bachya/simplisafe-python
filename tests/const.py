@@ -1,6 +1,7 @@
 """Define constants for use in tests."""
 
 TEST_ACCESS_TOKEN = 'abcde12345'
+TEST_ACCOUNT_ID = 12345
 TEST_EMAIL = 'user@email.com'
 TEST_PASSWORD = '12345'
 TEST_REFRESH_TOKEN = 'qrstu98765'

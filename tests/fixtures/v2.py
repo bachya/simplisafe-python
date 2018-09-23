@@ -5,7 +5,8 @@ import aresponses
 import pytest
 
 from ..const import (
-    TEST_SUBSCRIPTION_ID, TEST_SYSTEM_ID, TEST_SYSTEM_SERIAL_NO, TEST_USER_ID)
+    TEST_ACCOUNT_ID, TEST_SUBSCRIPTION_ID, TEST_SYSTEM_ID,
+    TEST_SYSTEM_SERIAL_NO, TEST_USER_ID)
 
 
 @pytest.fixture()
@@ -38,7 +39,7 @@ def v2_server(
 def v2_settings_json():
     """Return a /v1/subscriptions/<SUBSCRIPTION_ID>/settings response."""
     return {
-        "account": "728C",
+        "account": TEST_ACCOUNT_ID,
         "type": "all",
         "success": True,
         "settings": {
@@ -465,6 +466,51 @@ def v2_settings_json():
 
 
 @pytest.fixture()
+def v2_state_away_json():
+    """
+    Return a /v1/subscriptions/<SUBSCRIPTION_ID>/state?state=away response
+    with parameters needed to set the system to away.
+    """
+    return {
+        "success": True,
+        "reason": None,
+        "requestedState": "away",
+        "lastUpdated": 1534725096,
+        "exitDelay": 120
+    }
+
+
+@pytest.fixture()
+def v2_state_home_json():
+    """
+    Return a /v1/subscriptions/<SUBSCRIPTION_ID>/state?state=home response
+    with parameters needed to set the system to home.
+    """
+    return {
+        "success": True,
+        "reason": None,
+        "requestedState": "home",
+        "lastUpdated": 1534725096,
+        "exitDelay": 120
+    }
+
+
+@pytest.fixture()
+def v2_state_off_json():
+    """
+    Return a /v1/subscriptions/<SUBSCRIPTION_ID>/state?state=off response
+    with parameters needed to set the system to off.
+    """
+    return {
+        "success": True,
+        "reason": None,
+        "requestedState": "off",
+        "lastUpdated": 1534725096,
+        "exitDelay": 120
+    }
+
+
+@pytest.fixture()
 def v2_subscriptions_json():
     """Return a /v1/users/<USER_ID>/subscriptions response."""
     return {
@@ -478,7 +524,7 @@ def v2_subscriptions_json():
             "location": {
                 "sid": TEST_SYSTEM_ID,
                 "uid": TEST_USER_ID,
-                "account": "12345",
+                "account": TEST_ACCOUNT_ID,
                 "street1": "1234 Main Street",
                 "street2": "",
                 "locationName": "",

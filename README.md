@@ -88,8 +88,8 @@ of objects can be returned:
 * `SystemV2`: an object to control V2 (classic) SimpliSafe systems
 * `SystemV3`: an object to control V3 (new) SimpliSafe systems
 
-Although all systems have a common base interface, there are differences
-between V2 and V3.
+Despite the differences, `simplisafe-python` provides a common interface to
+these objects, meaning the same properties and methods are available to both.
 
 ## Base Properties and Methods
 
@@ -119,8 +119,9 @@ primary_system.system_id
 primary_system.version
 # >>> 2
 
-# Return a list of events for the system (with an optional start timestamp and
-# number of events):
+# Return a list of events for the system with an optional start timestamp and
+# number of events - omitting these parameters will return all events (max of
+# 50) stored in SimpliSafe's cloud:
 await primary_system.get_events(from_timestamp=1534035861, num_events=2)
 # >>> return {"numEvents": 2, "lastEventTimestamp": 1534035861, "events": [{...}]}
 
@@ -138,7 +139,8 @@ await primary_system.update(refresh_location=True, cached=True)
 
 There is one crucial difference between V2 and V3 systems when updating:
 
-* V2 systems, which only use 2G cell connectivity, will be slower to update than V3 systems when those V3 systems are connected to WiFi.
-* V2 systems will audibly announce, "Your settings have been synchronized." V3 systems will not. Unfortunately, this cannot currently be worked around.
-
-## V2 Properties and Methods
+* V2 systems, which only use 2G cell connectivity, will be slower to update
+  than V3 systems when those V3 systems are connected to WiFi.
+* V2 systems will audibly announce, "Your settings have been synchronized."
+  when the update completes; V3 systems will not. Unfortunately, this cannot
+  currently be worked around.

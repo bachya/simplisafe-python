@@ -83,7 +83,7 @@ asyncio.get_event_loop().run_until_complete(main())
 # Usage: SimpliSafe System Object
 
 `simplipy.get_systems` returns a list of SimpliSafe `System` objects. Two types
-of objects can be created:
+of objects can be returned:
 
 * `SystemV2`: an object to control V2 (classic) SimpliSafe systems
 * `SystemV3`: an object to control V3 (new) SimpliSafe systems
@@ -99,11 +99,13 @@ systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
 
 primary_system = systems[0]
 
-# Return whether the alarm is going off:
+# Return whether the alarm is currently going off:
 primary_system.alarm_going_off
+# >>> False
 
 # Return the system's serial number:
 primary_system.serial
+# >>> 1234ABCD
 
 # Return the current state of the system:
 primary_system.state
@@ -111,9 +113,32 @@ primary_system.state
 
 # Return the SimpliSafe identifier for this system:
 primary_system.system_id
+# >>> 1234ABCD
 
 # Return the SimpliSafe version:
 primary_system.version
+# >>> 2
+
+# Return a list of events for the system (with an optional start timestamp and
+# number of events):
+await primary_system.get_events(from_timestamp=1534035861, num_events=2)
+# >>> return {"numEvents": 2, "lastEventTimestamp": 1534035861, "events": [{...}]}
+
+# Set the state of the system:
+await primary_system.set_away()
+await primary_system.set_home()
+await primary_system.set_off()
+
+# Get the latest values from the system; by default, include both system info
+# and sensor info and use cached values (both can be overridden):
+await primary_system.update(refresh_location=True, cached=True)
 ```
+
+### A Note on Updating
+
+There is one crucial difference between V2 and V3 systems when updating:
+
+* V2 systems, which only use 2G cell connectivity, will be slower to update than V3 systems when those V3 systems are connected to WiFi.
+* V2 systems will audibly announce, "Your settings have been synchronized." V3 systems will not. Unfortunately, this cannot currently be worked around.
 
 ## V2 Properties and Methods

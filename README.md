@@ -1,4 +1,4 @@
-# 🚨 simplipy: A Python3, asyncio interface to the SimpliSafe API
+# 🚨 simplipy: A Python3, `asyncio` interface to the SimpliSafe API
 
 [![Travis CI](https://travis-ci.org/w1ll1am23/simplipy.svg?branch=master)](https://travis-ci.org/w1ll1am23/simplipy)
 [![PyPi](https://img.shields.io/pypi/v/simplipy.svg)](https://pypi.python.org/pypi/simplipy)
@@ -9,7 +9,7 @@
 [![Say Thanks](https://img.shields.io/badge/SayThanks-!-1EAEDB.svg)](https://saythanks.io/to/w1ll1am23)
 
 `simplisafe-python` (hereafter referred to as `simplipy`) is a Python3,
-asyncio-driven interface to the unofficial SimpliSafe API. With it, users can
+`asyncio`-driven interface to the unofficial SimpliSafe API. With it, users can
 get data on their system (including available sensors), set the system state,
 and more.
 

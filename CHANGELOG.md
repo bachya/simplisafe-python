@@ -1,5 +1,14 @@
 # Change Log
 
+## 3.0.0
+- Convert library to use `asyncio`
+- Added full test sweet (with 100% coverage)
+- Complete overhaul of documentation
+- Added Makefile with common tasks
+- Added CodeClimate and CodeCov badging/tracking
+- Added contribution instructions
+- Added author recognition
+
 ## 2.0.2
 - Raise exception when setup doesn't complete
 

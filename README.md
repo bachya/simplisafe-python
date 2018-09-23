@@ -38,7 +38,7 @@ If you wish to continue using the previous, synchronous version of
 # Installation
 
 ```python
-pip install simplipy
+pip install python-simplisafe
 ```
 
 # Usage

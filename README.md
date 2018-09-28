@@ -109,9 +109,9 @@ async def main() -> None:
       # >>> [<simplipy.system.SystemV2 object at 0x10661e3c8>]
 
       for system in systems:
-        # Return a reference to a SimpliSafe™ account object (detailed later):
-        system.account
-        # >>> <simplipy.account.SimpliSafe™ object at 0x12aba2321>
+        # Return a reference to a SimpliSafe™ API object (detailed later):
+        system.api
+        # >>> <simplipy.api.API object at 0x12aba2321>
 
         # Return whether the alarm is currently going off:
         system.alarm_going_off
@@ -310,15 +310,15 @@ async def main() -> None:
       systems = await simplisafe.get_systems()
       for system in systems:
         # Return the current access token:
-        system.account._access_token
+        system.api._access_token
         # >>> 7s9yasdh9aeu21211add
 
         # Return the current refresh token:
-        system.account.refresh_token
+        system.api.refresh_token
         # >>> 896sad86gudas87d6asd
 
         # Return the SimpliSafe™ user ID associated with this account:
-        system.account.user_id
+        system.api.user_id
         # >>> 1234567
 
 

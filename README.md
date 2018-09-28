@@ -374,6 +374,7 @@ however, the system object(s) will need to be recreated via
 6. Write a test that covers your new functionality.
 7. Update `README.md` with any new documentation.
 8. Run tests and ensure 100% code coverage: `make coverage`
-9. Run ensure you have no linting errors: `make lint`
-10. Add yourself to `AUTHORS.md`.
-11. Submit a pull request!
+9. Ensure you have no linting errors: `make lint`
+10. Ensure you have no typed your code correctly: `make type`
+11. Add yourself to `AUTHORS.md`.
+12. Submit a pull request!

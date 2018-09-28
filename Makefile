@@ -14,3 +14,5 @@ publish:
 	rm -rf dist/ build/ .egg simplisafe_python.egg-info/
 test:
 	pipenv run py.test
+typing:
+	pipenv run mypy --ignore-missing-imports simplipy

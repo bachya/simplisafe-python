@@ -5,7 +5,7 @@ from typing import List, Union  # noqa
 
 from aiohttp import BasicAuth, ClientSession, client_exceptions
 
-from .errors import RequestError, TokenExpiredError
+from .errors import RequestError
 from .system import System, SystemV2, SystemV3  # noqa
 
 DEFAULT_USER_AGENT = 'SimpliSafe/2105 CFNetwork/902.2 Darwin/17.7.0'
@@ -89,10 +89,8 @@ class SimpliSafe:
     async def refresh_access_token(self, refresh_token: str = None) -> None:
         """Regenerate an access token using the stored refresh token."""
         await self._authenticate({
-            'grant_type':
-                'refresh_token',
-            'username':
-                self._email,
+            'grant_type': 'refresh_token',
+            'username': self._email,
             'refresh_token':
                 refresh_token if refresh_token else self.refresh_token,
         })
@@ -110,7 +108,7 @@ class SimpliSafe:
         """Make a request."""
         if (self._access_token_expire
                 and datetime.now() >= self._access_token_expire):
-            raise TokenExpiredError('The access token has expired')
+            await self.refresh_access_token()
 
         url = '{0}/{1}'.format(URL_BASE, endpoint)
 

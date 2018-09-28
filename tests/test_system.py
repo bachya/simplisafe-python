@@ -8,7 +8,7 @@ import pytest
 
 from simplipy import get_systems
 from simplipy.account import SimpliSafe
-from simplipy.errors import RequestError, TokenExpiredError
+from simplipy.errors import RequestError
 from simplipy.system import System
 
 from .const import (
@@ -34,7 +34,7 @@ async def test_bad_request(api_token_json, event_loop, v2_server):
 
 
 @pytest.mark.asyncio
-async def test_expired_token_exception(event_loop, v2_server):
+async def test_expired_token_refresh(event_loop, v2_server):
     """Test that the correct exception is raised when the token is expired."""
     async with v2_server:
         v2_server.add(

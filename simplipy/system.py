@@ -24,10 +24,10 @@ class System:
         off = 6
         unknown = 99
 
-    def __init__(self, account, location_info: dict) -> None:
+    def __init__(self, api, location_info: dict) -> None:
         """Initialize."""
         self._location_info = location_info
-        self.account = account
+        self.api = api
         self.sensors = {}  # type: Dict[str, Union[SensorV2, SensorV3]]
 
         try:
@@ -73,7 +73,7 @@ class System:
 
     async def _update_location_info(self) -> None:
         """Update information on the system."""
-        subscription_resp = await self.account.get_subscription_data()
+        subscription_resp = await self.api.get_subscription_data()
         [location_info] = [
             system['location'] for system in subscription_resp['subscriptions']
             if system['sid'] == self.system_id
@@ -89,7 +89,7 @@ class System:
         if num_events:
             params['numEvents'] = num_events
 
-        resp = await self.account.request(
+        resp = await self.api.request(
             'get',
             'subscriptions/{0}/events'.format(self.system_id),
             params=params)
@@ -122,7 +122,7 @@ class SystemV2(System):
         if self._state == value:
             return
 
-        resp = await self.account.request(
+        resp = await self.api.request(
             'post',
             'subscriptions/{0}/state'.format(self.system_id),
             params={'state': value.name})
@@ -136,7 +136,7 @@ class SystemV2(System):
         if refresh_location:
             await self._update_location_info()
 
-        sensor_resp = await self.account.request(
+        sensor_resp = await self.api.request(
             'get',
             'subscriptions/{0}/settings'.format(self.system_id),
             params={
@@ -163,7 +163,7 @@ class SystemV3(System):
         if self._state == value:
             return
 
-        resp = await self.account.request(
+        resp = await self.api.request(
             'post', 'ss3/subscriptions/{0}/state/{1}'.format(
                 self.system_id, value.name))
 
@@ -175,7 +175,7 @@ class SystemV3(System):
         if refresh_location:
             await self._update_location_info()
 
-        sensor_resp = await self.account.request(
+        sensor_resp = await self.api.request(
             'get',
             'ss3/subscriptions/{0}/sensors'.format(self.system_id),
             params={'forceUpdate': str(not cached).lower()})

@@ -1,8 +1,10 @@
 """Define tests for the Sensor objects."""
+# pylint: disable=protected-access,redefined-outer-name
+
 import aiohttp
 import pytest
 
-from simplipy import get_systems
+from simplipy import API
 from simplipy.sensor import SensorTypes
 
 from .const import TEST_EMAIL, TEST_PASSWORD
@@ -16,7 +18,9 @@ async def test_properties_base(event_loop, v2_server):
     """Test that base sensor properties are created properly."""
     async with v2_server:
         async with aiohttp.ClientSession(loop=event_loop) as websession:
-            [system] = await get_systems(TEST_EMAIL, TEST_PASSWORD, websession)
+            api = await API.login_via_credentials(
+                TEST_EMAIL, TEST_PASSWORD, websession)
+            [system] = await api.get_systems()
 
             sensor = system.sensors['195']
             assert sensor.name == 'Garage Keypad'
@@ -29,7 +33,9 @@ async def test_properties_v2(event_loop, v2_server):
     """Test that v2 sensor properties are created properly."""
     async with v2_server:
         async with aiohttp.ClientSession(loop=event_loop) as websession:
-            [system] = await get_systems(TEST_EMAIL, TEST_PASSWORD, websession)
+            api = await API.login_via_credentials(
+                TEST_EMAIL, TEST_PASSWORD, websession)
+            [system] = await api.get_systems()
 
             sensor = system.sensors['195']
             assert sensor.data == 0
@@ -44,7 +50,9 @@ async def test_properties_v3(event_loop, v3_server):
     """Test that v3 sensor properties are created properly."""
     async with v3_server:
         async with aiohttp.ClientSession(loop=event_loop) as websession:
-            [system] = await get_systems(TEST_EMAIL, TEST_PASSWORD, websession)
+            api = await API.login_via_credentials(
+                TEST_EMAIL, TEST_PASSWORD, websession)
+            [system] = await api.get_systems()
 
             entry_sensor = system.sensors['825']
             assert not entry_sensor.error
@@ -70,5 +78,7 @@ async def test_unknown_sensor_type(caplog, event_loop, v2_server):
     """Test that a message is logged when unknown sensors types are found."""
     async with v2_server:
         async with aiohttp.ClientSession(loop=event_loop) as websession:
-            await get_systems(TEST_EMAIL, TEST_PASSWORD, websession)
+            api = await API.login_via_credentials(
+                TEST_EMAIL, TEST_PASSWORD, websession)
+            _ = await api.get_systems()  # noqa
             assert any('Unknown' in e.message for e in caplog.records)

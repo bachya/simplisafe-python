@@ -1,7 +1,8 @@
 """Define a SimpliSafe account."""
-# pylint: disable=import-error, unused-import
+# pylint: disable=import-error,protected-access,unused-import
+
 from datetime import datetime, timedelta
-from typing import List, Union  # noqa
+from typing import List, Type, TypeVar, Union  # noqa
 
 from aiohttp import BasicAuth, ClientSession, client_exceptions
 
@@ -17,27 +18,46 @@ URL_BASE = 'https://{0}/v1'.format(URL_HOSTNAME)
 
 SYSTEM_MAP = {2: SystemV2, 3: SystemV3}
 
-
-# pylint: disable=protected-access
-async def get_systems(
-        email: str, password: str, websession: ClientSession) -> list:
-    """Return a list of systems."""
-    account = SimpliSafe(websession)
-    await account._login(email, password)
-    return await account._get_subscriptions()
+ApiType = TypeVar('ApiType', bound='API')
 
 
-class SimpliSafe:
-    """Define an "account" client."""
+class API:
+    """Define an API object to interact with the SimpliSafe cloud."""
 
     def __init__(self, websession: ClientSession) -> None:
         """Initialize."""
+        self._access_token = None
         self._access_token_expire = None  # type: Union[None, datetime]
+        self._actively_refreshing = False
         self._email = None  # type: Union[None, str]
         self._websession = websession
-        self.access_token = None
         self.refresh_token = None
         self.user_id = None
+
+    @classmethod
+    async def login_via_credentials(
+            cls: Type[ApiType], email: str, password: str,
+            websession: ClientSession) -> ApiType:
+        """Create an API object from a email address and password."""
+        klass = cls(websession)
+        klass._email = email
+
+        await klass._authenticate({
+            'grant_type': 'password',
+            'username': email,
+            'password': password,
+        })
+
+        return klass
+
+    @classmethod
+    async def login_via_token(
+            cls: Type[ApiType], refresh_token: str,
+            websession: ClientSession) -> ApiType:
+        """Create an API object from a refresh token."""
+        klass = cls(websession)
+        await klass._refresh_access_token(refresh_token)
+        return klass
 
     async def _authenticate(self, payload_data: dict) -> None:
         """Request token data and parse it."""
@@ -47,13 +67,26 @@ class SimpliSafe:
             data=payload_data,
             auth=BasicAuth(
                 login=DEFAULT_AUTH_USERNAME, password='', encoding='latin1'))
-        self.access_token = token_resp['access_token']
-        self._access_token_expire = datetime.now() + timedelta(
-            seconds=int(token_resp['expires_in']))
         self.refresh_token = token_resp['refresh_token']
 
-    async def _get_subscriptions(self) -> list:
-        """Get subscriptions associated to this account."""
+        auth_check_resp = await self.request('get', 'api/authCheck')
+        self.user_id = auth_check_resp['userId']
+        self._access_token = token_resp['access_token']
+        self._access_token_expire = datetime.now() + timedelta(
+            seconds=int(token_resp['expires_in']))
+
+    async def _refresh_access_token(self, refresh_token: str) -> None:
+        """Regenerate an access token."""
+        await self._authenticate({
+            'grant_type': 'refresh_token',
+            'username': self._email,
+            'refresh_token': refresh_token,
+        })
+
+        self._actively_refreshing = False
+
+    async def get_systems(self) -> list:
+        """Get systems associated to this account."""
         subscription_resp = await self.get_subscription_data()
 
         systems = []  # type: List[System]
@@ -66,34 +99,12 @@ class SimpliSafe:
 
         return systems
 
-    async def _login(self, email: str, password: str) -> None:
-        """Login to SimpliSafe."""
-        self._email = email
-
-        await self._authenticate({
-            'grant_type': 'password',
-            'username': email,
-            'password': password,
-        })
-
-        auth_check_resp = await self.request('get', 'api/authCheck')
-        self.user_id = auth_check_resp['userId']
-
     async def get_subscription_data(self) -> dict:
         """Get the latest location-level data."""
         return await self.request(
             'get',
             'users/{0}/subscriptions'.format(self.user_id),
             params={'activeOnly': 'true'})
-
-    async def refresh_access_token(self, refresh_token: str = None) -> None:
-        """Regenerate an access token using the stored refresh token."""
-        await self._authenticate({
-            'grant_type': 'refresh_token',
-            'username': self._email,
-            'refresh_token':
-                refresh_token if refresh_token else self.refresh_token,
-        })
 
     async def request(
             self,
@@ -107,15 +118,18 @@ class SimpliSafe:
             **kwargs) -> dict:
         """Make a request."""
         if (self._access_token_expire
-                and datetime.now() >= self._access_token_expire):
-            await self.refresh_access_token()
+                and datetime.now() >= self._access_token_expire
+                and not self._actively_refreshing):
+            self._actively_refreshing = True
+            await self._refresh_access_token(  # type: ignore
+                self.refresh_token)
 
         url = '{0}/{1}'.format(URL_BASE, endpoint)
 
         if not headers:
             headers = {}
-        if not kwargs.get('auth') and self.access_token:
-            headers['Authorization'] = 'Bearer {0}'.format(self.access_token)
+        if not kwargs.get('auth') and self._access_token:
+            headers['Authorization'] = 'Bearer {0}'.format(self._access_token)
         headers.update({
             'Content-Type': 'application/x-www-form-urlencoded',
             'Host': URL_HOSTNAME,

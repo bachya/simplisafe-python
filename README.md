@@ -70,13 +70,14 @@ import asyncio
 
 from aiohttp import ClientSession
 
-from simplipy import get_systems
+from simplipy import API
 
 
 async def main() -> None:
     """Create the aiohttp session and run."""
     async with ClientSession() as websession:
-      systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
+      simplisafe = API.login_via_credentials("<EMAIL>", "<PASSWORD>", websession)
+      systems = await simplisafe.get_systems()
       # >>> [<simplipy.system.SystemV2 object at 0x10661e3c8>, ...]
 
 
@@ -97,13 +98,14 @@ these objects, meaning the same properties and methods are available to both.
 ### Properties and Methods
 
 ```python
-from simplipy import get_systems
+from simplipy import API
 
 
 async def main() -> None:
     """Create the aiohttp session and run."""
     async with ClientSession() as websession:
-      systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
+      simplisafe = API.login_via_credentials("<EMAIL>", "<PASSWORD>", websession)
+      systems = await simplisafe.get_systems()
       # >>> [<simplipy.system.SystemV2 object at 0x10661e3c8>]
 
       for system in systems:
@@ -191,13 +193,14 @@ differences are outlined below.
 ### Base Properties
 
 ```python
-from simplipy import get_systems
+from simplipy import API
 
 
 async def main() -> None:
     """Create the aiohttp session and run."""
     async with ClientSession() as websession:
-      systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
+      simplisafe = API.login_via_credentials("<EMAIL>", "<PASSWORD>", websession)
+      systems = await simplisafe.get_systems()
       for system in systems:
         for serial, sensor_attrs in system.sensors.items():
           # Return the sensor's name:
@@ -234,13 +237,14 @@ asyncio.get_event_loop().run_until_complete(main())
 ### V2 Properties
 
 ```python
-from simplipy import get_systems
+from simplipy import API
 
 
 async def main() -> None:
     """Create the aiohttp session and run."""
     async with ClientSession() as websession:
-      systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
+      simplisafe = API.login_via_credentials("<EMAIL>", "<PASSWORD>", websession)
+      systems = await simplisafe.get_systems()
       for system in systems:
         for serial, sensor_attrs in system.sensors.items():
           # Return the sensor's data as a currently non-understood integer:
@@ -258,13 +262,14 @@ asyncio.get_event_loop().run_until_complete(main())
 ### V3 Properties
 
 ```python
-from simplipy import get_systems
+from simplipy import API
 
 
 async def main() -> None:
     """Create the aiohttp session and run."""
     async with ClientSession() as websession:
-      systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
+      simplisafe = API.login_via_credentials("<EMAIL>", "<PASSWORD>", websession)
+      systems = await simplisafe.get_systems()
       for system in systems:
         for sensor in system.sensors:
           # Return whether the sensor is offline:
@@ -283,29 +288,29 @@ async def main() -> None:
 asyncio.get_event_loop().run_until_complete(main())
 ```
 
-## The `Account` Object
+## The `API` Object
 
-Each `System` object has a reference to an `Account` object. This object
-contains properties and a method useful for authentication and ongoing
-access.
+Each `System` object has a reference to an `API` object. This object contains
+properties and a method useful for authentication and ongoing access.
 
-**VERY IMPORTANT NOTE:** the `Account` object contains references to
+**VERY IMPORTANT NOTE:** the `API` object contains references to
 SimpliSafe™ access and refresh tokens. **It is vitally important that you do
 not let these tokens leave your control.** If exposed, savvy attackers could
 use them to view and alter your system's state. **You have been warned; proper
 usage of these properties is solely your responsibility.**
 
 ```python
-from simplipy import get_systems
+from simplipy import API
 
 
 async def main() -> None:
     """Create the aiohttp session and run."""
     async with ClientSession() as websession:
-      systems = await get_systems("<EMAIL>", "<PASSWORD>", websession)
+      simplisafe = API.login_via_credentials("<EMAIL>", "<PASSWORD>", websession)
+      systems = await simplisafe.get_systems()
       for system in systems:
         # Return the current access token:
-        system.account.access_token
+        system.account._access_token
         # >>> 7s9yasdh9aeu21211add
 
         # Return the current refresh token:
@@ -328,32 +333,26 @@ asyncio.get_event_loop().run_until_complete(main())
   errors inherit from
 * `simplipy.errors.RequestError`: an error related to HTTP requests that return
   something other than a `200` response code
-* `simplipy.errors.TokenExpiredError`: an error related to an expired access
-  token
 
 # Refreshing the Access Token
 
-When `simplipy.get_systems()` is run, everything is set to make repeated
-authorized requests against the SimpliSafe™ cloud. At some point, however, the
-access token will expire and any future requests will raise
-`simplipy.errors.TokenExpiredError`.
-
-When this occurs, a new access token can easily be generated:
+It may be desirable to re-authenticate to the SimpliSafe™ API without using
+a user's email and password again. In that case, it is recommended that you
+save the `refresh_token` property somewhere; when it comes time to
+re-authenticate, simply:
 
 ```python
-await system.account.refresh_access_token()
-```
+from simplipy import API
 
-This will use the "on-file" refresh token to request a new access token; once
-the call is complete, you're good to go.
 
-In some instances, it may be desirable to store the "on-file" refresh token for
-later use (for example, if your app/script/etc. stops and needs to restart at
-some indeterminate point in the future). In that case, the
-`refresh_access_token()` method can take an optional `refresh_token` parameter:
+async def main() -> None:
+    """Create the aiohttp session and run."""
+    async with ClientSession() as websession:
+      simplisafe = API.login_via_token("<REFRESH TOKEN>", websession)
+      systems = await simplisafe.get_systems()
 
-```python
-await system.account.refresh_access_token(refresh_token='abcdefg987665')
+
+asyncio.get_event_loop().run_until_complete(main())
 ```
 
 Although no official documentation exists, basic testing appears to confirm the
@@ -361,7 +360,7 @@ hypothesis that the refresh token is both long-lived and single-use. This means
 that theoretically, it should be possible to use it to create an access token
 long into the future. If `refresh_access_token()` should throw an error,
 however, the system object(s) will need to be recreated via
-`simplipy.get_systems`.
+`simplipy.API.login_via_credentials`.
 
 # Contributing
 

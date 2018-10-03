@@ -231,7 +231,7 @@ def v2_settings_json():
                 "entryStatus": "closed"
             }, {
                 "type": 5,
-                "serial": "609",
+                "serial": "610",
                 "setting": 1,
                 "instant": False,
                 "enotify": False,

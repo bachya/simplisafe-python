@@ -78,6 +78,11 @@ class SensorV2(Sensor):
         return self.sensor_data['setting']
 
     @property
+    def trigger_instantly(self) -> bool:
+        """Return whether the sensor will trigger instantly."""
+        return self.sensor_data['instant']
+
+    @property
     def triggered(self) -> bool:
         """Return the current sensor state."""
         if self.type == SensorTypes.entry:
@@ -110,6 +115,11 @@ class SensorV3(Sensor):
     def settings(self) -> dict:
         """Return the sensor's settings."""
         return self.sensor_data['setting']
+
+    @property
+    def trigger_instantly(self) -> bool:
+        """Return whether the sensor will trigger instantly."""
+        return self.sensor_data['setting']['instantTrigger']
 
     @property
     def triggered(self) -> bool:

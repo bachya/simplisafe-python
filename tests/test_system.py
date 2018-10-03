@@ -114,7 +114,7 @@ async def test_get_systems_v2(
             assert primary_system.serial == TEST_SYSTEM_SERIAL_NO
             assert primary_system.system_id == TEST_SYSTEM_ID
             assert primary_system.api._access_token == TEST_ACCESS_TOKEN
-            assert len(primary_system.sensors) == 34
+            assert len(primary_system.sensors) == 35
 
             token_api = await API.login_via_token(
                 TEST_REFRESH_TOKEN, websession)
@@ -125,7 +125,7 @@ async def test_get_systems_v2(
             assert primary_system.serial == TEST_SYSTEM_SERIAL_NO
             assert primary_system.system_id == TEST_SYSTEM_ID
             assert primary_system.api._access_token == TEST_ACCESS_TOKEN
-            assert len(primary_system.sensors) == 34
+            assert len(primary_system.sensors) == 35
 
 
 @pytest.mark.asyncio
@@ -338,7 +338,7 @@ async def test_update_system_data_v2(
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.system_id == TEST_SYSTEM_ID
             assert system.api._access_token == TEST_ACCESS_TOKEN
-            assert len(system.sensors) == 34
+            assert len(system.sensors) == 35
 
 
 @pytest.mark.asyncio

@@ -50,10 +50,11 @@ async def test_properties_v2(event_loop, v2_server):
                 assert keypad.triggered == 42
 
             entry_sensor = system.sensors['609']
-            assert entry_sensor.data == 210
+            assert entry_sensor.data == 130
             assert not entry_sensor.error
             assert not entry_sensor.low_battery
             assert entry_sensor.settings == 1
+            assert not entry_sensor.trigger_instantly
             assert not entry_sensor.triggered
 
 
@@ -71,6 +72,7 @@ async def test_properties_v3(event_loop, v3_server):
             assert not entry_sensor.low_battery
             assert not entry_sensor.offline
             assert not entry_sensor.settings['instantTrigger']
+            assert not entry_sensor.trigger_instantly
             assert not entry_sensor.triggered
 
             siren = system.sensors['236']

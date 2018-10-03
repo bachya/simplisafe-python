@@ -34,6 +34,16 @@ changes:
 If you wish to continue using the previous, synchronous version of
 `simplipy`, make sure to pin version 2.0.2.
 
+# Versions
+
+`simplisafe-python` is currently supported on:
+
+* Python 3.5
+* Python 3.6
+* Python 3.7
+
+However, running the test suite currently requires Python 3.6 or higher; tests
+run on Python 3.5 will fail.
 
 # Installation
 

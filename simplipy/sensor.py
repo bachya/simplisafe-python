@@ -78,11 +78,6 @@ class SensorV2(Sensor):
         return self.sensor_data['setting']
 
     @property
-    def status(self) -> int:
-        """Return the sensor's status (unknown meaning)."""
-        return self.sensor_data['sensorStatus']
-
-    @property
     def triggered(self) -> bool:
         """Return the current sensor state."""
         if self.type == SensorTypes.entry:

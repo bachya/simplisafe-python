@@ -236,7 +236,7 @@ async def main() -> None:
           sensor.low_battery
           # >>> False
 
-          # Return whether the sensor has been triggered:
+          # Return whether the sensor has been triggered (open/closed, etc.):
           sensor.triggered
           # >>> False
 

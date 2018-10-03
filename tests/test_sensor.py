@@ -5,6 +5,7 @@ import aiohttp
 import pytest
 
 from simplipy import API
+from simplipy.errors import SimplipyError
 from simplipy.sensor import SensorTypes
 
 from .const import TEST_EMAIL, TEST_PASSWORD
@@ -37,12 +38,23 @@ async def test_properties_v2(event_loop, v2_server):
                 TEST_EMAIL, TEST_PASSWORD, websession)
             [system] = await api.get_systems()
 
-            sensor = system.sensors['195']
-            assert sensor.data == 0
-            assert not sensor.error
-            assert not sensor.low_battery
-            assert sensor.settings == 1
-            assert not sensor.triggered
+            keypad = system.sensors['195']
+            assert keypad.data == 0
+            assert not keypad.error
+            assert not keypad.low_battery
+            assert keypad.settings == 1
+
+            # Ensure that attempting to access the triggered of anything but
+            # an entry sensor in a V2 system throws an error:
+            with pytest.raises(SimplipyError):
+                assert keypad.triggered == 42
+
+            entry_sensor = system.sensors['609']
+            assert entry_sensor.data == 210
+            assert not entry_sensor.error
+            assert not entry_sensor.low_battery
+            assert entry_sensor.settings == 1
+            assert not entry_sensor.triggered
 
 
 @pytest.mark.asyncio

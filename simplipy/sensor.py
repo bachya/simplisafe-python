@@ -74,6 +74,13 @@ class SensorV2(Sensor):
     def settings(self) -> bool:
         """Return the sensor's settings."""
         return self.sensor_data['setting']
+    
+    @property
+    def entrystatus(self) -> str:
+        if self._type == SensorTypes.entry:
+            return self.sensor_data['entryStatus']
+        else:
+            return "null"
 
     @property
     def triggered(self) -> bool:

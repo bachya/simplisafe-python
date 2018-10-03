@@ -8,3 +8,4 @@
 
 - Scott Newman (https://github.com/greencoder/easysafe-python)
 - William Scanlon (https://github.com/w1ll1am23)
+- Quinn Easterbrook (https://github.com/qpe123/)

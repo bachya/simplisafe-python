@@ -13,8 +13,9 @@ from simplipy.errors import RequestError
 from simplipy.system import System
 
 from .const import (
-    TEST_ACCESS_TOKEN, TEST_EMAIL, TEST_PASSWORD, TEST_REFRESH_TOKEN,
-    TEST_SUBSCRIPTION_ID, TEST_SYSTEM_ID, TEST_SYSTEM_SERIAL_NO, TEST_USER_ID)
+    TEST_ACCESS_TOKEN, TEST_ADDRESS, TEST_EMAIL, TEST_PASSWORD,
+    TEST_REFRESH_TOKEN, TEST_SUBSCRIPTION_ID, TEST_SYSTEM_ID,
+    TEST_SYSTEM_SERIAL_NO, TEST_USER_ID)
 from .fixtures import *  # noqa
 from .fixtures.v2 import *  # noqa
 from .fixtures.v3 import *  # noqa
@@ -186,6 +187,7 @@ async def test_properties_base(event_loop, v2_server):
             api = await API.login_via_credentials(
                 TEST_EMAIL, TEST_PASSWORD, websession)
             [system] = await api.get_systems()
+            assert system.address == TEST_ADDRESS
             assert not system.alarm_going_off
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.state == system.SystemStates.off

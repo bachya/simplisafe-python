@@ -38,6 +38,11 @@ class System:
             self._state = self.SystemStates.unknown
 
     @property
+    def address(self) -> bool:
+        """Return whether the alarm is going off."""
+        return self._location_info['street1']
+
+    @property
     def alarm_going_off(self) -> bool:
         """Return whether the alarm is going off."""
         return self._location_info['system']['isAlarming']

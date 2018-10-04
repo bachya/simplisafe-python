@@ -123,6 +123,10 @@ async def main() -> None:
         system.api
         # >>> <simplipy.api.API object at 0x12aba2321>
 
+        # Return the street address of the system:
+        system.address
+        # >>> 1234 Main Street
+
         # Return whether the alarm is currently going off:
         system.alarm_going_off
         # >>> False
@@ -217,10 +221,11 @@ async def main() -> None:
           sensor.name
           # >>> Kitchen Window
 
-          # Return the sensor's serial number (either through the index or
-          # through the property):
+          # Return the sensor's serial number through the index:
           serial
           # >>> 1234ABCD
+
+          # ...or through the property:
           sensor.serial
           # >>> 1234ABCD
 

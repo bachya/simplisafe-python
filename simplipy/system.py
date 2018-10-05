@@ -9,20 +9,21 @@ from .util.string import convert_to_underscore
 _LOGGER = logging.getLogger(__name__)
 
 
+class SystemStates(Enum):
+    """Define states that the system can be in."""
+
+    away = 1
+    away_count = 2
+    entry_delay = 3
+    exit_delay = 4
+    home = 5
+    home_count = 5
+    off = 6
+    unknown = 99
+
+
 class System:
     """Define a system."""
-
-    class SystemStates(Enum):
-        """Define states that the system can be in."""
-
-        away = 1
-        away_count = 2
-        entry_delay = 3
-        exit_delay = 4
-        home = 5
-        home_count = 5
-        off = 6
-        unknown = 99
 
     def __init__(self, api, location_info: dict) -> None:
         """Initialize."""
@@ -32,10 +33,10 @@ class System:
 
         try:
             raw_state = location_info['system']['alarmState']
-            self._state = self.SystemStates[convert_to_underscore(raw_state)]
+            self._state = self._coerce_state_from_string(raw_state)
         except KeyError:
             _LOGGER.error('Unknown alarm state: %s', raw_state)
-            self._state = self.SystemStates.unknown
+            self._state = SystemStates.unknown
 
     @property
     def address(self) -> bool:
@@ -72,6 +73,11 @@ class System:
         """Return the system version."""
         return self._location_info['system']['version']
 
+    @staticmethod
+    def _coerce_state_from_string(value: str) -> SystemStates:
+        """Return a proper state from a string input."""
+        return SystemStates[convert_to_underscore(value)]
+
     async def _set_state(self, value: SystemStates) -> None:
         """Raise if calling this undefined based method."""
         raise NotImplementedError()
@@ -84,6 +90,8 @@ class System:
             if system['sid'] == self.system_id
         ]
         self._location_info = location_info
+        self._state = self._coerce_state_from_string(
+            location_info['system']['alarmState'])
 
     async def get_events(
             self, from_timestamp: int = None, num_events: int = None) -> dict:
@@ -103,15 +111,15 @@ class System:
 
     async def set_away(self) -> None:
         """Set the system in "Away" mode."""
-        await self._set_state(self.SystemStates.away)
+        await self._set_state(SystemStates.away)
 
     async def set_home(self) -> None:
         """Set the system in "Home" mode."""
-        await self._set_state(self.SystemStates.home)
+        await self._set_state(SystemStates.home)
 
     async def set_off(self) -> None:
         """Set the system in "Off" mode."""
-        await self._set_state(self.SystemStates.off)
+        await self._set_state(SystemStates.off)
 
     async def update(
             self, refresh_location: bool = True, cached: bool = True) -> None:
@@ -133,7 +141,7 @@ class SystemV2(System):
             params={'state': value.name})
 
         if resp['success']:
-            self._state = self.SystemStates[resp['requestedState']]
+            self._state = SystemStates[resp['requestedState']]
 
     async def update(
             self, refresh_location: bool = True, cached: bool = True) -> None:
@@ -172,7 +180,7 @@ class SystemV3(System):
             'post', 'ss3/subscriptions/{0}/state/{1}'.format(
                 self.system_id, value.name))
 
-        self._state = self.SystemStates[convert_to_underscore(resp['state'])]
+        self._state = self._coerce_state_from_string(resp['state'])
 
     async def update(
             self, refresh_location: bool = True, cached: bool = True) -> None:

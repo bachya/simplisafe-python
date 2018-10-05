@@ -10,7 +10,7 @@ import pytest
 
 from simplipy import API
 from simplipy.errors import RequestError
-from simplipy.system import System
+from simplipy.system import System, SystemStates
 
 from .const import (
     TEST_ACCESS_TOKEN, TEST_ADDRESS, TEST_EMAIL, TEST_PASSWORD,
@@ -228,7 +228,7 @@ async def test_properties_base(event_loop, v2_server):
             assert system.address == TEST_ADDRESS
             assert not system.alarm_going_off
             assert system.serial == TEST_SYSTEM_SERIAL_NO
-            assert system.state == system.SystemStates.off
+            assert system.state == SystemStates.off
             assert system.system_id == TEST_SYSTEM_ID
             assert system.temperature == 67
             assert system.version == 2
@@ -271,19 +271,19 @@ async def test_set_states_v2(
 
             await system.set_away()
 
-            assert system.state == system.SystemStates.away
+            assert system.state == SystemStates.away
 
             await system.set_home()
 
-            assert system.state == system.SystemStates.home
+            assert system.state == SystemStates.home
 
             await system.set_off()
 
-            assert system.state == system.SystemStates.off
+            assert system.state == SystemStates.off
 
             await system.set_off()
 
-            assert system.state == system.SystemStates.off
+            assert system.state == SystemStates.off
 
 
 @pytest.mark.asyncio
@@ -323,19 +323,19 @@ async def test_set_states_v3(
 
             await system.set_away()
 
-            assert system.state == system.SystemStates.away
+            assert system.state == SystemStates.away
 
             await system.set_home()
 
-            assert system.state == system.SystemStates.home
+            assert system.state == SystemStates.home
 
             await system.set_off()
 
-            assert system.state == system.SystemStates.off
+            assert system.state == SystemStates.off
 
             await system.set_off()
 
-            assert system.state == system.SystemStates.off
+            assert system.state == SystemStates.off
 
 
 @pytest.mark.asyncio

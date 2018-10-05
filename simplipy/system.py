@@ -15,10 +15,11 @@ class SystemStates(Enum):
     away = 1
     away_count = 2
     entry_delay = 3
-    exit_delay = 4
-    home = 5
-    home_count = 5
-    off = 6
+    error = 4
+    exit_delay = 5
+    home = 6
+    home_count = 7
+    off = 8
     unknown = 99
 
 
@@ -31,12 +32,8 @@ class System:
         self.api = api
         self.sensors = {}  # type: Dict[str, Union[SensorV2, SensorV3]]
 
-        try:
-            raw_state = location_info['system']['alarmState']
-            self._state = self._coerce_state_from_string(raw_state)
-        except KeyError:
-            _LOGGER.error('Unknown alarm state: %s', raw_state)
-            self._state = SystemStates.unknown
+        self._state = self._coerce_state_from_string(
+            location_info['system']['alarmState'])
 
     @property
     def address(self) -> bool:
@@ -76,7 +73,11 @@ class System:
     @staticmethod
     def _coerce_state_from_string(value: str) -> SystemStates:
         """Return a proper state from a string input."""
-        return SystemStates[convert_to_underscore(value)]
+        try:
+            return SystemStates[convert_to_underscore(value)]
+        except KeyError:
+            _LOGGER.error('Unknown system state: %s', value)
+            return SystemStates.unknown
 
     async def _set_state(self, value: SystemStates) -> None:
         """Raise if calling this undefined based method."""

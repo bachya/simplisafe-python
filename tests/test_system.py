@@ -40,7 +40,7 @@ async def test_bad_request(event_loop, v2_server):
 @pytest.mark.asyncio
 async def test_expired_token_refresh(
         api_token_json, auth_check_json, event_loop, v2_server):
-    """Test that the correct exception is raised when the token is expired."""
+    """Test that a refresh token is used correctly."""
     async with v2_server:
         v2_server.add(
             'api.simplisafe.com', '/v1/api/token', 'post',
@@ -62,6 +62,34 @@ async def test_expired_token_refresh(
 
 
 @pytest.mark.asyncio
+async def test_refresh_token_dirtiness(
+        api_token_json, auth_check_json, event_loop, v2_server):
+    """Test that the refresh token's dirtiness can be checked."""
+    async with v2_server:
+        v2_server.add(
+            'api.simplisafe.com', '/v1/api/token', 'post',
+            aresponses.Response(text=json.dumps(api_token_json), status=200))
+        v2_server.add(
+            'api.simplisafe.com', '/v1/api/authCheck', 'get',
+            aresponses.Response(text=json.dumps(auth_check_json), status=200))
+        v2_server.add(
+            'api.simplisafe.com', '/v1/api/authCheck', 'get',
+            aresponses.Response(text=json.dumps(auth_check_json), status=200))
+
+        async with aiohttp.ClientSession(loop=event_loop) as websession:
+            api = await API.login_via_credentials(
+                TEST_EMAIL, TEST_PASSWORD, websession)
+            [system] = await api.get_systems()
+            system.api._access_token_expire = datetime.now() - timedelta(
+                hours=1)
+            await system.api.request('get', 'api/authCheck')
+
+            assert system.api.refresh_token_dirty
+            assert system.api.refresh_token == TEST_REFRESH_TOKEN
+            assert not system.api.refresh_token_dirty
+
+
+@pytest.mark.asyncio
 async def test_get_events(events_json, event_loop, v2_server):
     """Test getting events from a system."""
     async with v2_server:
@@ -76,6 +104,7 @@ async def test_get_events(events_json, event_loop, v2_server):
             [system] = await api.get_systems()
 
             events = await system.get_events(1534725051, 2)
+
             assert len(events) == 2
 
 
@@ -109,9 +138,11 @@ async def test_get_systems_v2(
             credentials_api = await API.login_via_credentials(
                 TEST_EMAIL, TEST_PASSWORD, websession)
             systems = await credentials_api.get_systems()
+
             assert len(systems) == 1
 
             primary_system = systems[0]
+
             assert primary_system.serial == TEST_SYSTEM_SERIAL_NO
             assert primary_system.system_id == TEST_SYSTEM_ID
             assert primary_system.api._access_token == TEST_ACCESS_TOKEN
@@ -120,9 +151,11 @@ async def test_get_systems_v2(
             token_api = await API.login_via_token(
                 TEST_REFRESH_TOKEN, websession)
             systems = await token_api.get_systems()
+
             assert len(systems) == 1
 
             primary_system = systems[0]
+
             assert primary_system.serial == TEST_SYSTEM_SERIAL_NO
             assert primary_system.system_id == TEST_SYSTEM_ID
             assert primary_system.api._access_token == TEST_ACCESS_TOKEN
@@ -159,9 +192,11 @@ async def test_get_systems_v3(
             credentials_api = await API.login_via_credentials(
                 TEST_EMAIL, TEST_PASSWORD, websession)
             systems = await credentials_api.get_systems()
+
             assert len(systems) == 1
 
             primary_system = systems[0]
+
             assert primary_system.serial == TEST_SYSTEM_SERIAL_NO
             assert primary_system.system_id == TEST_SYSTEM_ID
             assert primary_system.api._access_token == TEST_ACCESS_TOKEN
@@ -170,9 +205,11 @@ async def test_get_systems_v3(
             token_api = await API.login_via_token(
                 TEST_REFRESH_TOKEN, websession)
             systems = await token_api.get_systems()
+
             assert len(systems) == 1
 
             primary_system = systems[0]
+
             assert primary_system.serial == TEST_SYSTEM_SERIAL_NO
             assert primary_system.system_id == TEST_SYSTEM_ID
             assert primary_system.api._access_token == TEST_ACCESS_TOKEN
@@ -187,6 +224,7 @@ async def test_properties_base(event_loop, v2_server):
             api = await API.login_via_credentials(
                 TEST_EMAIL, TEST_PASSWORD, websession)
             [system] = await api.get_systems()
+
             assert system.address == TEST_ADDRESS
             assert not system.alarm_going_off
             assert system.serial == TEST_SYSTEM_SERIAL_NO
@@ -232,15 +270,19 @@ async def test_set_states_v2(
             [system] = await api.get_systems()
 
             await system.set_away()
+
             assert system.state == system.SystemStates.away
 
             await system.set_home()
+
             assert system.state == system.SystemStates.home
 
             await system.set_off()
+
             assert system.state == system.SystemStates.off
 
             await system.set_off()
+
             assert system.state == system.SystemStates.off
 
 
@@ -280,15 +322,19 @@ async def test_set_states_v3(
             [system] = await api.get_systems()
 
             await system.set_away()
+
             assert system.state == system.SystemStates.away
 
             await system.set_home()
+
             assert system.state == system.SystemStates.home
 
             await system.set_off()
+
             assert system.state == system.SystemStates.off
 
             await system.set_off()
+
             assert system.state == system.SystemStates.off
 
 
@@ -306,12 +352,13 @@ async def test_unknown_initial_state(caplog, event_loop):
 
 @pytest.mark.asyncio
 async def test_unknown_sensor_type(caplog, event_loop, v2_server):
-    """Test getting a new access token from a refresh token."""
+    """Test whether a message is logged upon finding an unknown sensor type."""
     async with v2_server:
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             api = await API.login_via_credentials(
                 TEST_EMAIL, TEST_PASSWORD, websession)
             _ = await api.get_systems()  # noqa
+
             assert any('Unknown' in e.message for e in caplog.records)
 
 
@@ -337,6 +384,7 @@ async def test_update_system_data_v2(
             [system] = await api.get_systems()
 
             await system.update()
+
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.system_id == TEST_SYSTEM_ID
             assert system.api._access_token == TEST_ACCESS_TOKEN
@@ -365,6 +413,7 @@ async def test_update_system_data_v3(
             [system] = await api.get_systems()
 
             await system.update()
+
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.system_id == TEST_SYSTEM_ID
             assert system.api._access_token == TEST_ACCESS_TOKEN

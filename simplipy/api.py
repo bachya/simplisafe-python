@@ -1,5 +1,6 @@
 """Define a SimpliSafe account."""
-# pylint: disable=import-error,protected-access,unused-import
+# pylint: disable=import-error,protected-access,too-many-instance-attributes
+# pylint: disable=unused-import
 
 from datetime import datetime, timedelta
 from typing import List, Type, TypeVar, Union  # noqa
@@ -26,13 +27,31 @@ class API:
 
     def __init__(self, websession: ClientSession) -> None:
         """Initialize."""
-        self._access_token = None
+        self._access_token = ''
         self._access_token_expire = None  # type: Union[None, datetime]
         self._actively_refreshing = False
         self._email = None  # type: Union[None, str]
         self._websession = websession
-        self.refresh_token = None
+        self._refresh_token = ''
+        self.refresh_token_dirty = False
         self.user_id = None
+
+    @property
+    def refresh_token(self) -> str:
+        """Return the current refresh_token."""
+        if self.refresh_token_dirty:
+            self.refresh_token_dirty = False
+
+        return self._refresh_token
+
+    @refresh_token.setter
+    def refresh_token(self, value: str) -> None:
+        """Set the refresh token if it has changed."""
+        if value == self._refresh_token:
+            return
+
+        self._refresh_token = value
+        self.refresh_token_dirty = True
 
     @classmethod
     async def login_via_credentials(
@@ -121,8 +140,7 @@ class API:
                 and datetime.now() >= self._access_token_expire
                 and not self._actively_refreshing):
             self._actively_refreshing = True
-            await self._refresh_access_token(  # type: ignore
-                self.refresh_token)
+            await self._refresh_access_token(self._refresh_token)
 
         url = '{0}/{1}'.format(URL_BASE, endpoint)
 

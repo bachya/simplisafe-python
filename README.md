@@ -351,6 +351,36 @@ asyncio.get_event_loop().run_until_complete(main())
 
 # Refreshing the Access Token
 
+## General Notes
+
+During usage, `simplipy` will automatically refresh the access token as needed.
+At any point, the "dirtiness" of the token can be checked:
+
+```python
+from simplipy import API
+
+
+async def main() -> None:
+    """Create the aiohttp session and run."""
+    async with ClientSession() as websession:
+      simplisafe = API.login_via_token("<REFRESH TOKEN>", websession)
+      systems = await simplisafe.get_systems()
+      primary_system = systems[0]
+
+      # Assuming the access token was automatically refreshed:
+      primary_system.api.refresh_token_dirty
+      # >>> True
+
+      # Once the dirtiness is confirmed, the dirty bit resets:
+      primary_system.api.refresh_token_dirty
+      # >>> False
+
+
+asyncio.get_event_loop().run_until_complete(main())
+```
+
+## Restarting with a Refresh Token
+
 It may be desirable to re-authenticate against the SimpliSafe™ API at some
 point in the future (and without using a user's email and password). In that
 case, it is recommended that you save the `refresh_token` property somewhere;

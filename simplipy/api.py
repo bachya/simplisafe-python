@@ -5,7 +5,8 @@
 from datetime import datetime, timedelta
 from typing import List, Type, TypeVar, Union  # noqa
 
-from aiohttp import BasicAuth, ClientSession, client_exceptions
+from aiohttp import BasicAuth, ClientSession
+from aiohttp.client_exceptions import ClientError
 
 from .errors import RequestError
 from .system import System, SystemV2, SystemV3  # noqa
@@ -154,13 +155,12 @@ class API:
             'User-Agent': DEFAULT_USER_AGENT,
         })
 
-        async with self._websession.request(method, url, headers=headers,
-                                            params=params, data=data,
-                                            json=json, **kwargs) as resp:
-            try:
+        try:
+            async with self._websession.request(
+                    method, url, headers=headers, params=params, data=data,
+                    json=json, **kwargs) as resp:
                 resp.raise_for_status()
                 return await resp.json(content_type=None)
-            except client_exceptions.ClientError as err:
-                raise RequestError(
-                    'Error requesting data from {0}: {1}'.format(
-                        endpoint, err)) from None
+        except ClientError as err:
+            raise RequestError(
+                'Error requesting data from {0}: {1}'.format(endpoint, err))

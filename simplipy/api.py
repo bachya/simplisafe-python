@@ -35,8 +35,8 @@ class API:
         self._access_token_expire = None  # type: Union[None, datetime]
         self._actively_refreshing = False
         self._email = None  # type: Union[None, str]
-        self._websession = websession
         self._refresh_token = ''
+        self._websession = websession
         self.refresh_token_dirty = False
         self.user_id = None
 

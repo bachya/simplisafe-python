@@ -71,3 +71,15 @@ def events_json():
             "video": {}
         }]
     }
+
+
+@pytest.fixture()
+def unavailable_feature_json():
+    """Return a response to amn unavailable request."""
+    return {
+        "errorType": "NoRemoteManagement",
+        "code": 403,
+        "message":
+            "Subscription {0} does not support remote management".format(
+                TEST_SUBSCRIPTION_ID)
+    }

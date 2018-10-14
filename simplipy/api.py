@@ -2,6 +2,7 @@
 # pylint: disable=import-error,protected-access,too-many-instance-attributes
 # pylint: disable=unused-import
 
+import logging
 from datetime import datetime, timedelta
 from typing import List, Type, TypeVar, Union  # noqa
 
@@ -10,6 +11,8 @@ from aiohttp.client_exceptions import ClientError
 
 from .errors import RequestError
 from .system import System, SystemV2, SystemV3  # noqa
+
+_LOGGER = logging.getLogger(__name__)
 
 DEFAULT_USER_AGENT = 'SimpliSafe/2105 CFNetwork/902.2 Darwin/17.7.0'
 DEFAULT_AUTH_USERNAME = 'a9c490a5-28c7-48c8-a8c3-1f1d7faa1394.2074.0.0.com.' \
@@ -156,11 +159,16 @@ class API:
         })
 
         try:
-            async with self._websession.request(
-                    method, url, headers=headers, params=params, data=data,
-                    json=json, **kwargs) as resp:
+            async with self._websession.request(method, url, headers=headers,
+                                                params=params, data=data,
+                                                json=json, **kwargs) as resp:
                 resp.raise_for_status()
                 return await resp.json(content_type=None)
         except ClientError as err:
+            if self.user_id and '403' in str(err):
+                _LOGGER.warning(
+                    'Endpoint not available in this plan: %s', endpoint)
+                return {}
+
             raise RequestError(
                 'Error requesting data from {0}: {1}'.format(endpoint, err))

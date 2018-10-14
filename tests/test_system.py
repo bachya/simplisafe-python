@@ -2,14 +2,12 @@
 # pylint: disable=protected-access,redefined-outer-name,too-many-arguments
 
 import json
-from datetime import datetime, timedelta
 
 import aiohttp
 import aresponses
 import pytest
 
 from simplipy import API
-from simplipy.errors import RequestError
 from simplipy.system import System, SystemStates
 
 from .const import (
@@ -19,74 +17,6 @@ from .const import (
 from .fixtures import *  # noqa
 from .fixtures.v2 import *  # noqa
 from .fixtures.v3 import *  # noqa
-
-
-@pytest.mark.asyncio
-async def test_bad_request(event_loop, v2_server):
-    """Test that a generic error is thrown when a request fails."""
-    async with v2_server:
-        v2_server.add(
-            'api.simplisafe.com', '/v1/api/fakeEndpoint', 'get',
-            aresponses.Response(text='', status=404))
-
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
-            api = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, websession)
-            [system] = await api.get_systems()
-            with pytest.raises(RequestError):
-                await system.api.request('get', 'api/fakeEndpoint')
-
-
-@pytest.mark.asyncio
-async def test_expired_token_refresh(
-        api_token_json, auth_check_json, event_loop, v2_server):
-    """Test that a refresh token is used correctly."""
-    async with v2_server:
-        v2_server.add(
-            'api.simplisafe.com', '/v1/api/token', 'post',
-            aresponses.Response(text=json.dumps(api_token_json), status=200))
-        v2_server.add(
-            'api.simplisafe.com', '/v1/api/authCheck', 'get',
-            aresponses.Response(text=json.dumps(auth_check_json), status=200))
-        v2_server.add(
-            'api.simplisafe.com', '/v1/api/authCheck', 'get',
-            aresponses.Response(text=json.dumps(auth_check_json), status=200))
-
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
-            api = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, websession)
-            [system] = await api.get_systems()
-            system.api._access_token_expire = datetime.now() - timedelta(
-                hours=1)
-            await system.api.request('get', 'api/authCheck')
-
-
-@pytest.mark.asyncio
-async def test_refresh_token_dirtiness(
-        api_token_json, auth_check_json, event_loop, v2_server):
-    """Test that the refresh token's dirtiness can be checked."""
-    async with v2_server:
-        v2_server.add(
-            'api.simplisafe.com', '/v1/api/token', 'post',
-            aresponses.Response(text=json.dumps(api_token_json), status=200))
-        v2_server.add(
-            'api.simplisafe.com', '/v1/api/authCheck', 'get',
-            aresponses.Response(text=json.dumps(auth_check_json), status=200))
-        v2_server.add(
-            'api.simplisafe.com', '/v1/api/authCheck', 'get',
-            aresponses.Response(text=json.dumps(auth_check_json), status=200))
-
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
-            api = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, websession)
-            [system] = await api.get_systems()
-            system.api._access_token_expire = datetime.now() - timedelta(
-                hours=1)
-            await system.api.request('get', 'api/authCheck')
-
-            assert system.api.refresh_token_dirty
-            assert system.api.refresh_token == TEST_REFRESH_TOKEN
-            assert not system.api.refresh_token_dirty
 
 
 @pytest.mark.asyncio

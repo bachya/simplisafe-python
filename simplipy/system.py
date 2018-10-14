@@ -136,13 +136,16 @@ class SystemV2(System):
         if self._state == value:
             return
 
-        resp = await self.api.request(
+        state_resp = await self.api.request(
             'post',
             'subscriptions/{0}/state'.format(self.system_id),
             params={'state': value.name})
 
-        if resp['success']:
-            self._state = SystemStates[resp['requestedState']]
+        if not state_resp:
+            return
+
+        if state_resp['success']:
+            self._state = SystemStates[state_resp['requestedState']]
 
     async def update(
             self, refresh_location: bool = True, cached: bool = True) -> None:
@@ -157,6 +160,9 @@ class SystemV2(System):
                 'settingsType': 'all',
                 'cached': str(cached).lower()
             })
+
+        if not sensor_resp:
+            return
 
         for sensor_data in sensor_resp['settings']['sensors']:
             if not sensor_data:
@@ -177,11 +183,14 @@ class SystemV3(System):
         if self._state == value:
             return
 
-        resp = await self.api.request(
+        state_resp = await self.api.request(
             'post', 'ss3/subscriptions/{0}/state/{1}'.format(
                 self.system_id, value.name))
 
-        self._state = self._coerce_state_from_string(resp['state'])
+        if not state_resp:
+            return
+
+        self._state = self._coerce_state_from_string(state_resp['state'])
 
     async def update(
             self, refresh_location: bool = True, cached: bool = True) -> None:
@@ -193,6 +202,9 @@ class SystemV3(System):
             'get',
             'ss3/subscriptions/{0}/sensors'.format(self.system_id),
             params={'forceUpdate': str(not cached).lower()})
+
+        if not sensor_resp:
+            return
 
         for sensor_data in sensor_resp['sensors']:
             if sensor_data['serial'] in self.sensors:

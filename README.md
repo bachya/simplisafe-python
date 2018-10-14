@@ -360,7 +360,7 @@ asyncio.get_event_loop().run_until_complete(main())
 
 # Errors/Exceptions
 
-`simplipy` exposes serveal useful error types:
+`simplipy` exposes several useful error types:
 
 * `simplipy.errors.SimplipyError`: a base error that all other `simplipy`
   errors inherit from

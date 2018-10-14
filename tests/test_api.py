@@ -1,6 +1,7 @@
 """Define tests for the System object."""
 # pylint: disable=protected-access,redefined-outer-name,too-many-arguments
 import json
+import logging
 from datetime import datetime, timedelta
 
 import aiohttp
@@ -91,6 +92,8 @@ async def test_unavailable_feature_v2(
         api_token_json, auth_check_json, caplog, event_loop, v2_server,
         v2_subscriptions_json, unavailable_feature_json):
     """Test that a message is logged with an unavailable feature."""
+    caplog.set_level(logging.INFO)
+
     async with v2_server:
         v2_server.add(
             'api.simplisafe.com', '/v1/api/token', 'post',
@@ -121,8 +124,12 @@ async def test_unavailable_feature_v2(
             [system] = await api.get_systems()
             await system.update()
             await system.set_away()
-            logs = ['not available' in e.message for e in caplog.records]
-            assert len(logs) == 3
+            logs = [
+                l for l in
+                ['not available' in e.message for e in caplog.records]
+                if l is not False
+            ]
+            assert len(logs) == 2
 
 
 @pytest.mark.asyncio
@@ -130,6 +137,8 @@ async def test_unavailable_feature_v3(
         api_token_json, auth_check_json, caplog, event_loop, v3_server,
         v3_subscriptions_json, unavailable_feature_json):
     """Test that a message is logged with an unavailable feature."""
+    caplog.set_level(logging.INFO)
+
     async with v3_server:
         v3_server.add(
             'api.simplisafe.com', '/v1/api/token', 'post',
@@ -160,5 +169,9 @@ async def test_unavailable_feature_v3(
             [system] = await api.get_systems()
             await system.update()
             await system.set_away()
-            logs = ['not available' in e.message for e in caplog.records]
+            logs = [
+                l for l in
+                ['not available' in e.message for e in caplog.records]
+                if l is not False
+            ]
             assert len(logs) == 2

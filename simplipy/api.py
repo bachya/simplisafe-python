@@ -166,7 +166,7 @@ class API:
                 return await resp.json(content_type=None)
         except ClientError as err:
             if self.user_id and '403' in str(err):
-                _LOGGER.warning(
+                _LOGGER.info(
                     'Endpoint not available in this plan: %s', endpoint)
                 return {}
 

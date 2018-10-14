@@ -53,7 +53,7 @@ async def main() -> None:
     async with ClientSession() as websession:
         try:
             print()
-            await exercise_client('suresh.kalavala@outlook.com', 'Q+ynx52hzV_4', websession)
+            await exercise_client('<EMAIL>', '<PASSWORD>', websession)
         except SimplipyError as err:
             print(err)
 

@@ -360,10 +360,12 @@ asyncio.get_event_loop().run_until_complete(main())
 
 # Errors/Exceptions
 
-`simplipy` exposes two useful error types:
+`simplipy` exposes serveal useful error types:
 
 * `simplipy.errors.SimplipyError`: a base error that all other `simplipy`
   errors inherit from
+* `simplipy.errors.InvalidCredentialsError`: an error related to an invalid
+  username/password combo
 * `simplipy.errors.RequestError`: an error related to HTTP requests that return
   something other than a `200` response code
 

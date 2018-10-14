@@ -74,8 +74,17 @@ def events_json():
 
 
 @pytest.fixture()
+def invalid_credentials_json():
+    """Return a response related to invalid credentials."""
+    return {
+        "error": "invalid_grant",
+        "error_description": "Invalid resource owner credentials"
+    }
+
+
+@pytest.fixture()
 def unavailable_feature_json():
-    """Return a response to amn unavailable request."""
+    """Return a response related to any unavailable request."""
     return {
         "errorType": "NoRemoteManagement",
         "code": 403,

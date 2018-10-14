@@ -9,7 +9,7 @@ import aresponses
 import pytest
 
 from simplipy import API
-from simplipy.errors import RequestError
+from simplipy.errors import InvalidCredentialsError, RequestError
 
 from .const import (
     TEST_EMAIL, TEST_PASSWORD, TEST_REFRESH_TOKEN, TEST_SUBSCRIPTION_ID,
@@ -57,6 +57,22 @@ async def test_expired_token_refresh(
             system.api._access_token_expire = datetime.now() - timedelta(
                 hours=1)
             await system.api.request('get', 'api/authCheck')
+
+
+@pytest.mark.asyncio
+async def test_invalid_credentials(
+        event_loop, invalid_credentials_json, v2_server):
+    """Test that invalid credentials throw the correct exception."""
+    async with v2_server:
+        v2_server.add(
+            'api.simplisafe.com', '/v1/api/token', 'post',
+            aresponses.Response(
+                text=json.dumps(invalid_credentials_json), status=403))
+
+    async with aiohttp.ClientSession(loop=event_loop) as websession:
+        with pytest.raises(InvalidCredentialsError):
+            await API.login_via_credentials(
+                TEST_EMAIL, TEST_PASSWORD, websession)
 
 
 @pytest.mark.asyncio

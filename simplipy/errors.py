@@ -7,6 +7,12 @@ class SimplipyError(Exception):
     pass
 
 
+class InvalidCredentialsError(SimplipyError):
+    """Define an error related to invalid requests."""
+
+    pass
+
+
 class RequestError(SimplipyError):
     """Define an error related to invalid requests."""
 

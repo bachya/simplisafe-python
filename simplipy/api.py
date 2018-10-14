@@ -9,7 +9,7 @@ from typing import List, Type, TypeVar, Union  # noqa
 from aiohttp import BasicAuth, ClientSession
 from aiohttp.client_exceptions import ClientError
 
-from .errors import RequestError
+from .errors import InvalidCredentialsError, RequestError
 from .system import System, SystemV2, SystemV3  # noqa
 
 _LOGGER = logging.getLogger(__name__)
@@ -165,6 +165,8 @@ class API:
                 resp.raise_for_status()
                 return await resp.json(content_type=None)
         except ClientError as err:
+            if not self.user_id and '403' in str(err):
+                raise InvalidCredentialsError
             if self.user_id and '403' in str(err):
                 _LOGGER.info(
                     'Endpoint not available in this plan: %s', endpoint)

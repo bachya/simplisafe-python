@@ -6,7 +6,7 @@ import asyncio
 from aiohttp import ClientSession
 
 from simplipy import API
-from simplipy.errors import SimplipyError
+from simplipy.errors import InvalidCredentialsError, SimplipyError
 
 
 async def exercise_client(
@@ -54,6 +54,8 @@ async def main() -> None:
         try:
             print()
             await exercise_client('<EMAIL>', '<PASSWORD>', websession)
+        except InvalidCredentialsError:
+            print('Invalid credentials')
         except SimplipyError as err:
             print(err)
 

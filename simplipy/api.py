@@ -5,6 +5,7 @@
 import logging
 from datetime import datetime, timedelta
 from typing import List, Type, TypeVar, Union  # noqa
+from uuid import uuid4
 
 from aiohttp import BasicAuth, ClientSession
 from aiohttp.client_exceptions import ClientError
@@ -15,8 +16,7 @@ from .system import System, SystemV2, SystemV3  # noqa
 _LOGGER = logging.getLogger(__name__)
 
 DEFAULT_USER_AGENT = 'SimpliSafe/2105 CFNetwork/902.2 Darwin/17.7.0'
-DEFAULT_AUTH_USERNAME = 'a9c490a5-28c7-48c8-a8c3-1f1d7faa1394.2074.0.0.com.' \
-    'simplisafe.mobile'
+DEFAULT_AUTH_USERNAME = '{0}.2074.0.0.com.simplisafe.mobile'
 
 SYSTEM_MAP = {2: SystemV2, 3: SystemV3}
 
@@ -36,6 +36,7 @@ class API:
         self._actively_refreshing = False
         self._email = None  # type: Union[None, str]
         self._refresh_token = ''
+        self._uuid = uuid4()
         self._websession = websession
         self.refresh_token_dirty = False
         self.user_id = None
@@ -89,7 +90,9 @@ class API:
             'api/token',
             data=payload_data,
             auth=BasicAuth(
-                login=DEFAULT_AUTH_USERNAME, password='', encoding='latin1'))
+                login=DEFAULT_AUTH_USERNAME.format(self._uuid),
+                password='',
+                encoding='latin1'))
         self._access_token = token_resp['access_token']
         self._access_token_expire = datetime.now() + timedelta(
             seconds=int(token_resp['expires_in']))

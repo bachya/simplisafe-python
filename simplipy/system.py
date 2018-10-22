@@ -12,14 +12,15 @@ _LOGGER = logging.getLogger(__name__)
 class SystemStates(Enum):
     """Define states that the system can be in."""
 
-    away = 1
-    away_count = 2
-    entry_delay = 3
-    error = 4
-    exit_delay = 5
-    home = 6
-    home_count = 7
-    off = 8
+    alarm_count = 1
+    away = 2
+    away_count = 3
+    entry_delay = 4
+    error = 5
+    exit_delay = 6
+    home = 7
+    home_count = 8
+    off = 9
     unknown = 99
 
 

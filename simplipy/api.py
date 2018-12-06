@@ -93,6 +93,7 @@ class API:
                 login=DEFAULT_AUTH_USERNAME.format(self._uuid),
                 password='',
                 encoding='latin1'))
+
         self._access_token = token_resp['access_token']
         self._access_token_expire = datetime.now() + timedelta(
             seconds=int(token_resp['expires_in']) - 60)
@@ -127,10 +128,14 @@ class API:
 
     async def get_subscription_data(self) -> dict:
         """Get the latest location-level data."""
-        return await self.request(
+        subscription_resp = await self.request(
             'get',
             'users/{0}/subscriptions'.format(self.user_id),
             params={'activeOnly': 'true'})
+
+        _LOGGER.debug('Subscription response: %s', subscription_resp)
+
+        return subscription_resp
 
     async def request(
             self,

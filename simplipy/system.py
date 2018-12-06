@@ -104,12 +104,14 @@ class System:
         if num_events:
             params['numEvents'] = num_events
 
-        resp = await self.api.request(
+        events_resp = await self.api.request(
             'get',
             'subscriptions/{0}/events'.format(self.system_id),
             params=params)
 
-        return resp['events']
+        _LOGGER.debug('Events response: %s', events_resp)
+
+        return events_resp['events']
 
     async def set_away(self) -> None:
         """Set the system in "Away" mode."""
@@ -142,6 +144,8 @@ class SystemV2(System):
             'subscriptions/{0}/state'.format(self.system_id),
             params={'state': value.name})
 
+        _LOGGER.debug('Set "%s" response: %s', value.name, state_resp)
+
         if not state_resp:
             return
 
@@ -161,6 +165,8 @@ class SystemV2(System):
                 'settingsType': 'all',
                 'cached': str(cached).lower()
             })
+
+        _LOGGER.debug('Sensor response: %s', sensor_resp)
 
         if not sensor_resp:
             return
@@ -188,6 +194,8 @@ class SystemV3(System):
             'post', 'ss3/subscriptions/{0}/state/{1}'.format(
                 self.system_id, value.name))
 
+        _LOGGER.debug('Set "%s" response: %s', value.name, state_resp)
+
         if not state_resp:
             return
 
@@ -203,6 +211,8 @@ class SystemV3(System):
             'get',
             'ss3/subscriptions/{0}/sensors'.format(self.system_id),
             params={'forceUpdate': str(not cached).lower()})
+
+        _LOGGER.debug('Sensor response: %s', sensor_resp)
 
         if not sensor_resp:
             return

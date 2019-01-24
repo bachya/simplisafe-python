@@ -29,7 +29,7 @@ ApiType = TypeVar('ApiType', bound='API')
 class API:
     """Define an API object to interact with the SimpliSafe cloud."""
 
-    def __init__(self, websession: ClientSession) -> None:
+    def __init__(self, *, session: ClientSession = None) -> None:
         """Initialize."""
         self._access_token = ''
         self._access_token_expire = None  # type: Union[None, datetime]
@@ -37,7 +37,7 @@ class API:
         self._email = None  # type: Union[None, str]
         self._refresh_token = ''
         self._uuid = uuid4()
-        self._websession = websession
+        self._session = session or ClientSession()
         self.refresh_token_dirty = False
         self.user_id = None
 
@@ -60,10 +60,13 @@ class API:
 
     @classmethod
     async def login_via_credentials(
-            cls: Type[ApiType], email: str, password: str,
-            websession: ClientSession) -> ApiType:
+            cls: Type[ApiType],
+            email: str,
+            password: str,
+            *,
+            session: ClientSession = None) -> ApiType:
         """Create an API object from a email address and password."""
-        klass = cls(websession)
+        klass = cls(session=session)
         klass._email = email
 
         await klass._authenticate({
@@ -76,10 +79,12 @@ class API:
 
     @classmethod
     async def login_via_token(
-            cls: Type[ApiType], refresh_token: str,
-            websession: ClientSession) -> ApiType:
+            cls: Type[ApiType],
+            refresh_token: str,
+            *,
+            session: ClientSession = None) -> ApiType:
         """Create an API object from a refresh token."""
-        klass = cls(websession)
+        klass = cls(session=session)
         await klass._refresh_access_token(refresh_token)
         return klass
 
@@ -167,9 +172,9 @@ class API:
         })
 
         try:
-            async with self._websession.request(method, url, headers=headers,
-                                                params=params, data=data,
-                                                json=json, **kwargs) as resp:
+            async with self._session.request(method, url, headers=headers,
+                                             params=params, data=data,
+                                             json=json, **kwargs) as resp:
                 resp.raise_for_status()
                 return await resp.json(content_type=None)
         except ClientError as err:

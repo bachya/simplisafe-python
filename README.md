@@ -73,44 +73,45 @@ pip install simplisafe-python
 
 ## Getting Systems Associated with an Account
 
-`simplipy` starts within an
-[aiohttp](https://aiohttp.readthedocs.io/en/stable/) `ClientSession`:
-
-```python
-import asyncio
-
-from aiohttp import ClientSession
-
-
-async def main() -> None:
-    """Create the aiohttp session and run."""
-    async with ClientSession() as websession:
-      # YOUR CODE HERE
-
-
-asyncio.get_event_loop().run_until_complete(main())
-```
-
 To get all SimpliSafe™ systems associated with an account:
 
 ```python
 import asyncio
 
-from aiohttp import ClientSession
+from simplipy import API
+
+
+async def main() -> None:
+    """Create a client and get all of its systems."""
+    simplisafe = API.login_via_credentials("<EMAIL>", "<PASSWORD>")
+    systems = await simplisafe.get_systems()
+    # >>> [<simplipy.system.SystemV2 object at 0x10661e3c8>, ...]
+
+
+asyncio.get_event_loop().run_until_complete(main())
+```
+
+If you have an existing `aiohttp.ClientSession`, you can use it:
+
+```python
+import asyncio
+
+from aiohttp import ClientSessions
 
 from simplipy import API
 
 
 async def main() -> None:
-    """Create the aiohttp session and run."""
-    async with ClientSession() as websession:
-      simplisafe = API.login_via_credentials("<EMAIL>", "<PASSWORD>", websession)
+    """Create a client and get all of its systems."""
+    async with ClientSession() as session:
+      simplisafe = API.login_via_credentials("<EMAIL>", "<PASSWORD>", session)
       systems = await simplisafe.get_systems()
       # >>> [<simplipy.system.SystemV2 object at 0x10661e3c8>, ...]
 
 
 asyncio.get_event_loop().run_until_complete(main())
 ```
+
 
 ## The `System` Object
 
@@ -130,63 +131,62 @@ from simplipy import API
 
 
 async def main() -> None:
-    """Create the aiohttp session and run."""
-    async with ClientSession() as websession:
-      simplisafe = API.login_via_credentials("<EMAIL>", "<PASSWORD>", websession)
-      systems = await simplisafe.get_systems()
-      # >>> [<simplipy.system.SystemV2 object at 0x10661e3c8>]
+    """Rock and roll."""
+    simplisafe = API.login_via_credentials("<EMAIL>", "<PASSWORD>")
+    systems = await simplisafe.get_systems()
+    # >>> [<simplipy.system.SystemV2 object at 0x10661e3c8>]
 
-      for system in systems:
-        # Return a reference to a SimpliSafe™ API object (detailed later):
-        system.api
-        # >>> <simplipy.api.API object at 0x12aba2321>
+    for system in systems:
+      # Return a reference to a SimpliSafe™ API object (detailed later):
+      system.api
+      # >>> <simplipy.api.API object at 0x12aba2321>
 
-        # Return the street address of the system:
-        system.address
-        # >>> 1234 Main Street
+      # Return the street address of the system:
+      system.address
+      # >>> 1234 Main Street
 
-        # Return whether the alarm is currently going off:
-        system.alarm_going_off
-        # >>> False
+      # Return whether the alarm is currently going off:
+      system.alarm_going_off
+      # >>> False
 
-        # Return a list of sensors attached to this sytem (detailed later):
-        system.sensors
-        # >>> [<simplipy.sensor.SensorV2 object at 0x10661e3c8>, ...]
+      # Return a list of sensors attached to this sytem (detailed later):
+      system.sensors
+      # >>> [<simplipy.sensor.SensorV2 object at 0x10661e3c8>, ...]
 
-        # Return the system's serial number:
-        system.serial
-        # >>> 1234ABCD
+      # Return the system's serial number:
+      system.serial
+      # >>> 1234ABCD
 
-        # Return the current state of the system:
-        system.state
-        # >>> simplipy.system.SystemStates.away
+      # Return the current state of the system:
+      system.state
+      # >>> simplipy.system.SystemStates.away
 
-        # Return the SimpliSafe™ identifier for this system:
-        system.system_id
-        # >>> 1234ABCD
+      # Return the SimpliSafe™ identifier for this system:
+      system.system_id
+      # >>> 1234ABCD
 
-        # Return the average of all temperature sensors (if they exist):
-        system.temperature
-        # >>> 67
+      # Return the average of all temperature sensors (if they exist):
+      system.temperature
+      # >>> 67
 
-        # Return the SimpliSafe™ version:
-        system.version
-        # >>> 2
+      # Return the SimpliSafe™ version:
+      system.version
+      # >>> 2
 
-        # Return a list of events for the system with an optional start timestamp and
-        # number of events - omitting these parameters will return all events (max of
-        # 50) stored in SimpliSafe™'s cloud:
-        await system.get_events(from_timestamp=1534035861, num_events=2)
-        # >>> return {"numEvents": 2, "lastEventTimestamp": 1534035861, "events": [{...}]}
+      # Return a list of events for the system with an optional start timestamp and
+      # number of events - omitting these parameters will return all events (max of
+      # 50) stored in SimpliSafe™'s cloud:
+      await system.get_events(from_timestamp=1534035861, num_events=2)
+      # >>> return {"numEvents": 2, "lastEventTimestamp": 1534035861, "events": [{...}]}
 
-        # Set the state of the system:
-        await system.set_away()
-        await system.set_home()
-        await system.set_off()
+      # Set the state of the system:
+      await system.set_away()
+      await system.set_home()
+      await system.set_off()
 
-        # Get the latest values from the system; by default, include a refresh
-        # of system info and use cached values (both can be overridden):
-        await system.update(refresh_location=True, cached=True)
+      # Get the latest values from the system; by default, include a refresh
+      # of system info and use cached values (both can be overridden):
+      await system.update(refresh_location=True, cached=True)
 
 
 asyncio.get_event_loop().run_until_complete(main())
@@ -229,39 +229,38 @@ from simplipy import API
 
 
 async def main() -> None:
-    """Create the aiohttp session and run."""
-    async with ClientSession() as websession:
-      simplisafe = API.login_via_credentials("<EMAIL>", "<PASSWORD>", websession)
-      systems = await simplisafe.get_systems()
-      for system in systems:
-        for serial, sensor_attrs in system.sensors.items():
-          # Return the sensor's name:
-          sensor.name
-          # >>> Kitchen Window
+    """Rock and roll."""
+    simplisafe = API.login_via_credentials("<EMAIL>", "<PASSWORD>")
+    systems = await simplisafe.get_systems()
+    for system in systems:
+      for serial, sensor_attrs in system.sensors.items():
+        # Return the sensor's name:
+        sensor.name
+        # >>> Kitchen Window
 
-          # Return the sensor's serial number through the index:
-          serial
-          # >>> 1234ABCD
+        # Return the sensor's serial number through the index:
+        serial
+        # >>> 1234ABCD
 
-          # ...or through the property:
-          sensor.serial
-          # >>> 1234ABCD
+        # ...or through the property:
+        sensor.serial
+        # >>> 1234ABCD
 
-          # Return the sensor's type:
-          sensor.type
-          # >>> simplipy.sensor.SensorTypes.glass_break
+        # Return the sensor's type:
+        sensor.type
+        # >>> simplipy.sensor.SensorTypes.glass_break
 
-          # Return whether the sensor is in an error state:
-          sensor.error
-          # >>> False
+        # Return whether the sensor is in an error state:
+        sensor.error
+        # >>> False
 
-          # Return whether the sensor has a low battery:
-          sensor.low_battery
-          # >>> False
+        # Return whether the sensor has a low battery:
+        sensor.low_battery
+        # >>> False
 
-          # Return whether the sensor has been triggered (open/closed, etc.):
-          sensor.triggered
-          # >>> False
+        # Return whether the sensor has been triggered (open/closed, etc.):
+        sensor.triggered
+        # >>> False
 
 
 asyncio.get_event_loop().run_until_complete(main())
@@ -274,19 +273,18 @@ from simplipy import API
 
 
 async def main() -> None:
-    """Create the aiohttp session and run."""
-    async with ClientSession() as websession:
-      simplisafe = API.login_via_credentials("<EMAIL>", "<PASSWORD>", websession)
-      systems = await simplisafe.get_systems()
-      for system in systems:
-        for serial, sensor_attrs in system.sensors.items():
-          # Return the sensor's data as a currently non-understood integer:
-          sensor.data
-          # >>> 0
+    """Rock and roll."""
+    simplisafe = API.login_via_credentials("<EMAIL>", "<PASSWORD>")
+    systems = await simplisafe.get_systems()
+    for system in systems:
+      for serial, sensor_attrs in system.sensors.items():
+        # Return the sensor's data as a currently non-understood integer:
+        sensor.data
+        # >>> 0
 
-          # Return the sensor's settings as a currently non-understood integer:
-          sensor.settings
-          # >>> 1
+        # Return the sensor's settings as a currently non-understood integer:
+        sensor.settings
+        # >>> 1
 
 
 asyncio.get_event_loop().run_until_complete(main())
@@ -299,23 +297,22 @@ from simplipy import API
 
 
 async def main() -> None:
-    """Create the aiohttp session and run."""
-    async with ClientSession() as websession:
-      simplisafe = API.login_via_credentials("<EMAIL>", "<PASSWORD>", websession)
-      systems = await simplisafe.get_systems()
-      for system in systems:
-        for sensor in system.sensors:
-          # Return whether the sensor is offline:
-          sensor.offline
-          # >>> False
+    """Rock and roll."""
+    simplisafe = API.login_via_credentials("<EMAIL>", "<PASSWORD>")
+    systems = await simplisafe.get_systems()
+    for system in systems:
+      for sensor in system.sensors:
+        # Return whether the sensor is offline:
+        sensor.offline
+        # >>> False
 
-          # Return a settings dictionary for the sensor:
-          sensor.settings
-          # >>> {"instantTrigger": False, "away2": 1, "away": 1, ...}
+        # Return a settings dictionary for the sensor:
+        sensor.settings
+        # >>> {"instantTrigger": False, "away2": 1, "away": 1, ...}
 
-          # For temperature sensors, return the current temperature:
-          sensor.temperature
-          # >>> 67
+        # For temperature sensors, return the current temperature:
+        sensor.temperature
+        # >>> 67
 
 
 asyncio.get_event_loop().run_until_complete(main())
@@ -337,22 +334,21 @@ from simplipy import API
 
 
 async def main() -> None:
-    """Create the aiohttp session and run."""
-    async with ClientSession() as websession:
-      simplisafe = API.login_via_credentials("<EMAIL>", "<PASSWORD>", websession)
-      systems = await simplisafe.get_systems()
-      for system in systems:
-        # Return the current access token:
-        system.api._access_token
-        # >>> 7s9yasdh9aeu21211add
+    """Rock and roll."""
+    simplisafe = API.login_via_credentials("<EMAIL>", "<PASSWORD>")
+    systems = await simplisafe.get_systems()
+    for system in systems:
+      # Return the current access token:
+      system.api._access_token
+      # >>> 7s9yasdh9aeu21211add
 
-        # Return the current refresh token:
-        system.api.refresh_token
-        # >>> 896sad86gudas87d6asd
+      # Return the current refresh token:
+      system.api.refresh_token
+      # >>> 896sad86gudas87d6asd
 
-        # Return the SimpliSafe™ user ID associated with this account:
-        system.api.user_id
-        # >>> 1234567
+      # Return the SimpliSafe™ user ID associated with this account:
+      system.api.user_id
+      # >>> 1234567
 
 
 asyncio.get_event_loop().run_until_complete(main())
@@ -381,19 +377,18 @@ from simplipy import API
 
 
 async def main() -> None:
-    """Create the aiohttp session and run."""
-    async with ClientSession() as websession:
-      simplisafe = API.login_via_token("<REFRESH TOKEN>", websession)
-      systems = await simplisafe.get_systems()
-      primary_system = systems[0]
+    """Rock and roll."""
+    simplisafe = API.login_via_token("<REFRESH TOKEN>")
+    systems = await simplisafe.get_systems()
+    primary_system = systems[0]
 
-      # Assuming the access token was automatically refreshed:
-      primary_system.api.refresh_token_dirty
-      # >>> True
+    # Assuming the access token was automatically refreshed:
+    primary_system.api.refresh_token_dirty
+    # >>> True
 
-      # Once the dirtiness is confirmed, the dirty bit resets:
-      primary_system.api.refresh_token_dirty
-      # >>> False
+    # Once the dirtiness is confirmed, the dirty bit resets:
+    primary_system.api.refresh_token_dirty
+    # >>> False
 
 
 asyncio.get_event_loop().run_until_complete(main())
@@ -411,11 +406,10 @@ from simplipy import API
 
 
 async def main() -> None:
-    """Create the aiohttp session and run."""
-    async with ClientSession() as websession:
-      simplisafe = API.login_via_token("<REFRESH TOKEN>", websession)
-      systems = await simplisafe.get_systems()
-      # ...
+    """Rock and roll."""
+    simplisafe = API.login_via_token("<REFRESH TOKEN>")
+    systems = await simplisafe.get_systems()
+    # ...
 
 
 asyncio.get_event_loop().run_until_complete(main())

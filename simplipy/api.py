@@ -175,10 +175,10 @@ class API:
         except ClientError as err:
             if '401' in str(err):
                 if self._actively_refreshing:
-                    _LOGGER.error('Refresh token was unsuccessful')
+                    _LOGGER.error('Refresh token was unsuccessful on 401')
                     raise InvalidCredentialsError
                 if self._refresh_token:
-                    _LOGGER.info('401 detected; using refresh token')
+                    _LOGGER.info('401 detected; attempting refresh token')
                     self._access_token_expire = datetime.now()
                     return await self.request(
                         method,

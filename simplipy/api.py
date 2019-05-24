@@ -173,11 +173,10 @@ class API:
                 resp.raise_for_status()
                 return await resp.json(content_type=None)
         except ClientError as err:
-            if self.user_id and '403' in str(err):
-                _LOGGER.info(
-                    'Endpoint not available in this plan: %s', endpoint)
-                return {}
-            if not self.user_id and '403' in str(err):
+            if '403' in str(err):
+                if self.user_id:
+                    _LOGGER.info('Endpoint unavailable in plan: %s', endpoint)
+                    return {}
                 raise InvalidCredentialsError
 
             raise RequestError(

@@ -142,7 +142,7 @@ async def test_unavailable_feature_v2(
             await system.set_away()
             logs = [
                 l for l in
-                ['not available' in e.message for e in caplog.records]
+                ['unavailable in plan' in e.message for e in caplog.records]
                 if l is not False
             ]
             assert len(logs) == 2
@@ -187,7 +187,7 @@ async def test_unavailable_feature_v3(
             await system.set_away()
             logs = [
                 l for l in
-                ['not available' in e.message for e in caplog.records]
+                ['unavailable in plan' in e.message for e in caplog.records]
                 if l is not False
             ]
             assert len(logs) == 2

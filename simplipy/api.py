@@ -179,9 +179,15 @@ class API:
                     raise InvalidCredentialsError
                 if self._refresh_token:
                     _LOGGER.info('401 detected; using refresh token')
-                    self._actively_refreshing = True
-                    await self._refresh_access_token(self._refresh_token)
-                    return {}
+                    self._access_token_expire = datetime.now()
+                    return await self.request(
+                        method,
+                        endpoint,
+                        headers=headers,
+                        params=params,
+                        data=data,
+                        json=json,
+                        **kwargs)
                 raise InvalidCredentialsError
             if '403' in str(err):
                 if self.user_id:

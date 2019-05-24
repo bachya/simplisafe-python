@@ -20,6 +20,86 @@ from .fixtures.v3 import *  # noqa
 
 
 @pytest.mark.asyncio
+async def test_401(aresponses, event_loop):
+    """Test that a generic error is thrown when a request fails."""
+    aresponses.add(
+        'api.simplisafe.com', '/v1/api/token', 'post',
+        aresponses.Response(text='', status=401))
+
+    async with aiohttp.ClientSession(loop=event_loop) as websession:
+        with pytest.raises(InvalidCredentialsError):
+            await API.login_via_credentials(
+                TEST_EMAIL, TEST_PASSWORD, websession)
+
+
+@pytest.mark.asyncio
+async def test_401_refresh_token_failure(caplog, event_loop, v2_server):
+    """Test that a generic error is thrown when a request fails."""
+    caplog.set_level(logging.INFO)
+
+    async with v2_server:
+        v2_server.add(
+            'api.simplisafe.com',
+            '/v1/users/{0}/subscriptions'.format(TEST_USER_ID), 'get',
+            aresponses.Response(text='', status=401))
+        v2_server.add(
+            'api.simplisafe.com', '/v1/api/token', 'post',
+            aresponses.Response(text='', status=401))
+
+        async with aiohttp.ClientSession(loop=event_loop) as websession:
+            with pytest.raises(InvalidCredentialsError):
+                api = await API.login_via_credentials(
+                    TEST_EMAIL, TEST_PASSWORD, websession)
+                [system] = await api.get_systems()
+                await system.update()
+
+            logs = [
+                l
+                for l in ['unsuccessful' in e.message for e in caplog.records]
+                if l is not False
+            ]
+            assert len(logs) == 1
+
+
+@pytest.mark.asyncio
+async def test_401_refresh_token_success(
+        api_token_json, auth_check_json, event_loop, v2_server,
+        v2_settings_json, v2_subscriptions_json):
+    """Test that a generic error is thrown when a request fails."""
+    async with v2_server:
+        v2_server.add(
+            'api.simplisafe.com',
+            '/v1/users/{0}/subscriptions'.format(TEST_USER_ID), 'get',
+            aresponses.Response(text='', status=401))
+        v2_server.add(
+            'api.simplisafe.com', '/v1/api/token', 'post',
+            aresponses.Response(text=json.dumps(api_token_json), status=200))
+        v2_server.add(
+            'api.simplisafe.com', '/v1/api/authCheck', 'get',
+            aresponses.Response(text=json.dumps(auth_check_json), status=200))
+        v2_server.add(
+            'api.simplisafe.com',
+            '/v1/users/{0}/subscriptions'.format(TEST_USER_ID), 'get',
+            aresponses.Response(
+                text=json.dumps(v2_subscriptions_json), status=200))
+        v2_server.add(
+            'api.simplisafe.com',
+            '/v1/subscriptions/{0}/settings'.format(TEST_SUBSCRIPTION_ID),
+            'get',
+            aresponses.Response(text=json.dumps(v2_settings_json), status=200))
+
+        async with aiohttp.ClientSession(loop=event_loop) as websession:
+            api = await API.login_via_credentials(
+                TEST_EMAIL, TEST_PASSWORD, websession)
+            [system] = await api.get_systems()
+            await system.update()
+
+            assert system.api.refresh_token_dirty
+            assert system.api.refresh_token == TEST_REFRESH_TOKEN
+            assert not system.api.refresh_token_dirty
+
+
+@pytest.mark.asyncio
 async def test_bad_request(event_loop, v2_server):
     """Test that a generic error is thrown when a request fails."""
     async with v2_server:

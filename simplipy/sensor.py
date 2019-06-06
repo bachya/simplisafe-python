@@ -1,7 +1,7 @@
 """Define a SimpliSafe sensor."""
 import logging
 from enum import Enum
-from typing import Union
+from typing import Optional
 
 from .errors import SimplipyError
 
@@ -33,20 +33,20 @@ class Sensor:
         self.sensor_data = sensor_data
 
         try:
-            self._type = SensorTypes(sensor_data['type'])
+            self._type = SensorTypes(sensor_data["type"])
         except ValueError:
-            _LOGGER.error('Unknown sensor type: %s', self.sensor_data['type'])
+            _LOGGER.error("Unknown sensor type: %s", self.sensor_data["type"])
             self._type = SensorTypes.unknown
 
     @property
     def name(self) -> str:
         """Return the sensor name."""
-        return self.sensor_data['name']
+        return self.sensor_data["name"]
 
     @property
     def serial(self) -> str:
         """Return the serial number."""
-        return self.sensor_data['serial']
+        return self.sensor_data["serial"]
 
     @property
     def type(self) -> SensorTypes:
@@ -60,37 +60,37 @@ class SensorV2(Sensor):
     @property
     def data(self) -> int:
         """Return the sensor's current data."""
-        return self.sensor_data['sensorData']
+        return self.sensor_data["sensorData"]
 
     @property
     def error(self) -> bool:
         """Return the sensor's error status."""
-        return self.sensor_data['error']
+        return self.sensor_data["error"]
 
     @property
     def low_battery(self) -> bool:
         """Return whether the sensor's battery is low."""
-        return self.sensor_data.get('battery', 'ok') != 'ok'
+        return self.sensor_data.get("battery", "ok") != "ok"
 
     @property
     def settings(self) -> bool:
         """Return the sensor's settings."""
-        return self.sensor_data['setting']
+        return self.sensor_data["setting"]
 
     @property
     def trigger_instantly(self) -> bool:
         """Return whether the sensor will trigger instantly."""
-        return self.sensor_data['instant']
+        return self.sensor_data["instant"]
 
     @property
     def triggered(self) -> bool:
         """Return the current sensor state."""
         if self.type == SensorTypes.entry:
-            return self.sensor_data.get('entryStatus', 'closed') == 'open'
+            return self.sensor_data.get("entryStatus", "closed") == "open"
 
         raise SimplipyError(
-            'Cannot determine triggered state for sensor: {0}'.format(
-                self.name))
+            "Cannot determine triggered state for sensor: {0}".format(self.name)
+        )
 
 
 class SensorV3(Sensor):
@@ -99,44 +99,48 @@ class SensorV3(Sensor):
     @property
     def error(self) -> bool:
         """Return the sensor's error status."""
-        return self.sensor_data['status'].get('malfunction', False)
+        return self.sensor_data["status"].get("malfunction", False)
 
     @property
     def low_battery(self) -> bool:
         """Return whether the sensor's battery is low."""
-        return self.sensor_data['flags']['lowBattery']
+        return self.sensor_data["flags"]["lowBattery"]
 
     @property
     def offline(self) -> bool:
         """Return whether the sensor is offline."""
-        return self.sensor_data['flags']['offline']
+        return self.sensor_data["flags"]["offline"]
 
     @property
     def settings(self) -> dict:
         """Return the sensor's settings."""
-        return self.sensor_data['setting']
+        return self.sensor_data["setting"]
 
     @property
     def trigger_instantly(self) -> bool:
         """Return whether the sensor will trigger instantly."""
-        return self.sensor_data['setting']['instantTrigger']
+        return self.sensor_data["setting"]["instantTrigger"]
 
     @property
     def triggered(self) -> bool:
         """Return the sensor's status info."""
-        if self.type in (SensorTypes.motion, SensorTypes.entry,
-                         SensorTypes.glass_break, SensorTypes.carbon_monoxide,
-                         SensorTypes.smoke, SensorTypes.leak,
-                         SensorTypes.temperature):
-            return self.sensor_data['status'].get('triggered', False)
+        if self.type in (
+            SensorTypes.motion,
+            SensorTypes.entry,
+            SensorTypes.glass_break,
+            SensorTypes.carbon_monoxide,
+            SensorTypes.smoke,
+            SensorTypes.leak,
+            SensorTypes.temperature,
+        ):
+            return self.sensor_data["status"].get("triggered", False)
 
         return False
 
     @property
-    def temperature(self) -> Union[None, int]:
+    def temperature(self) -> Optional[int]:
         """Return the sensor's status info."""
         if self.type != SensorTypes.temperature:
-            raise AttributeError(
-                'Non-temperature sensor cannot have a temperature')
+            raise AttributeError("Non-temperature sensor cannot have a temperature")
 
-        return self.sensor_data['status']['temperature']
+        return self.sensor_data["status"]["temperature"]

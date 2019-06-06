@@ -19,13 +19,12 @@ async def test_properties_base(event_loop, v2_server):
     """Test that base sensor properties are created properly."""
     async with v2_server:
         async with aiohttp.ClientSession(loop=event_loop) as websession:
-            api = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, websession)
+            api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             [system] = await api.get_systems()
 
-            sensor = system.sensors['195']
-            assert sensor.name == 'Garage Keypad'
-            assert sensor.serial == '195'
+            sensor = system.sensors["195"]
+            assert sensor.name == "Garage Keypad"
+            assert sensor.serial == "195"
             assert sensor.type == SensorTypes.keypad
 
 
@@ -34,11 +33,10 @@ async def test_properties_v2(event_loop, v2_server):
     """Test that v2 sensor properties are created properly."""
     async with v2_server:
         async with aiohttp.ClientSession(loop=event_loop) as websession:
-            api = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, websession)
+            api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             [system] = await api.get_systems()
 
-            keypad = system.sensors['195']
+            keypad = system.sensors["195"]
             assert keypad.data == 0
             assert not keypad.error
             assert not keypad.low_battery
@@ -49,7 +47,7 @@ async def test_properties_v2(event_loop, v2_server):
             with pytest.raises(SimplipyError):
                 assert keypad.triggered == 42
 
-            entry_sensor = system.sensors['609']
+            entry_sensor = system.sensors["609"]
             assert entry_sensor.data == 130
             assert not entry_sensor.error
             assert not entry_sensor.low_battery
@@ -63,22 +61,21 @@ async def test_properties_v3(event_loop, v3_server):
     """Test that v3 sensor properties are created properly."""
     async with v3_server:
         async with aiohttp.ClientSession(loop=event_loop) as websession:
-            api = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, websession)
+            api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             [system] = await api.get_systems()
 
-            entry_sensor = system.sensors['825']
+            entry_sensor = system.sensors["825"]
             assert not entry_sensor.error
             assert not entry_sensor.low_battery
             assert not entry_sensor.offline
-            assert not entry_sensor.settings['instantTrigger']
+            assert not entry_sensor.settings["instantTrigger"]
             assert not entry_sensor.trigger_instantly
             assert not entry_sensor.triggered
 
-            siren = system.sensors['236']
+            siren = system.sensors["236"]
             assert not siren.triggered
 
-            temperature_sensor = system.sensors['320']
+            temperature_sensor = system.sensors["320"]
             assert temperature_sensor.temperature == 67
 
             # Ensure that attempting to access the temperature attribute of a
@@ -92,7 +89,6 @@ async def test_unknown_sensor_type(caplog, event_loop, v2_server):
     """Test that a message is logged when unknown sensors types are found."""
     async with v2_server:
         async with aiohttp.ClientSession(loop=event_loop) as websession:
-            api = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, websession)
+            api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             _ = await api.get_systems()  # noqa
-            assert any('Unknown' in e.message for e in caplog.records)
+            assert any("Unknown" in e.message for e in caplog.records)

@@ -138,11 +138,9 @@ class System:
         """Update to the latest data (including sensors)."""
         tasks = {"sensors": self._update_sensors(cached)}
         if refresh_location:
-            tasks[
+            tasks[  # pylint: disable=assignment-from-no-return
                 "location"
-            ] = (  # pylint: disable=assignment-from-no-return
-                self._update_location_info()
-            )
+            ] = self._update_location_info()
 
         results = await asyncio.gather(*tasks.values(), return_exceptions=True)
         for operation, result in zip(tasks, results):

@@ -2,7 +2,7 @@
 import asyncio
 import logging
 from enum import Enum
-from typing import Dict, Union
+from typing import Any, Dict, Union
 
 from .errors import InvalidCredentialsError
 from .sensor import SensorV2, SensorV3
@@ -104,6 +104,10 @@ class System:
         """Update sensors to the latest values."""
         raise NotImplementedError()
 
+    async def _update_settings(self, cached: bool = True) -> None:
+        """Update system settings."""
+        pass
+
     async def get_events(
         self, from_timestamp: int = None, num_events: int = None
     ) -> dict:
@@ -136,7 +140,10 @@ class System:
 
     async def update(self, refresh_location: bool = True, cached: bool = True) -> None:
         """Update to the latest data (including sensors)."""
-        tasks = {"sensors": self._update_sensors(cached)}
+        tasks = {
+            "sensors": self._update_sensors(cached),
+            "settings": self._update_settings(cached),
+        }
         if refresh_location:
             tasks[  # pylint: disable=assignment-from-no-return
                 "location"
@@ -198,6 +205,81 @@ class SystemV2(System):
 class SystemV3(System):
     """Define a V3 (new) system."""
 
+    def __init__(self, api, location_info: dict) -> None:
+        """Initialize."""
+        super().__init__(api, location_info)
+        self._settings_info = {}  # type: Dict[str, Any]
+
+    @property
+    def alarm_duration(self) -> int:
+        """Return the number of seconds an activated alarm will sound for."""
+        return self._settings_info["settings"]["normal"]["alarmDuration"]
+
+    @property
+    def alarm_volume(self) -> int:
+        """Return the loudness of the alarm volume."""
+        return self._settings_info["settings"]["normal"]["alarmVolume"]
+
+    @property
+    def battery_backup_power_level(self) -> int:
+        """Return the power rating of the battery backup."""
+        return self._settings_info["basestationStatus"]["backupBattery"]
+
+    @property
+    def entry_delay_away(self) -> int:
+        """Return the number of seconds to delay when returning to an "away" alarm."""
+        return self._settings_info["settings"]["normal"]["entryDelayAway"]
+
+    @property
+    def entry_delay_home(self) -> int:
+        """Return the number of seconds to delay when returning to an "home" alarm."""
+        return self._settings_info["settings"]["normal"]["entryDelayHome"]
+
+    @property
+    def exit_delay_away(self) -> int:
+        """Return the number of seconds to delay when exiting an "away" alarm."""
+        return self._settings_info["settings"]["normal"]["exitDelayAway"]
+
+    @property
+    def exit_delay_home(self) -> int:
+        """Return the number of seconds to delay when exiting an "home" alarm."""
+        return self._settings_info["settings"]["normal"]["exitDelayHome"]
+
+    @property
+    def gsm_strength(self) -> int:
+        """Return the signal strength of the cell antenna."""
+        return self._settings_info["basestationStatus"]["gsmRssi"]
+
+    @property
+    def light(self) -> bool:
+        """Return whether the base station light is on."""
+        return self._settings_info["settings"]["normal"]["light"]
+
+    @property
+    def rf_jamming(self) -> bool:
+        """Return whether the base station is noticing RF jamming."""
+        return self._settings_info["basestationStatus"]["rfJamming"]
+
+    @property
+    def voice_prompt_volume(self) -> int:
+        """Return the loudness of the voice prompt."""
+        return self._settings_info["settings"]["normal"]["voicePrompts"]
+
+    @property
+    def wall_power_level(self) -> int:
+        """Return the power rating of the A/C outlet."""
+        return self._settings_info["basestationStatus"]["wallPower"]
+
+    @property
+    def wifi_ssid(self) -> str:
+        """Return the ssid of the base station."""
+        return self._settings_info["settings"]["normal"]["wifiSSID"]
+
+    @property
+    def wifi_strength(self) -> int:
+        """Return the signal strength of the wifi antenna."""
+        return self._settings_info["basestationStatus"]["wifiRssi"]
+
     async def _set_state(self, value: Enum) -> None:
         """Set the state of the system."""
         if self._state == value:
@@ -233,3 +315,14 @@ class SystemV3(System):
                 sensor.sensor_data = sensor_data
             else:
                 self.sensors[sensor_data["serial"]] = SensorV3(sensor_data)
+
+    async def _update_settings(self, cached: bool = True) -> None:
+        """Update system settings."""
+        settings_resp = await self.api.request(
+            "get",
+            "ss3/subscriptions/{0}/settings/pins".format(self.system_id),
+            params={"forceUpdate": str(not cached).lower()},
+        )
+
+        if settings_resp:
+            self._settings_info = settings_resp

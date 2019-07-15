@@ -15,7 +15,12 @@ from ..const import (
 
 @pytest.fixture()
 def v3_server(
-    api_token_json, auth_check_json, event_loop, v3_sensors_json, v3_subscriptions_json
+    api_token_json,
+    auth_check_json,
+    event_loop,
+    v3_sensors_json,
+    v3_settings_json,
+    v3_subscriptions_json,
 ):
     """Return a ready-to-query mocked v2 server."""
     server = aresponses.ResponsesMockServer(loop=event_loop)
@@ -42,6 +47,12 @@ def v3_server(
         "/v1/ss3/subscriptions/{0}/sensors".format(TEST_SUBSCRIPTION_ID),
         "get",
         aresponses.Response(text=json.dumps(v3_sensors_json), status=200),
+    )
+    server.add(
+        "api.simplisafe.com",
+        "/v1/ss3/subscriptions/{0}/settings/pins".format(TEST_SUBSCRIPTION_ID),
+        "get",
+        aresponses.Response(text=json.dumps(v3_settings_json), status=200),
     )
 
     return server
@@ -402,6 +413,60 @@ def v3_sensors_json():
         "lastUpdated": 1534626361,
         "lastSynced": 1534626361,
         "lastStatusUpdate": 1534626358,
+    }
+
+
+@pytest.fixture()
+def v3_settings_json():
+    """Return a /v1/ss3/subscriptions/<SUBSCRIPTION_ID>/settings/pins."""
+    return {
+        "account": "12345012",
+        "settings": {
+            "normal": {
+                "wifiSSID": "MY_WIFI",
+                "alarmDuration": 240,
+                "alarmVolume": 3,
+                "doorChime": 2,
+                "entryDelayAway": 30,
+                "entryDelayAway2": 30,
+                "entryDelayHome": 30,
+                "entryDelayHome2": 30,
+                "exitDelayAway": 60,
+                "exitDelayAway2": 60,
+                "exitDelayHome": 0,
+                "exitDelayHome2": 0,
+                "lastUpdated": "2019-07-03T03:24:20.999Z",
+                "light": True,
+                "voicePrompts": 2,
+                "_id": "1197192618725121765212",
+            },
+            "pins": {
+                "lastUpdated": "2019-07-04T20:47:44.016Z",
+                "_id": "asd6281526381253123",
+                "users": [
+                    {"_id": "1271279d966212121124c7", "pin": "", "name": ""},
+                    {"_id": "1271279d966212121124c6", "pin": "", "name": ""},
+                    {"_id": "1271279d966212121124c5", "pin": "", "name": ""},
+                    {"_id": "1271279d966212121124c4", "pin": "", "name": ""},
+                ],
+                "duress": {"pin": "9876"},
+                "master": {"pin": "1234"},
+            },
+        },
+        "basestationStatus": {
+            "lastUpdated": "2019-07-15T15:28:22.961Z",
+            "rfJamming": False,
+            "ethernetStatus": 4,
+            "gsmRssi": -73,
+            "gsmStatus": 3,
+            "backupBattery": 5293,
+            "wallPower": 5933,
+            "wifiRssi": -49,
+            "wifiStatus": 1,
+            "_id": "6128153715231t237123",
+            "encryptionErrors": [],
+        },
+        "lastUpdated": 1562273264,
     }
 
 

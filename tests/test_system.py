@@ -118,8 +118,9 @@ async def test_get_systems_v3(
     api_token_json,
     auth_check_json,
     event_loop,
-    v3_server,
     v3_sensors_json,
+    v3_server,
+    v3_settings_json,
     v3_subscriptions_json,
 ):
     """Test the ability to get systems attached to a v3 account."""
@@ -151,6 +152,12 @@ async def test_get_systems_v3(
             "get",
             aresponses.Response(text=json.dumps(v3_sensors_json), status=200),
         )
+        v3_server.add(
+            "api.simplisafe.com",
+            "/v1/ss3/subscriptions/{0}/settings/pins".format(TEST_SUBSCRIPTION_ID),
+            "get",
+            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
+        )
 
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             credentials_api = await API.login_via_credentials(
@@ -181,7 +188,7 @@ async def test_get_systems_v3(
 
 
 @pytest.mark.asyncio
-async def test_properties_base(event_loop, v2_server):
+async def test_properties(event_loop, v2_server):
     """Test that base system properties are created properly."""
     async with v2_server:
         async with aiohttp.ClientSession(loop=event_loop) as websession:
@@ -195,6 +202,30 @@ async def test_properties_base(event_loop, v2_server):
             assert system.system_id == TEST_SYSTEM_ID
             assert system.temperature == 67
             assert system.version == 2
+
+
+@pytest.mark.asyncio
+async def test_properties_v3(event_loop, v3_server):
+    """Test that v3 system properties are available."""
+    async with v3_server:
+        async with aiohttp.ClientSession(loop=event_loop) as websession:
+            api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
+            [system] = await api.get_systems()
+
+            assert system.alarm_duration == 240
+            assert system.alarm_volume == 3
+            assert system.battery_backup_power_level == 5293
+            assert system.entry_delay_away == 30
+            assert system.entry_delay_home == 30
+            assert system.exit_delay_away == 60
+            assert system.exit_delay_home == 0
+            assert system.gsm_strength == -73
+            assert system.light is True
+            assert system.rf_jamming is False
+            assert system.voice_prompt_volume == 2
+            assert system.wall_power_level == 5933
+            assert system.wifi_ssid == "MY_WIFI"
+            assert system.wifi_strength == -49
 
 
 @pytest.mark.asyncio
@@ -360,7 +391,7 @@ async def test_update_system_data_v2(
 
 @pytest.mark.asyncio
 async def test_update_system_data_v3(
-    event_loop, v3_server, v3_sensors_json, v3_subscriptions_json
+    event_loop, v3_server, v3_sensors_json, v3_settings_json, v3_subscriptions_json
 ):
     """Test getting updated data for a v3 system."""
     async with v3_server:
@@ -375,6 +406,12 @@ async def test_update_system_data_v3(
             "/v1/ss3/subscriptions/{0}/sensors".format(TEST_SUBSCRIPTION_ID),
             "get",
             aresponses.Response(text=json.dumps(v3_sensors_json), status=200),
+        )
+        v3_server.add(
+            "api.simplisafe.com",
+            "/v1/ss3/subscriptions/{0}/settings/pins".format(TEST_SUBSCRIPTION_ID),
+            "get",
+            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
         )
 
         async with aiohttp.ClientSession(loop=event_loop) as websession:

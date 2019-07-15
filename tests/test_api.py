@@ -291,6 +291,7 @@ async def test_unavailable_feature_v3(
     caplog,
     event_loop,
     v3_server,
+    v3_settings_json,
     v3_subscriptions_json,
     unavailable_feature_json,
 ):
@@ -321,6 +322,12 @@ async def test_unavailable_feature_v3(
             "/v1/ss3/subscriptions/{0}/sensors".format(TEST_SUBSCRIPTION_ID),
             "get",
             aresponses.Response(text=json.dumps(unavailable_feature_json), status=403),
+        )
+        v3_server.add(
+            "api.simplisafe.com",
+            "/v1/ss3/subscriptions/{0}/settings/pins".format(TEST_SUBSCRIPTION_ID),
+            "get",
+            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
         )
         v3_server.add(
             "api.simplisafe.com",

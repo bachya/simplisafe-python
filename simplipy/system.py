@@ -1,8 +1,10 @@
 """Define a SimpliSafe system (attached to a location)."""
+import asyncio
 import logging
 from enum import Enum
 from typing import Dict, Union
 
+from .errors import InvalidCredentialsError
 from .sensor import SensorV2, SensorV3
 from .util.string import convert_to_underscore
 
@@ -98,6 +100,10 @@ class System:
             location_info["system"]["alarmState"]
         )
 
+    async def _update_sensors(self, cached: bool = True) -> None:
+        """Update sensors to the latest values."""
+        raise NotImplementedError()
+
     async def get_events(
         self, from_timestamp: int = None, num_events: int = None
     ) -> dict:
@@ -129,8 +135,20 @@ class System:
         await self._set_state(SystemStates.off)
 
     async def update(self, refresh_location: bool = True, cached: bool = True) -> None:
-        """Raise if calling this undefined based method."""
-        raise NotImplementedError()
+        """Update to the latest data (including sensors)."""
+        tasks = {"sensors": self._update_sensors(cached)}
+        if refresh_location:
+            tasks[
+                "location"
+            ] = (  # pylint: disable=assignment-from-no-return
+                self._update_location_info()
+            )
+
+        results = await asyncio.gather(*tasks.values(), return_exceptions=True)
+        for operation, result in zip(tasks, results):
+            if isinstance(result, InvalidCredentialsError):
+                raise result
+            _LOGGER.error("Error while retrieving %s: %s", operation, result)
 
 
 class SystemV2(System):
@@ -155,11 +173,8 @@ class SystemV2(System):
         if state_resp["success"]:
             self._state = SystemStates[state_resp["requestedState"]]
 
-    async def update(self, refresh_location: bool = True, cached: bool = True) -> None:
-        """Update to the latest data (including sensors)."""
-        if refresh_location:
-            await self._update_location_info()
-
+    async def _update_sensors(self, cached: bool = True) -> None:
+        """Update sensors to the latest values."""
         sensor_resp = await self.api.request(
             "get",
             "subscriptions/{0}/settings".format(self.system_id),
@@ -201,11 +216,8 @@ class SystemV3(System):
 
         self._state = self._coerce_state_from_string(state_resp["state"])
 
-    async def update(self, refresh_location: bool = True, cached: bool = True) -> None:
-        """Update sensor data."""
-        if refresh_location:
-            await self._update_location_info()
-
+    async def _update_sensors(self, cached: bool = True) -> None:
+        """Update sensors to the latest values."""
         sensor_resp = await self.api.request(
             "get",
             "ss3/subscriptions/{0}/sensors".format(self.system_id),

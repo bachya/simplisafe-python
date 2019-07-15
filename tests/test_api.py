@@ -24,8 +24,8 @@ from .fixtures.v3 import *  # noqa
 
 
 @pytest.mark.asyncio
-async def test_401(aresponses, event_loop):
-    """Test that a generic error is thrown when a request fails."""
+async def test_401_bad_credentials(aresponses, event_loop):
+    """Test that a 401 is thrown when credentials fail."""
     aresponses.add(
         "api.simplisafe.com",
         "/v1/api/token",
@@ -39,14 +39,20 @@ async def test_401(aresponses, event_loop):
 
 
 @pytest.mark.asyncio
-async def test_401_refresh_token_failure(caplog, event_loop, v2_server):
+async def test_401_refresh_token_failure(
+    aresponses, event_loop, v2_server, v2_subscriptions_json
+):
     """Test that a generic error is thrown when a request fails."""
-    caplog.set_level(logging.INFO)
-
     async with v2_server:
         v2_server.add(
             "api.simplisafe.com",
             "/v1/users/{0}/subscriptions".format(TEST_USER_ID),
+            "get",
+            aresponses.Response(text=json.dumps(v2_subscriptions_json), status=200),
+        )
+        v2_server.add(
+            "api.simplisafe.com",
+            "/v1/subscriptions/{0}/settings".format(TEST_SUBSCRIPTION_ID),
             "get",
             aresponses.Response(text="", status=401),
         )
@@ -64,13 +70,6 @@ async def test_401_refresh_token_failure(caplog, event_loop, v2_server):
                 )
                 [system] = await api.get_systems()
                 await system.update()
-
-            logs = [
-                l
-                for l in ["unsuccessful" in e.message for e in caplog.records]
-                if l is not False
-            ]
-            assert len(logs) == 1
 
 
 @pytest.mark.asyncio

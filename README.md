@@ -192,7 +192,7 @@ async def main() -> None:
 asyncio.get_event_loop().run_until_complete(main())
 ```
 
-### V3 Properties and Methods
+### V3 Properties
 
 ```python
 from simplipy import API

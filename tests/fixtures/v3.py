@@ -417,6 +417,114 @@ def v3_sensors_json():
 
 
 @pytest.fixture()
+def v3_settings_full_pins_json():
+    """Return a /v1/ss3/subscriptions/<SUBSCRIPTION_ID>/settings/pins (full)."""
+    return {
+        "account": "12345012",
+        "settings": {
+            "normal": {
+                "wifiSSID": "MY_WIFI",
+                "alarmDuration": 240,
+                "alarmVolume": 3,
+                "doorChime": 2,
+                "entryDelayAway": 30,
+                "entryDelayAway2": 30,
+                "entryDelayHome": 30,
+                "entryDelayHome2": 30,
+                "exitDelayAway": 60,
+                "exitDelayAway2": 60,
+                "exitDelayHome": 0,
+                "exitDelayHome2": 0,
+                "lastUpdated": "2019-07-03T03:24:20.999Z",
+                "light": True,
+                "voicePrompts": 2,
+                "_id": "1197192618725121765212",
+            },
+            "pins": {
+                "lastUpdated": "2019-07-04T20:47:44.016Z",
+                "_id": "asd6281526381253123",
+                "users": [
+                    {"_id": "1271279d966212121124c7", "pin": "3456", "name": "Test 1"},
+                    {"_id": "1271279d966212121124c6", "pin": "5423", "name": "Test 2"},
+                    {"_id": "1271279d966212121124c5", "pin": "1289", "name": "Test 3"},
+                    {"_id": "1271279d966212121124c4", "pin": "1099", "name": "Test 4"},
+                ],
+                "duress": {"pin": "9876"},
+                "master": {"pin": "1234"},
+            },
+        },
+        "basestationStatus": {
+            "lastUpdated": "2019-07-15T15:28:22.961Z",
+            "rfJamming": False,
+            "ethernetStatus": 4,
+            "gsmRssi": -73,
+            "gsmStatus": 3,
+            "backupBattery": 5293,
+            "wallPower": 5933,
+            "wifiRssi": -49,
+            "wifiStatus": 1,
+            "_id": "6128153715231t237123",
+            "encryptionErrors": [],
+        },
+        "lastUpdated": 1562273264,
+    }
+
+
+@pytest.fixture()
+def v3_settings_deleted_pin_json():
+    """Return a /v1/ss3/subscriptions/<SUBSCRIPTION_ID>/settings/pins (deleted PIN)."""
+    return {
+        "account": "12345012",
+        "settings": {
+            "normal": {
+                "wifiSSID": "MY_WIFI",
+                "alarmDuration": 240,
+                "alarmVolume": 3,
+                "doorChime": 2,
+                "entryDelayAway": 30,
+                "entryDelayAway2": 30,
+                "entryDelayHome": 30,
+                "entryDelayHome2": 30,
+                "exitDelayAway": 60,
+                "exitDelayAway2": 60,
+                "exitDelayHome": 0,
+                "exitDelayHome2": 0,
+                "lastUpdated": "2019-07-03T03:24:20.999Z",
+                "light": True,
+                "voicePrompts": 2,
+                "_id": "1197192618725121765212",
+            },
+            "pins": {
+                "lastUpdated": "2019-07-04T20:47:44.016Z",
+                "_id": "asd6281526381253123",
+                "users": [
+                    {"_id": "1271279d966212121124c7", "pin": "3456", "name": "Test 1"},
+                    {"_id": "1271279d966212121124c6", "pin": "", "name": ""},
+                    {"_id": "1271279d966212121124c5", "pin": "", "name": ""},
+                    {"_id": "1271279d966212121124c4", "pin": "", "name": ""},
+                ],
+                "duress": {"pin": "9876"},
+                "master": {"pin": "1234"},
+            },
+        },
+        "basestationStatus": {
+            "lastUpdated": "2019-07-15T15:28:22.961Z",
+            "rfJamming": False,
+            "ethernetStatus": 4,
+            "gsmRssi": -73,
+            "gsmStatus": 3,
+            "backupBattery": 5293,
+            "wallPower": 5933,
+            "wifiRssi": -49,
+            "wifiStatus": 1,
+            "_id": "6128153715231t237123",
+            "encryptionErrors": [],
+        },
+        "lastUpdated": 1562273264,
+    }
+
+
+@pytest.fixture()
 def v3_settings_json():
     """Return a /v1/ss3/subscriptions/<SUBSCRIPTION_ID>/settings/pins."""
     return {
@@ -444,9 +552,67 @@ def v3_settings_json():
                 "lastUpdated": "2019-07-04T20:47:44.016Z",
                 "_id": "asd6281526381253123",
                 "users": [
-                    {"_id": "1271279d966212121124c7", "pin": "", "name": ""},
-                    {"_id": "1271279d966212121124c6", "pin": "", "name": ""},
+                    {"_id": "1271279d966212121124c7", "pin": "3456", "name": "Test 1"},
+                    {"_id": "1271279d966212121124c6", "pin": "5423", "name": "Test 2"},
                     {"_id": "1271279d966212121124c5", "pin": "", "name": ""},
+                    {"_id": "1271279d966212121124c4", "pin": "", "name": ""},
+                ],
+                "duress": {"pin": "9876"},
+                "master": {"pin": "1234"},
+            },
+        },
+        "basestationStatus": {
+            "lastUpdated": "2019-07-15T15:28:22.961Z",
+            "rfJamming": False,
+            "ethernetStatus": 4,
+            "gsmRssi": -73,
+            "gsmStatus": 3,
+            "backupBattery": 5293,
+            "wallPower": 5933,
+            "wifiRssi": -49,
+            "wifiStatus": 1,
+            "_id": "6128153715231t237123",
+            "encryptionErrors": [],
+        },
+        "lastUpdated": 1562273264,
+    }
+
+
+@pytest.fixture()
+def v3_settings_new_pin_json():
+    """Return a /v1/ss3/subscriptions/<SUBSCRIPTION_ID>/settings/pins (new pin)."""
+    return {
+        "account": "12345012",
+        "settings": {
+            "normal": {
+                "wifiSSID": "MY_WIFI",
+                "alarmDuration": 240,
+                "alarmVolume": 3,
+                "doorChime": 2,
+                "entryDelayAway": 30,
+                "entryDelayAway2": 30,
+                "entryDelayHome": 30,
+                "entryDelayHome2": 30,
+                "exitDelayAway": 60,
+                "exitDelayAway2": 60,
+                "exitDelayHome": 0,
+                "exitDelayHome2": 0,
+                "lastUpdated": "2019-07-03T03:24:20.999Z",
+                "light": True,
+                "voicePrompts": 2,
+                "_id": "1197192618725121765212",
+            },
+            "pins": {
+                "lastUpdated": "2019-07-04T20:47:44.016Z",
+                "_id": "asd6281526381253123",
+                "users": [
+                    {"_id": "1271279d966212121124c7", "pin": "3456", "name": "Test 1"},
+                    {"_id": "1271279d966212121124c6", "pin": "5423", "name": "Test 2"},
+                    {
+                        "_id": "1271279d966212121124c5",
+                        "pin": "1274",
+                        "name": "whatever 3",
+                    },
                     {"_id": "1271279d966212121124c4", "pin": "", "name": ""},
                 ],
                 "duress": {"pin": "9876"},

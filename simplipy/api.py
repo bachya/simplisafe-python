@@ -166,13 +166,7 @@ class API:
             headers = {}
         if not kwargs.get("auth") and self._access_token:
             headers["Authorization"] = "Bearer {0}".format(self._access_token)
-        headers.update(
-            {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "Host": URL_HOSTNAME,
-                "User-Agent": DEFAULT_USER_AGENT,
-            }
-        )
+        headers.update({"Host": URL_HOSTNAME, "User-Agent": DEFAULT_USER_AGENT})
 
         try:
             async with self._websession.request(

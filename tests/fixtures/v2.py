@@ -48,6 +48,54 @@ def v2_server(
 
 
 @pytest.fixture()
+def v2_deleted_pins_json():
+    """Return a /v1/subscriptions/<SUBSCRIPTION_ID>/pins response (deleted PIN)."""
+    return {
+        "pins": {
+            "pin1": {"value": "1234"},
+            "pin2": {"value": "3456", "name": "Mother"},
+            "pin3": {"value": "", "name": ""},
+            "pin4": {"value": "", "name": ""},
+            "pin5": {"value": "", "name": ""},
+            "duress": {"value": "9876"},
+        },
+        "lastUpdated": 1563208180,
+    }
+
+
+@pytest.fixture()
+def v2_new_pins_json():
+    """Return a /v1/subscriptions/<SUBSCRIPTION_ID>/pins response (new PIN)."""
+    return {
+        "pins": {
+            "pin1": {"value": "1234"},
+            "pin2": {"value": "3456", "name": "Mother"},
+            "pin3": {"value": "4567", "name": "Father"},
+            "pin4": {"value": "1275", "name": "whatever"},
+            "pin5": {"value": "", "name": ""},
+            "duress": {"value": "9876"},
+        },
+        "lastUpdated": 1563208180,
+    }
+
+
+@pytest.fixture()
+def v2_pins_json():
+    """Return a /v1/subscriptions/<SUBSCRIPTION_ID>/pins response."""
+    return {
+        "pins": {
+            "pin1": {"value": "1234"},
+            "pin2": {"value": "3456", "name": "Mother"},
+            "pin3": {"value": "4567", "name": "Father"},
+            "pin4": {"value": "", "name": ""},
+            "pin5": {"value": "", "name": ""},
+            "duress": {"value": "9876"},
+        },
+        "lastUpdated": 1563208180,
+    }
+
+
+@pytest.fixture()
 def v2_settings_json():
     """Return a /v1/subscriptions/<SUBSCRIPTION_ID>/settings response."""
     return {

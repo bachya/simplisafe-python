@@ -395,6 +395,48 @@ async def main() -> None:
 asyncio.get_event_loop().run_until_complete(main())
 ```
 
+## Dealing with PINs
+
+`simplipy` allows users to easily retrieve, set, reset, and remove PINs associated with a
+SimpliSafe™ account:
+
+```python
+from simplipy import API
+
+
+async def main() -> None:
+    """Create the aiohttp session and run."""
+    async with ClientSession() as websession:
+        simplisafe = API.login_via_credentials("<EMAIL>", "<PASSWORD>", websession)
+        systems = await simplisafe.get_systems()
+        primary_system = systems[0]
+
+        # Get all PINs (retrieving fresh or from the cache):
+        await system.get_pins(cached=False)
+        # >>> {"master": "1234", "duress": "9876"}
+
+        # Set a new user PIN:
+        await system.set_pin("My New User", "1122")
+        await system.get_pins(cached=False)
+        # >>> {"master": "1234", "duress": "9876", "My New User": "1122"}
+
+        # Remove a PIN (by value or by label)
+        await system.remove_pin("My New User")
+        await system.get_pins(cached=False)
+        # >>> {"master": "1234", "duress": "9876"}
+
+        # Set the master PIN (works for the duress PIN, too):
+        await system.set_pin("master", "9865")
+        await system.get_pins(cached=False)
+        # >>> {"master": "9865", "duress": "9876"}
+
+
+asyncio.get_event_loop().run_until_complete(main())
+```
+
+Note that the above note re: V2 systems – specifically, their propensity to audibly
+announce that settings synchronization has occurred – applies to getting/setting PINs.
+
 ## The `API` Object
 
 Each `System` object has a reference to an `API` object. This object contains
@@ -440,6 +482,8 @@ asyncio.get_event_loop().run_until_complete(main())
   errors inherit from
 * `simplipy.errors.InvalidCredentialsError`: an error related to an invalid
   username/password combo
+* `simplipy.errors.PinError`: an error related to an invalid PIN operation (attempting
+  delete a reserved PIN (e.g., "master"), adding too many PINs, etc.
 * `simplipy.errors.RequestError`: an error related to HTTP requests that return
   something other than a `200` response code
 

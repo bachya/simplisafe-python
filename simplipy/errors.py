@@ -13,6 +13,12 @@ class InvalidCredentialsError(SimplipyError):
     pass
 
 
+class PinError(SimplipyError):
+    """Define an error related to invalid PINs or PIN operations."""
+
+    pass
+
+
 class RequestError(SimplipyError):
     """Define an error related to invalid requests."""
 

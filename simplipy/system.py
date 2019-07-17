@@ -14,6 +14,7 @@ CONF_DURESS_PIN = "duress"
 CONF_MASTER_PIN = "master"
 
 DEFAULT_MAX_USER_PINS = 4
+MAX_PIN_LENGTH = 4
 
 RESERVED_PIN_LABELS = (CONF_DURESS_PIN, CONF_MASTER_PIN)
 
@@ -174,6 +175,14 @@ class System:
 
     async def set_pin(self, label: str, pin: str) -> None:
         """Set a PIN."""
+        if len(pin) != MAX_PIN_LENGTH:
+            raise PinError("PINs must be {0} digits long".format(MAX_PIN_LENGTH))
+
+        try:
+            int(pin)
+        except ValueError:
+            raise PinError("PINs can only contain numbers")
+
         # Because SimpliSafe's API works by sending the entire payload of PINs, we
         # can't reasonably check a local cache for up-to-date PIN data; so, we fetch the
         # latest each time.

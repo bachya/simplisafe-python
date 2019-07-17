@@ -384,7 +384,50 @@ async def test_set_max_user_pins(
 
 
 @pytest.mark.asyncio
-async def test_set_pins_v2(event_loop, v2_new_pins_json, v2_pins_json, v2_server):
+async def test_properties(event_loop, v2_server):
+    """Test that base system properties are created properly."""
+    async with v2_server:
+        async with aiohttp.ClientSession(loop=event_loop) as websession:
+            api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
+
+            assert system.address == TEST_ADDRESS
+            assert not system.alarm_going_off
+            assert system.serial == TEST_SYSTEM_SERIAL_NO
+            assert system.state == SystemStates.off
+            assert system.system_id == TEST_SYSTEM_ID
+            assert system.temperature == 67
+            assert system.version == 2
+
+
+@pytest.mark.asyncio
+async def test_properties_v3(event_loop, v3_server):
+    """Test that v3 system properties are available."""
+    async with v3_server:
+        async with aiohttp.ClientSession(loop=event_loop) as websession:
+            api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
+
+            assert system.alarm_duration == 240
+            assert system.alarm_volume == 3
+            assert system.battery_backup_power_level == 5293
+            assert system.entry_delay_away == 30
+            assert system.entry_delay_home == 30
+            assert system.exit_delay_away == 60
+            assert system.exit_delay_home == 0
+            assert system.gsm_strength == -73
+            assert system.light is True
+            assert system.rf_jamming is False
+            assert system.voice_prompt_volume == 2
+            assert system.wall_power_level == 5933
+            assert system.wifi_ssid == "MY_WIFI"
+            assert system.wifi_strength == -49
+
+
+@pytest.mark.asyncio
+async def test_set_pin_v2(event_loop, v2_new_pins_json, v2_pins_json, v2_server):
     """Test setting a PIN in a V2 system."""
     async with v2_server:
         v2_server.add(
@@ -470,46 +513,35 @@ async def test_set_pin_v3(
 
 
 @pytest.mark.asyncio
-async def test_properties(event_loop, v2_server):
-    """Test that base system properties are created properly."""
-    async with v2_server:
+async def test_set_pin_wrong_chars(event_loop, v3_server):
+    """Test throwing an error when setting a PIN with non-digits."""
+    async with v3_server:
         async with aiohttp.ClientSession(loop=event_loop) as websession:
-            api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
-            systems = await api.get_systems()
-            system = systems[TEST_SYSTEM_ID]
+            with pytest.raises(PinError) as err:
+                api = await API.login_via_credentials(
+                    TEST_EMAIL, TEST_PASSWORD, websession
+                )
+                systems = await api.get_systems()
+                system = systems[TEST_SYSTEM_ID]
 
-            assert system.address == TEST_ADDRESS
-            assert not system.alarm_going_off
-            assert system.serial == TEST_SYSTEM_SERIAL_NO
-            assert system.state == SystemStates.off
-            assert system.system_id == TEST_SYSTEM_ID
-            assert system.temperature == 67
-            assert system.version == 2
+                await system.set_pin("whatever", "abcd")
+                assert "PINs can only contain numbers" in str(err)
 
 
 @pytest.mark.asyncio
-async def test_properties_v3(event_loop, v3_server):
-    """Test that v3 system properties are available."""
+async def test_set_pin_wrong_length(event_loop, v3_server):
+    """Test throwing an error when setting a PIN with the wrong length."""
     async with v3_server:
         async with aiohttp.ClientSession(loop=event_loop) as websession:
-            api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
-            systems = await api.get_systems()
-            system = systems[TEST_SYSTEM_ID]
+            with pytest.raises(PinError) as err:
+                api = await API.login_via_credentials(
+                    TEST_EMAIL, TEST_PASSWORD, websession
+                )
+                systems = await api.get_systems()
+                system = systems[TEST_SYSTEM_ID]
 
-            assert system.alarm_duration == 240
-            assert system.alarm_volume == 3
-            assert system.battery_backup_power_level == 5293
-            assert system.entry_delay_away == 30
-            assert system.entry_delay_home == 30
-            assert system.exit_delay_away == 60
-            assert system.exit_delay_home == 0
-            assert system.gsm_strength == -73
-            assert system.light is True
-            assert system.rf_jamming is False
-            assert system.voice_prompt_volume == 2
-            assert system.wall_power_level == 5933
-            assert system.wifi_ssid == "MY_WIFI"
-            assert system.wifi_strength == -49
+                await system.set_pin("whatever", "1122334455")
+                assert "digits long" in str(err)
 
 
 @pytest.mark.asyncio

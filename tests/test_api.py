@@ -16,6 +16,7 @@ from .const import (
     TEST_PASSWORD,
     TEST_REFRESH_TOKEN,
     TEST_SUBSCRIPTION_ID,
+    TEST_SYSTEM_ID,
     TEST_USER_ID,
 )
 from .fixtures import *  # noqa
@@ -68,7 +69,9 @@ async def test_401_refresh_token_failure(
                 api = await API.login_via_credentials(
                     TEST_EMAIL, TEST_PASSWORD, websession
                 )
-                [system] = await api.get_systems()
+
+                systems = await api.get_systems()
+                system = systems[TEST_SYSTEM_ID]
                 await system.update()
 
 
@@ -116,7 +119,8 @@ async def test_401_refresh_token_success(
 
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
-            [system] = await api.get_systems()
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
             await system.update()
 
             assert system.api.refresh_token_dirty
@@ -137,7 +141,8 @@ async def test_bad_request(event_loop, v2_server):
 
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
-            [system] = await api.get_systems()
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
             with pytest.raises(RequestError):
                 await system.api.request("get", "api/fakeEndpoint")
 
@@ -169,7 +174,8 @@ async def test_expired_token_refresh(
 
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
-            [system] = await api.get_systems()
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
             system.api._access_token_expire = datetime.now() - timedelta(hours=1)
             await system.api.request("get", "api/authCheck")
 
@@ -217,7 +223,8 @@ async def test_refresh_token_dirtiness(
 
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
-            [system] = await api.get_systems()
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
             system.api._access_token_expire = datetime.now() - timedelta(hours=1)
             await system.api.request("get", "api/authCheck")
 
@@ -273,7 +280,8 @@ async def test_unavailable_feature_v2(
 
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
-            [system] = await api.get_systems()
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
             await system.update()
             await system.set_away()
             logs = [
@@ -281,6 +289,7 @@ async def test_unavailable_feature_v2(
                 for l in ["unavailable in plan" in e.message for e in caplog.records]
                 if l is not False
             ]
+
             assert len(logs) == 2
 
 
@@ -338,7 +347,8 @@ async def test_unavailable_feature_v3(
 
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
-            [system] = await api.get_systems()
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
             await system.update()
             await system.set_away()
             logs = [
@@ -346,4 +356,5 @@ async def test_unavailable_feature_v3(
                 for l in ["unavailable in plan" in e.message for e in caplog.records]
                 if l is not False
             ]
+
             assert len(logs) == 2

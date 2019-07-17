@@ -40,7 +40,8 @@ async def test_get_events(events_json, event_loop, v2_server):
 
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
-            [system] = await api.get_systems()
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
 
             events = await system.get_events(1534725051, 2)
 
@@ -60,7 +61,8 @@ async def test_get_pins_v2(event_loop, v2_pins_json, v2_server):
 
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
-            [system] = await api.get_systems()
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
 
             pins = await system.get_pins()
             assert len(pins) == 4
@@ -83,7 +85,8 @@ async def test_get_pins_v3(event_loop, v3_server, v3_settings_json):
 
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
-            [system] = await api.get_systems()
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
 
             pins = await system.get_pins()
             assert len(pins) == 4
@@ -137,27 +140,23 @@ async def test_get_systems_v2(
                 TEST_EMAIL, TEST_PASSWORD, websession
             )
             systems = await credentials_api.get_systems()
-
             assert len(systems) == 1
 
-            primary_system = systems[0]
-
-            assert primary_system.serial == TEST_SYSTEM_SERIAL_NO
-            assert primary_system.system_id == TEST_SYSTEM_ID
-            assert primary_system.api._access_token == TEST_ACCESS_TOKEN
-            assert len(primary_system.sensors) == 35
+            system = systems[TEST_SYSTEM_ID]
+            assert system.serial == TEST_SYSTEM_SERIAL_NO
+            assert system.system_id == TEST_SYSTEM_ID
+            assert system.api._access_token == TEST_ACCESS_TOKEN
+            assert len(system.sensors) == 35
 
             token_api = await API.login_via_token(TEST_REFRESH_TOKEN, websession)
             systems = await token_api.get_systems()
-
             assert len(systems) == 1
 
-            primary_system = systems[0]
-
-            assert primary_system.serial == TEST_SYSTEM_SERIAL_NO
-            assert primary_system.system_id == TEST_SYSTEM_ID
-            assert primary_system.api._access_token == TEST_ACCESS_TOKEN
-            assert len(primary_system.sensors) == 35
+            system = systems[TEST_SYSTEM_ID]
+            assert system.serial == TEST_SYSTEM_SERIAL_NO
+            assert system.system_id == TEST_SYSTEM_ID
+            assert system.api._access_token == TEST_ACCESS_TOKEN
+            assert len(system.sensors) == 35
 
 
 @pytest.mark.asyncio
@@ -211,27 +210,25 @@ async def test_get_systems_v3(
                 TEST_EMAIL, TEST_PASSWORD, websession
             )
             systems = await credentials_api.get_systems()
-
             assert len(systems) == 1
 
-            primary_system = systems[0]
+            system = systems[TEST_SYSTEM_ID]
 
-            assert primary_system.serial == TEST_SYSTEM_SERIAL_NO
-            assert primary_system.system_id == TEST_SYSTEM_ID
-            assert primary_system.api._access_token == TEST_ACCESS_TOKEN
-            assert len(primary_system.sensors) == 21
+            assert system.serial == TEST_SYSTEM_SERIAL_NO
+            assert system.system_id == TEST_SYSTEM_ID
+            assert system.api._access_token == TEST_ACCESS_TOKEN
+            assert len(system.sensors) == 21
 
             token_api = await API.login_via_token(TEST_REFRESH_TOKEN, websession)
             systems = await token_api.get_systems()
-
             assert len(systems) == 1
 
-            primary_system = systems[0]
+            system = systems[TEST_SYSTEM_ID]
 
-            assert primary_system.serial == TEST_SYSTEM_SERIAL_NO
-            assert primary_system.system_id == TEST_SYSTEM_ID
-            assert primary_system.api._access_token == TEST_ACCESS_TOKEN
-            assert len(primary_system.sensors) == 21
+            assert system.serial == TEST_SYSTEM_SERIAL_NO
+            assert system.system_id == TEST_SYSTEM_ID
+            assert system.api._access_token == TEST_ACCESS_TOKEN
+            assert len(system.sensors) == 21
 
 
 @pytest.mark.asyncio
@@ -247,7 +244,8 @@ async def test_remove_nonexistent_pin_v3(event_loop, v3_server, v3_settings_json
 
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
-            [system] = await api.get_systems()
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
 
             with pytest.raises(PinError) as err:
                 await system.remove_pin("0000")
@@ -291,7 +289,8 @@ async def test_remove_pin_v3(
 
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
-            [system] = await api.get_systems()
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
 
             latest_pins = await system.get_pins()
             assert len(latest_pins) == 4
@@ -314,7 +313,8 @@ async def test_remove_reserved_pin_v3(event_loop, v3_server, v3_settings_json):
 
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
-            [system] = await api.get_systems()
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
 
             with pytest.raises(PinError) as err:
                 await system.remove_pin("master")
@@ -343,7 +343,8 @@ async def test_set_duplicate_pin(event_loop, v3_server, v3_settings_json):
                 api = await API.login_via_credentials(
                     TEST_EMAIL, TEST_PASSWORD, websession
                 )
-                [system] = await api.get_systems()
+                systems = await api.get_systems()
+                system = systems[TEST_SYSTEM_ID]
 
                 await system.set_pin("whatever", "1234")
                 assert "Refusing to create duplicate PIN" in str(err)
@@ -375,7 +376,8 @@ async def test_set_max_user_pins(
                 api = await API.login_via_credentials(
                     TEST_EMAIL, TEST_PASSWORD, websession
                 )
-                [system] = await api.get_systems()
+                systems = await api.get_systems()
+                system = systems[TEST_SYSTEM_ID]
 
                 await system.set_pin("whatever", "8121")
                 assert "Refusing to create more than" in str(err)
@@ -412,7 +414,8 @@ async def test_set_pins_v2(event_loop, v2_new_pins_json, v2_pins_json, v2_server
 
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
-            [system] = await api.get_systems()
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
 
             latest_pins = await system.get_pins()
             assert len(latest_pins) == 4
@@ -455,7 +458,8 @@ async def test_set_pin_v3(
 
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
-            [system] = await api.get_systems()
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
 
             latest_pins = await system.get_pins()
             assert len(latest_pins) == 4
@@ -471,7 +475,8 @@ async def test_properties(event_loop, v2_server):
     async with v2_server:
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
-            [system] = await api.get_systems()
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
 
             assert system.address == TEST_ADDRESS
             assert not system.alarm_going_off
@@ -488,7 +493,8 @@ async def test_properties_v3(event_loop, v3_server):
     async with v3_server:
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
-            [system] = await api.get_systems()
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
 
             assert system.alarm_duration == 240
             assert system.alarm_volume == 3
@@ -542,22 +548,19 @@ async def test_set_states_v2(
 
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
-            [system] = await api.get_systems()
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
 
             await system.set_away()
-
             assert system.state == SystemStates.away
 
             await system.set_home()
-
             assert system.state == SystemStates.home
 
             await system.set_off()
-
             assert system.state == SystemStates.off
 
             await system.set_off()
-
             assert system.state == SystemStates.off
 
 
@@ -597,7 +600,8 @@ async def test_set_states_v3(
 
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
-            [system] = await api.get_systems()
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
 
             await system.set_away()
             assert system.state == SystemStates.away
@@ -653,7 +657,8 @@ async def test_update_system_data_v2(
 
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
-            [system] = await api.get_systems()
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
 
             await system.update()
 
@@ -690,7 +695,8 @@ async def test_update_system_data_v3(
 
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
-            [system] = await api.get_systems()
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
 
             await system.update()
 
@@ -732,7 +738,8 @@ async def test_update_error_v3(
 
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
-            [system] = await api.get_systems()
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
 
             await system.update()
 

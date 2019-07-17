@@ -3,7 +3,7 @@
 
 import logging
 from datetime import datetime, timedelta
-from typing import List, Optional, Type, TypeVar
+from typing import Dict, Optional, Type, TypeVar
 from uuid import uuid4
 
 from aiohttp import BasicAuth, ClientSession
@@ -114,17 +114,17 @@ class API:
 
         self._actively_refreshing = False
 
-    async def get_systems(self) -> list:
+    async def get_systems(self) -> Dict[str, System]:
         """Get systems associated to this account."""
         subscription_resp = await self.get_subscription_data()
 
-        systems = []  # type: List[System]
+        systems = {}
         for system_data in subscription_resp["subscriptions"]:
             version = system_data["location"]["system"]["version"]
             system_class = SYSTEM_MAP[version]
             system = system_class(self, system_data["location"])
             await system.update(refresh_location=False)
-            systems.append(system)
+            systems[system_data["sid"]] = system
 
         return systems
 

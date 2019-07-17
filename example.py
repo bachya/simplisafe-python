@@ -25,8 +25,8 @@ async def main() -> None:
                 SIMPLISAFE_EMAIL, SIMPLISAFE_PASSWORD, websession
             )
             systems = await simplisafe.get_systems()
-            for idx, system in enumerate(systems):
-                _LOGGER.info("System #%s", idx + 1)
+            for system_id, system in systems.items():
+                _LOGGER.info("System ID: %s", system_id)
                 _LOGGER.info("Version: %s", system.version)
                 _LOGGER.info("User ID: %s", system.api.user_id)
                 _LOGGER.info("Access Token: %s", system.api._access_token)

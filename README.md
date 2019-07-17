@@ -105,8 +105,10 @@ async def main() -> None:
     """Create the aiohttp session and run."""
     async with ClientSession() as websession:
         simplisafe = API.login_via_credentials("<EMAIL>", "<PASSWORD>", websession)
+
+        # Get a dict of systems with the system ID as the key:
         systems = await simplisafe.get_systems()
-        # >>> [<simplipy.system.SystemV2 object at 0x10661e3c8>, ...]
+        # >>> {"1234abc": <simplipy.system.SystemV2 object at 0x10661e3c8>, ...}
 
 
 asyncio.get_event_loop().run_until_complete(main())
@@ -133,10 +135,9 @@ async def main() -> None:
     """Create the aiohttp session and run."""
     async with ClientSession() as websession:
         simplisafe = API.login_via_credentials("<EMAIL>", "<PASSWORD>", websession)
-        systems = await simplisafe.get_systems()
-        # >>> [<simplipy.system.SystemV2 object at 0x10661e3c8>]
 
-        for system in systems:
+        systems = await simplisafe.get_systems()
+        for system_id, system in systems.items():
             # Return a reference to a SimpliSafe™ API object (detailed later):
             system.api
             # >>> <simplipy.api.API object at 0x12aba2321>
@@ -155,15 +156,19 @@ async def main() -> None:
 
             # Return the system's serial number:
             system.serial
-            # >>> 1234ABCD
+            # >>> xxxxxxxxxxxxxx
 
             # Return the current state of the system:
             system.state
             # >>> simplipy.system.SystemStates.away
 
-            # Return the SimpliSafe™ identifier for this system:
+            # Return the SimpliSafe™ identifier for this system from the key:
+            system_id
+            # >>> 1234abc
+
+            # ...or as a property of the system itself:
             system.system_id
-            # >>> 1234ABCD
+            # >>> 1234abc
 
             # Return the average of all temperature sensors (if they exist):
             system.temperature
@@ -202,10 +207,9 @@ async def main() -> None:
     """Create the aiohttp session and run."""
     async with ClientSession() as websession:
         simplisafe = API.login_via_credentials("<EMAIL>", "<PASSWORD>", websession)
-        systems = await simplisafe.get_systems()
-        # >>> [<simplipy.system.SystemV2 object at 0x10661e3c8>]
 
-        for system in systems:
+        systems = await simplisafe.get_systems()
+        for system_id, system in systems:
             # Return the number of seconds an activated alarm will sound for:
             system.alarm_duration
             # >>> 240
@@ -306,8 +310,9 @@ async def main() -> None:
     """Create the aiohttp session and run."""
     async with ClientSession() as websession:
         simplisafe = API.login_via_credentials("<EMAIL>", "<PASSWORD>", websession)
+
         systems = await simplisafe.get_systems()
-        for system in systems:
+        for system_id, system in systems:
             for serial, sensor_attrs in system.sensors.items():
                 # Return the sensor's name:
                 sensor.name
@@ -351,8 +356,9 @@ async def main() -> None:
     """Create the aiohttp session and run."""
     async with ClientSession() as websession:
         simplisafe = API.login_via_credentials("<EMAIL>", "<PASSWORD>", websession)
+
         systems = await simplisafe.get_systems()
-        for system in systems:
+        for system_id, system in systems:
             for serial, sensor_attrs in system.sensors.items():
                 # Return the sensor's data as a currently non-understood integer:
                 sensor.data
@@ -376,8 +382,9 @@ async def main() -> None:
     """Create the aiohttp session and run."""
     async with ClientSession() as websession:
         simplisafe = API.login_via_credentials("<EMAIL>", "<PASSWORD>", websession)
+
         systems = await simplisafe.get_systems()
-        for system in systems:
+        for system_id, system in systems:
             for sensor in system.sensors:
                 # Return whether the sensor is offline:
                 sensor.offline
@@ -408,27 +415,27 @@ async def main() -> None:
     """Create the aiohttp session and run."""
     async with ClientSession() as websession:
         simplisafe = API.login_via_credentials("<EMAIL>", "<PASSWORD>", websession)
+
         systems = await simplisafe.get_systems()
-        primary_system = systems[0]
+        for system_id, system in systems:
+            # Get all PINs (retrieving fresh or from the cache):
+            await system.get_pins(cached=False)
+            # >>> {"master": "1234", "duress": "9876"}
 
-        # Get all PINs (retrieving fresh or from the cache):
-        await system.get_pins(cached=False)
-        # >>> {"master": "1234", "duress": "9876"}
+            # Set a new user PIN:
+            await system.set_pin("My New User", "1122")
+            await system.get_pins(cached=False)
+            # >>> {"master": "1234", "duress": "9876", "My New User": "1122"}
 
-        # Set a new user PIN:
-        await system.set_pin("My New User", "1122")
-        await system.get_pins(cached=False)
-        # >>> {"master": "1234", "duress": "9876", "My New User": "1122"}
+            # Remove a PIN (by value or by label)
+            await system.remove_pin("My New User")
+            await system.get_pins(cached=False)
+            # >>> {"master": "1234", "duress": "9876"}
 
-        # Remove a PIN (by value or by label)
-        await system.remove_pin("My New User")
-        await system.get_pins(cached=False)
-        # >>> {"master": "1234", "duress": "9876"}
-
-        # Set the master PIN (works for the duress PIN, too):
-        await system.set_pin("master", "9865")
-        await system.get_pins(cached=False)
-        # >>> {"master": "9865", "duress": "9876"}
+            # Set the master PIN (works for the duress PIN, too):
+            await system.set_pin("master", "9865")
+            await system.get_pins(cached=False)
+            # >>> {"master": "9865", "duress": "9876"}
 
 
 asyncio.get_event_loop().run_until_complete(main())
@@ -456,8 +463,9 @@ async def main() -> None:
     """Create the aiohttp session and run."""
     async with ClientSession() as websession:
         simplisafe = API.login_via_credentials("<EMAIL>", "<PASSWORD>", websession)
+
         systems = await simplisafe.get_systems()
-        for system in systems:
+        for system_id, system in systems:
             # Return the current access token:
             system.api._access_token
             # >>> 7s9yasdh9aeu21211add
@@ -502,16 +510,16 @@ async def main() -> None:
     """Create the aiohttp session and run."""
     async with ClientSession() as websession:
         simplisafe = API.login_via_token("<REFRESH TOKEN>", websession)
+
         systems = await simplisafe.get_systems()
-        primary_system = systems[0]
+        for system in systems:
+            # Assuming the access token was automatically refreshed:
+            primary_system.api.refresh_token_dirty
+            # >>> True
 
-        # Assuming the access token was automatically refreshed:
-        primary_system.api.refresh_token_dirty
-        # >>> True
-
-        # Once the dirtiness is confirmed, the dirty bit resets:
-        primary_system.api.refresh_token_dirty
-        # >>> False
+            # Once the dirtiness is confirmed, the dirty bit resets:
+            primary_system.api.refresh_token_dirty
+            # >>> False
 
 
 asyncio.get_event_loop().run_until_complete(main())

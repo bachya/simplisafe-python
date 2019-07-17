@@ -8,7 +8,7 @@ from simplipy import API
 from simplipy.errors import SimplipyError
 from simplipy.sensor import SensorTypes
 
-from .const import TEST_EMAIL, TEST_PASSWORD
+from .const import TEST_EMAIL, TEST_PASSWORD, TEST_SYSTEM_ID
 from .fixtures import *
 from .fixtures.v2 import *
 from .fixtures.v3 import *
@@ -20,7 +20,8 @@ async def test_properties_base(event_loop, v2_server):
     async with v2_server:
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
-            [system] = await api.get_systems()
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
 
             sensor = system.sensors["195"]
             assert sensor.name == "Garage Keypad"
@@ -34,7 +35,8 @@ async def test_properties_v2(event_loop, v2_server):
     async with v2_server:
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
-            [system] = await api.get_systems()
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
 
             keypad = system.sensors["195"]
             assert keypad.data == 0
@@ -62,7 +64,8 @@ async def test_properties_v3(event_loop, v3_server):
     async with v3_server:
         async with aiohttp.ClientSession(loop=event_loop) as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
-            [system] = await api.get_systems()
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
 
             entry_sensor = system.sensors["825"]
             assert not entry_sensor.error

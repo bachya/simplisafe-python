@@ -482,8 +482,8 @@ asyncio.get_event_loop().run_until_complete(main())
   errors inherit from
 * `simplipy.errors.InvalidCredentialsError`: an error related to an invalid
   username/password combo
-* `simplipy.errors.PinError`: an error related to an invalid PIN operation (attempting
-  delete a reserved PIN (e.g., "master"), adding too many PINs, etc.
+* `simplipy.errors.PinError`: an error related to an invalid PIN operation, such as
+  attempting to delete a reserved PIN (e.g., "master"), adding too many PINs, etc.
 * `simplipy.errors.RequestError`: an error related to HTTP requests that return
   something other than a `200` response code
 

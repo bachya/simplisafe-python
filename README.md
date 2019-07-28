@@ -168,7 +168,11 @@ async def main() -> None:
             # number of events - omitting these parameters will return all events (max of
             # 50) stored in SimpliSafe™'s cloud:
             await system.get_events(from_timestamp=1534035861, num_events=2)
-            # >>> return {"numEvents": 2, "lastEventTimestamp": 1534035861, "events": [{...}]}
+            # >>> [{"eventId": 123, ...}, {"eventId": 456, ...}]
+
+            # You can also get the latest event easily:
+            await system.get_latest_event()
+            # >>> {"eventId": 987, ...}
 
             # Set the state of the system:
             await system.set_away()

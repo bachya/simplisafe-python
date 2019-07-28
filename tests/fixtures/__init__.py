@@ -90,6 +90,39 @@ def invalid_credentials_json():
 
 
 @pytest.fixture()
+def latest_event_json():
+    """Return a response related the most recent system event."""
+    return {
+        "numEvents": 50,
+        "lastEventTimestamp": 1564018073,
+        "events": [
+            {
+                "eventId": 1234567890,
+                "eventTimestamp": 1564018073,
+                "eventCid": 1400,
+                "zoneCid": "2",
+                "sensorType": 1,
+                "sensorSerial": "01010101",
+                "account": "00011122",
+                "userId": TEST_USER_ID,
+                "sid": TEST_SUBSCRIPTION_ID,
+                "info": "System Disarmed by PIN 2",
+                "pinName": "",
+                "sensorName": "Kitchen",
+                "messageSubject": "SimpliSafe System Disarmed",
+                "messageBody": "System Disarmed: Your SimpliSafe security system was "
+                "disarmed Keypad PIN 2 at 1234 Main Street on 7-28-19 at 1:30 pm",
+                "eventType": "activity",
+                "timezone": 2,
+                "locationOffset": -360,
+                "videoStartedBy": "",
+                "video": {},
+            }
+        ],
+    }
+
+
+@pytest.fixture()
 def unavailable_feature_json():
     """Return a response related to any unavailable request."""
     return {

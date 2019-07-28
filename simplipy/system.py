@@ -138,6 +138,11 @@ class System:
 
         return events_resp["events"]
 
+    async def get_latest_event(self) -> dict:
+        """Get the most recent system event."""
+        events = await self.get_events(num_events=1)
+        return events[0]
+
     async def get_pins(self, cached: bool = True) -> dict:
         """Return all of the set PINs, including master and duress."""
         raise NotImplementedError()
@@ -146,7 +151,7 @@ class System:
         """Remove a PIN by its value or label."""
         # Because SimpliSafe's API works by sending the entire payload of PINs, we
         # can't reasonably check a local cache for up-to-date PIN data; so, we fetch the
-        # latest each time.
+        # latest each time:
         latest_pins = await self.get_pins(cached=False)
 
         if pin_or_label in RESERVED_PIN_LABELS:

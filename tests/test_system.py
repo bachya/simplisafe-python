@@ -49,6 +49,26 @@ async def test_get_events(events_json, event_loop, v2_server):
 
 
 @pytest.mark.asyncio
+async def test_get_last_event(event_loop, v3_server, latest_event_json):
+    """Test getting the latest event."""
+    async with v3_server:
+        v3_server.add(
+            "api.simplisafe.com",
+            "/v1/subscriptions/{0}/events".format(TEST_SUBSCRIPTION_ID),
+            "get",
+            aresponses.Response(text=json.dumps(latest_event_json), status=200),
+        )
+
+        async with aiohttp.ClientSession(loop=event_loop) as websession:
+            api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
+
+            latest_event = await system.get_latest_event()
+            assert latest_event["eventId"] == 1234567890
+
+
+@pytest.mark.asyncio
 async def test_get_pins_v2(event_loop, v2_pins_json, v2_server):
     """Test getting PINs associated with a V3 system."""
     async with v2_server:

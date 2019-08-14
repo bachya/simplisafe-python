@@ -22,6 +22,7 @@ class SensorTypes(Enum):
     smoke = 8
     leak = 9
     temperature = 10
+    camera = 12
     siren = 13
     unknown = 99
 

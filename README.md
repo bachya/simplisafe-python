@@ -205,7 +205,7 @@ async def main() -> None:
         )
 
         systems = await simplisafe.get_systems()
-        for system_id, system in systems:
+        for system_id, system in systems.items():
             # Return the number of seconds an activated alarm will sound for:
             system.alarm_duration
             # >>> 240
@@ -310,7 +310,7 @@ async def main() -> None:
         )
 
         systems = await simplisafe.get_systems()
-        for system_id, system in systems:
+        for system_id, system in systems.items():
             for serial, sensor_attrs in system.sensors.items():
                 # Return the sensor's name:
                 sensor.name
@@ -358,7 +358,7 @@ async def main() -> None:
         )
 
         systems = await simplisafe.get_systems()
-        for system_id, system in systems:
+        for system_id, system in systems.items():
             for serial, sensor_attrs in system.sensors.items():
                 # Return the sensor's data as a currently non-understood integer:
                 sensor.data
@@ -386,7 +386,7 @@ async def main() -> None:
         )
 
         systems = await simplisafe.get_systems()
-        for system_id, system in systems:
+        for system_id, system in systems.items():
             for sensor in system.sensors:
                 # Return whether the sensor is offline:
                 sensor.offline
@@ -421,7 +421,7 @@ async def main() -> None:
         )
 
         systems = await simplisafe.get_systems()
-        for system_id, system in systems:
+        for system_id, system in systems.items():
             # Get all PINs (retrieving fresh or from the cache):
             await system.get_pins(cached=False)
             # >>> {"master": "1234", "duress": "9876"}
@@ -471,7 +471,7 @@ async def main() -> None:
         )
 
         systems = await simplisafe.get_systems()
-        for system_id, system in systems:
+        for system_id, system in systems.items():
             # Return the current access token:
             system.api._access_token
             # >>> 7s9yasdh9aeu21211add
@@ -520,7 +520,7 @@ async def main() -> None:
         )
 
         systems = await simplisafe.get_systems()
-        for system in systems:
+        for system in systems.items():
             # Assuming the access token was automatically refreshed:
             primary_system.api.refresh_token_dirty
             # >>> True

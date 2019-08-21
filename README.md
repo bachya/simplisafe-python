@@ -113,6 +113,139 @@ of SimpliSafe™ systems. Two types of objects can be returned:
 Despite the differences, `simplipy` provides a common interface to
 these objects, meaning many of the same properties and methods are available to both.
 
+### V3 Properties
+
+```python
+from simplipy import API
+
+
+async def main() -> None:
+    """Create the aiohttp session and run."""
+    async with ClientSession() as websession:
+        simplisafe = await API.login_via_credentials(
+            "<EMAIL>", "<PASSWORD>", websession
+        )
+
+        systems = await simplisafe.get_systems()
+        for system_id, system in systems.items():
+            # Return the number of seconds an activated alarm will sound for:
+            print(system.alarm_duration)
+            # >>> 240
+
+            # Return the loudness of the alarm volume:
+            print(system.alarm_volume)
+            # >>> 3
+
+            # Return the power rating of the battery backup:
+            print(system.battery_backup_power_level)
+            # >>> 5239
+
+            # Return the number of seconds to delay when returning to an "away" alarm:
+            print(system.entry_delay_away)
+            # >>> 30
+
+            # Return the number of seconds to delay when returning to an "home" alarm:
+            print(system.entry_delay_home)
+            # >>> 30
+
+            # Return the number of seconds to delay when exiting an "away" alarm:
+            print(system.exit_delay_away)
+            # >>> 60
+
+            # Return the number of seconds to delay when exiting an "home" alarm:
+            print(system.exit_delay_home)
+            # >>> 0
+
+            # Return the signal strength of the cell antenna:
+            print(system.gsm_strength)
+            # >>> -73
+
+            # Return whether the base station light is enabled:
+            print(system.light)
+            # >>> True
+
+            # Return whether the base station is noticing RF jamming:
+            print(system.rf_jamming)
+            # >>> False
+
+            # Return the loudness of the voice prompt:
+            print(system.voice_prompt_volume)
+            # >>> 2
+
+            # Return the power rating of the A/C outlet:
+            print(system.wall_power_level)
+            # >>> 5239
+
+            # Return the ssid of the base station:
+            print(system.wifi_ssid)
+            # >>> "My_SSID"
+
+            # Return the signal strength of the wifi antenna:
+            print(system.wifi_strength)
+            # >>> -43
+            
+            ###BASE PROPERTIES###
+            
+            # Return a reference to a SimpliSafe™ API object (detailed later):
+            print(system.api)
+            # >>> <simplipy.api.API object at 0x12aba2321>
+
+            # Return the street address of the system:
+            print(system.address)
+            # >>> 1234 Main Street
+
+            # Return whether the alarm is currently going off:
+            print(system.alarm_going_off)
+            # >>> False
+
+            # Return a list of sensors attached to this sytem (detailed later):
+            print(system.sensors)
+            # >>> [<simplipy.sensor.SensorV2 object at 0x10661e3c8>, ...]
+
+            # Return the system's serial number:
+            print(system.serial)
+            # >>> xxxxxxxxxxxxxx
+
+            # Return the current state of the system:
+            print(system.state)
+            # >>> simplipy.system.SystemStates.away
+
+            # Return the SimpliSafe™ identifier for this system from the key:
+            print(system_id)
+            # >>> 1234abc
+
+            # ...or as a property of the system itself:
+            print(system.system_id)
+            # >>> 1234abc
+
+            # Return the average of all temperature sensors (if they exist):
+            print(system.temperature)
+            # >>> 67
+
+            # Return the SimpliSafe™ version:
+            print(system.version)
+            # >>> 2
+
+            # Return a list of events for the system that has a max of 20.
+            print(await system.get_events(num_events=20))
+            # >>> [{"eventId": 123, ...}, {"eventId": 456, ...}]
+
+            # You can also get the latest event easily:
+            print(await system.get_latest_event())
+            # >>> {"eventId": 987, ...}
+
+            # Set the state of the system:
+            await system.set_away()
+            await system.set_home()
+            await system.set_off()
+
+            # Get the latest values from the system; by default, include a refresh
+            # of system info and use cached values (both can be overridden):
+            await system.update(refresh_location=True, cached=True)
+
+
+asyncio.get_event_loop().run_until_complete(main())
+```
 ### Base Properties and Methods
 
 ```python
@@ -190,82 +323,6 @@ async def main() -> None:
 
 asyncio.get_event_loop().run_until_complete(main())
 ```
-
-### V3 Properties
-
-```python
-from simplipy import API
-
-
-async def main() -> None:
-    """Create the aiohttp session and run."""
-    async with ClientSession() as websession:
-        simplisafe = await API.login_via_credentials(
-            "<EMAIL>", "<PASSWORD>", websession
-        )
-
-        systems = await simplisafe.get_systems()
-        for system_id, system in systems.items():
-            # Return the number of seconds an activated alarm will sound for:
-            system.alarm_duration
-            # >>> 240
-
-            # Return the loudness of the alarm volume:
-            system.alarm_volume
-            # >>> 3
-
-            # Return the power rating of the battery backup:
-            system.battery_backup_power_level
-            # >>> 5239
-
-            # Return the number of seconds to delay when returning to an "away" alarm:
-            system.entry_delay_away
-            # >>> 30
-
-            # Return the number of seconds to delay when returning to an "home" alarm:
-            system.entry_delay_home
-            # >>> 30
-
-            # Return the number of seconds to delay when exiting an "away" alarm:
-            system.exit_delay_away
-            # >>> 60
-
-            # Return the number of seconds to delay when exiting an "home" alarm:
-            system.exit_delay_home
-            # >>> 0
-
-            # Return the signal strength of the cell antenna:
-            system.gsm_strength
-            # >>> -73
-
-            # Return whether the base station light is on:
-            system.light
-            # >>> True
-
-            # Return whether the base station is noticing RF jamming:
-            system.rf_jamming
-            # >>> False
-
-            # Return the loudness of the voice prompt:
-            system.voice_prompt_volume
-            # >>> 2
-
-            # Return the power rating of the A/C outlet:
-            system.wall_power_level
-            # >>> 5239
-
-            # Return the ssid of the base station:
-            system.wifi_ssid
-            # >>> "My_SSID"
-
-            # Return the signal strength of the wifi antenna:
-            system.wifi_strength
-            # >>> -43
-
-
-asyncio.get_event_loop().run_until_complete(main())
-```
-
 ### A Note on `system.update()`
 
 There are two crucial differences between V2 and V3 systems when updating:
@@ -295,6 +352,126 @@ Once again, `simplipy` provides a common interface to
 these objects; however, there are some properties that are either (a) specific
 to one version or (b) return a different meaning based on the version. These
 differences are outlined below.
+
+### V2 Properties
+
+```python
+from simplipy import API
+
+
+async def main() -> None:
+    """Create the aiohttp session and run."""
+    async with ClientSession() as websession:
+        simplisafe = await API.login_via_credentials(
+            "<EMAIL>", "<PASSWORD>", websession
+        )
+
+        systems = await simplisafe.get_systems()
+        for system_id, system in systems.items():
+            for serial, sensor_attrs in system.sensors.items():
+                # Return the sensor's data as a currently non-understood integer:
+                print(sensor.data)
+                # >>> 0
+
+                # Return the sensor's settings as a currently non-understood integer:
+                print(sensor.settings)
+                # >>> 1
+                
+                # Return the sensor's name:
+                print(sensor.name)
+                # >>> Kitchen Window
+
+                # Return the sensor's serial number through the index:
+                print(serial)
+                # >>> 1234ABCD
+
+                # ...or through the property:
+                print(sensor.serial)
+                # >>> 1234ABCD
+
+                # Return the sensor's type:
+                print(sensor.type)
+                # >>> simplipy.sensor.SensorTypes.glass_break
+
+                # Return whether the sensor is in an error state:
+                print(sensor.error)
+                # >>> False
+
+                # Return whether the sensor has a low battery:
+                print(sensor.low_battery)
+                # >>> False
+
+                # Return whether the sensor has been triggered (open/closed, etc.):
+                print(sensor.triggered)
+                # >>> False
+
+
+asyncio.get_event_loop().run_until_complete(main())
+```
+
+### V3 Properties
+
+```python
+from simplipy import API
+
+
+async def main() -> None:
+    """Create the aiohttp session and run."""
+    async with ClientSession() as websession:
+        simplisafe = await API.login_via_credentials(
+            "<EMAIL>", "<PASSWORD>", websession
+        )
+
+        systems = await simplisafe.get_systems()
+        for system_id, system in systems.items():
+            for serial, sensor_attrs in system.sensors.items():
+                # Return whether the sensor is offline:
+                print(sensor.offline)
+                # >>> False
+
+                # Return a settings dictionary for the sensor:
+                print(sensor.settings)
+                # >>> {"instantTrigger": False, "away2": 1, "away": 1, ...}
+
+                # For temperature sensors, return the current temperature:
+                try:
+                    print(sensor.temperature)
+                except Exception as e:
+                    print(e)
+                # >>> 67
+                
+                # Return the sensor's name:
+                print(sensor.name)
+                # >>> Kitchen Window
+
+                # Return the sensor's serial number through the index:
+                print(serial)
+                # >>> 1234ABCD
+
+                # ...or through the property:
+                print(sensor.serial)
+                # >>> 1234ABCD
+
+                # Return the sensor's type:
+                print(sensor.type)
+                # >>> simplipy.sensor.SensorTypes.glass_break
+
+                # Return whether the sensor is in an error state:
+                print(sensor.error)
+                # >>> False
+
+                # Return whether the sensor has a low battery:
+                print(sensor.low_battery)
+                # >>> False
+
+                # Return whether the sensor has been triggered (open/closed, etc.):
+                print(sensor.triggered)
+                # >>> False
+
+
+asyncio.get_event_loop().run_until_complete(main())
+```
+
 
 ### Base Properties
 
@@ -344,66 +521,6 @@ async def main() -> None:
 asyncio.get_event_loop().run_until_complete(main())
 ```
 
-### V2 Properties
-
-```python
-from simplipy import API
-
-
-async def main() -> None:
-    """Create the aiohttp session and run."""
-    async with ClientSession() as websession:
-        simplisafe = await API.login_via_credentials(
-            "<EMAIL>", "<PASSWORD>", websession
-        )
-
-        systems = await simplisafe.get_systems()
-        for system_id, system in systems.items():
-            for serial, sensor_attrs in system.sensors.items():
-                # Return the sensor's data as a currently non-understood integer:
-                sensor.data
-                # >>> 0
-
-                # Return the sensor's settings as a currently non-understood integer:
-                sensor.settings
-                # >>> 1
-
-
-asyncio.get_event_loop().run_until_complete(main())
-```
-
-### V3 Properties
-
-```python
-from simplipy import API
-
-
-async def main() -> None:
-    """Create the aiohttp session and run."""
-    async with ClientSession() as websession:
-        simplisafe = await API.login_via_credentials(
-            "<EMAIL>", "<PASSWORD>", websession
-        )
-
-        systems = await simplisafe.get_systems()
-        for system_id, system in systems.items():
-            for sensor in system.sensors:
-                # Return whether the sensor is offline:
-                sensor.offline
-                # >>> False
-
-                # Return a settings dictionary for the sensor:
-                sensor.settings
-                # >>> {"instantTrigger": False, "away2": 1, "away": 1, ...}
-
-                # For temperature sensors, return the current temperature:
-                sensor.temperature
-                # >>> 67
-
-
-asyncio.get_event_loop().run_until_complete(main())
-```
-
 ## Dealing with PINs
 
 `simplipy` allows users to easily retrieve, set, reset, and remove PINs associated with a
@@ -423,22 +540,22 @@ async def main() -> None:
         systems = await simplisafe.get_systems()
         for system_id, system in systems.items():
             # Get all PINs (retrieving fresh or from the cache):
-            await system.get_pins(cached=False)
+            print(await system.get_pins(cached=False))
             # >>> {"master": "1234", "duress": "9876"}
 
             # Set a new user PIN:
             await system.set_pin("My New User", "1122")
-            await system.get_pins(cached=False)
+            print(await system.get_pins(cached=False))
             # >>> {"master": "1234", "duress": "9876", "My New User": "1122"}
 
             # Remove a PIN (by value or by label)
             await system.remove_pin("My New User")
-            await system.get_pins(cached=False)
+            print(await system.get_pins(cached=False))
             # >>> {"master": "1234", "duress": "9876"}
 
             # Set the master PIN (works for the duress PIN, too):
             await system.set_pin("master", "9865")
-            await system.get_pins(cached=False)
+            print(await system.get_pins(cached=False))
             # >>> {"master": "9865", "duress": "9876"}
 
 
@@ -472,16 +589,16 @@ async def main() -> None:
 
         systems = await simplisafe.get_systems()
         for system_id, system in systems.items():
-            # Return the current access token:
+            # Return the current access token: (higly advisable to not show on your screen; hackers can install software that runs in the background, takes screenshots, and send them to their computer.)
             system.api._access_token
             # >>> 7s9yasdh9aeu21211add
 
-            # Return the current refresh token:
+            # Return the current refresh token: (higly not advisable to print too.)
             system.api.refresh_token
             # >>> 896sad86gudas87d6asd
 
             # Return the SimpliSafe™ user ID associated with this account:
-            system.api.user_id
+            print(system.api.user_id)
             # >>> 1234567
 
 
@@ -522,11 +639,11 @@ async def main() -> None:
         systems = await simplisafe.get_systems()
         for system in systems.items():
             # Assuming the access token was automatically refreshed:
-            primary_system.api.refresh_token_dirty
+            print(primary_system.api.refresh_token_dirty)
             # >>> True
 
             # Once the dirtiness is confirmed, the dirty bit resets:
-            primary_system.api.refresh_token_dirty
+            print(primary_system.api.refresh_token_dirty)
             # >>> False
 
 

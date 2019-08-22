@@ -589,11 +589,11 @@ async def main() -> None:
 
         systems = await simplisafe.get_systems()
         for system_id, system in systems.items():
-            # Return the current access token: (higly advisable to not show on your screen; hackers can install software that runs in the background, takes screenshots, and send them to their computer.)
+            # Return the current access token:
             system.api._access_token
             # >>> 7s9yasdh9aeu21211add
 
-            # Return the current refresh token: (higly not advisable to print too.)
+            # Return the current refresh token:
             system.api.refresh_token
             # >>> 896sad86gudas87d6asd
 

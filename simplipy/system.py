@@ -2,21 +2,24 @@
 import asyncio
 import logging
 from enum import Enum
-from typing import Any, Dict, Union
+from typing import TYPE_CHECKING, Any, Coroutine, Dict, List, Set
 
 from .errors import InvalidCredentialsError, PinError, SimplipyError
-from .sensor import SensorV2, SensorV3
+from .sensor import Sensor, SensorV2, SensorV3
 from .util.string import convert_to_underscore
 
-_LOGGER = logging.getLogger(__name__)
+if TYPE_CHECKING:
+    from .api import API  # pylint: disable=cyclic-import
 
-CONF_DURESS_PIN = "duress"
-CONF_MASTER_PIN = "master"
+_LOGGER: logging.Logger = logging.getLogger(__name__)
 
-DEFAULT_MAX_USER_PINS = 4
-MAX_PIN_LENGTH = 4
+CONF_DURESS_PIN: str = "duress"
+CONF_MASTER_PIN: str = "master"
 
-RESERVED_PIN_LABELS = (CONF_DURESS_PIN, CONF_MASTER_PIN)
+DEFAULT_MAX_USER_PINS: int = 4
+MAX_PIN_LENGTH: int = 4
+
+RESERVED_PIN_LABELS: Set[str] = {CONF_DURESS_PIN, CONF_MASTER_PIN}
 
 
 class SystemStates(Enum):
@@ -37,13 +40,13 @@ class SystemStates(Enum):
 class System:
     """Define a system."""
 
-    def __init__(self, api, location_info: dict) -> None:
+    def __init__(self, api: "API", location_info: dict) -> None:
         """Initialize."""
-        self._location_info = location_info
-        self.api = api
-        self.sensors = {}  # type: Dict[str, Union[SensorV2, SensorV3]]
+        self._location_info: dict = location_info
+        self.api: API = api
+        self.sensors: Dict[str, Sensor] = {}
 
-        self._state = self._coerce_state_from_string(
+        self._state: SystemStates = self._coerce_state_from_string(
             location_info["system"]["alarmState"]
         )
 
@@ -63,7 +66,7 @@ class System:
         return self._location_info["system"]["serial"]
 
     @property
-    def state(self) -> Enum:
+    def state(self) -> SystemStates:
         """Return the current state of the system."""
         return self._state
 
@@ -101,12 +104,15 @@ class System:
 
     async def _update_location_info(self) -> None:
         """Update information on the system."""
-        subscription_resp = await self.api.get_subscription_data()
-        [location_info] = [
-            system["location"]
-            for system in subscription_resp["subscriptions"]
-            if system["sid"] == self.system_id
-        ]
+        subscription_resp: dict = await self.api.get_subscription_data()
+        location_info: dict = next(
+            (
+                system["location"]
+                for system in subscription_resp["subscriptions"]
+                if system["sid"] == self.system_id
+            )
+        )
+
         self._location_info = location_info
         self._state = self._coerce_state_from_string(
             location_info["system"]["alarmState"]
@@ -122,15 +128,15 @@ class System:
 
     async def get_events(
         self, from_timestamp: int = None, num_events: int = None
-    ) -> dict:
+    ) -> list:
         """Get events with optional start time and number of events."""
-        params = {}
+        params: Dict[str, Any] = {}
         if from_timestamp:
             params["fromTimestamp"] = from_timestamp
         if num_events:
             params["numEvents"] = num_events
 
-        events_resp = await self.api.request(
+        events_resp: dict = await self.api.request(
             "get", f"subscriptions/{self.system_id}/events", params=params
         )
 
@@ -140,7 +146,7 @@ class System:
 
     async def get_latest_event(self) -> dict:
         """Get the most recent system event."""
-        events = await self.get_events(num_events=1)
+        events: list = await self.get_events(num_events=1)
         return events[0]
 
     async def get_pins(self, cached: bool = True) -> dict:
@@ -152,13 +158,15 @@ class System:
         # Because SimpliSafe's API works by sending the entire payload of PINs, we
         # can't reasonably check a local cache for up-to-date PIN data; so, we fetch the
         # latest each time:
-        latest_pins = await self.get_pins(cached=False)
+        latest_pins: Dict[str, int] = await self.get_pins(cached=False)
 
         if pin_or_label in RESERVED_PIN_LABELS:
             raise PinError(f"Refusing to delete reserved PIN: {pin_or_label}")
 
         try:
-            label = next((k for k, v in latest_pins.items() if pin_or_label in (k, v)))
+            label: str = next(
+                (k for k, v in latest_pins.items() if pin_or_label in (k, v))
+            )
         except StopIteration:
             raise PinError(f"Cannot delete nonexistent PIN: {pin_or_label}")
 
@@ -191,12 +199,12 @@ class System:
         # Because SimpliSafe's API works by sending the entire payload of PINs, we
         # can't reasonably check a local cache for up-to-date PIN data; so, we fetch the
         # latest each time.
-        latest_pins = await self.get_pins(cached=False)
+        latest_pins: Dict[str, str] = await self.get_pins(cached=False)
 
         if pin in latest_pins.values():
             raise PinError(f"Refusing to create duplicate PIN: {pin}")
 
-        max_pins = DEFAULT_MAX_USER_PINS + len(RESERVED_PIN_LABELS)
+        max_pins: int = DEFAULT_MAX_USER_PINS + len(RESERVED_PIN_LABELS)
         if len(latest_pins) == max_pins and label not in RESERVED_PIN_LABELS:
             raise PinError(f"Refusing to create more than {max_pins} user PINs")
 
@@ -206,7 +214,7 @@ class System:
 
     async def update(self, refresh_location: bool = True, cached: bool = True) -> None:
         """Update to the latest data (including sensors)."""
-        tasks = {
+        tasks: Dict[str, Coroutine] = {
             "sensors": self._update_sensors(cached),
             "settings": self._update_settings(cached),
         }
@@ -215,7 +223,12 @@ class System:
                 "location"
             ] = self._update_location_info()
 
-        results = await asyncio.gather(*tasks.values(), return_exceptions=True)
+        results: List[Any] = await asyncio.gather(
+            *tasks.values(), return_exceptions=True
+        )
+
+        operation: str
+        result: Any
         for operation, result in zip(tasks, results):
             if isinstance(result, InvalidCredentialsError):
                 raise result
@@ -229,17 +242,20 @@ class SystemV2(System):
     @staticmethod
     def _create_pin_payload(pins: dict) -> dict:
         """Transform the internal PINs structure to a V2-compatible payload."""
-        payload = {
+        payload: dict = {
             "pins": {
                 CONF_DURESS_PIN: {"value": pins.pop(CONF_DURESS_PIN)},
                 "pin1": {"value": pins.pop(CONF_MASTER_PIN)},
             }
         }
 
+        idx: int
+        label: str
+        pin: str
         for idx, (label, pin) in enumerate(pins.items()):
             payload["pins"][f"pin{idx + 2}"] = {"name": label, "value": pin}
 
-        empty_user_index = len(pins)
+        empty_user_index: int = len(pins)
         for idx in range(DEFAULT_MAX_USER_PINS - empty_user_index):
             payload["pins"][f"pin{str(idx + 2 + empty_user_index)}"] = {
                 "name": "",
@@ -261,7 +277,7 @@ class SystemV2(System):
         if self._state == value:
             return
 
-        state_resp = await self.api.request(
+        state_resp: dict = await self.api.request(
             "post",
             f"subscriptions/{self.system_id}/state",
             params={"state": value.name},
@@ -277,7 +293,7 @@ class SystemV2(System):
 
     async def _update_sensors(self, cached: bool = True) -> None:
         """Update sensors to the latest values."""
-        sensor_resp = await self.api.request(
+        sensor_resp: dict = await self.api.request(
             "get",
             f"subscriptions/{self.system_id}/settings",
             params={"settingsType": "all", "cached": str(cached).lower()},
@@ -288,6 +304,7 @@ class SystemV2(System):
         if not sensor_resp:
             return
 
+        sensor_data: dict
         for sensor_data in sensor_resp["settings"]["sensors"]:
             if not sensor_data:
                 continue
@@ -300,17 +317,18 @@ class SystemV2(System):
 
     async def get_pins(self, cached: bool = True) -> Dict[str, str]:
         """Return all of the set PINs, including master and duress."""
-        pins_resp = await self.api.request(
+        pins_resp: dict = await self.api.request(
             "get",
             f"subscriptions/{self.system_id}/pins",
             params={"settingsType": "all", "cached": str(cached).lower()},
         )
 
-        pins = {
+        pins: Dict[str, str] = {
             CONF_MASTER_PIN: pins_resp["pins"].pop("pin1")["value"],
             CONF_DURESS_PIN: pins_resp["pins"].pop("duress")["value"],
         }
 
+        user_pin: dict
         for user_pin in [p for p in pins_resp["pins"].values() if p["value"]]:
             pins[user_pin["name"]] = user_pin["value"]
 
@@ -323,7 +341,8 @@ class SystemV3(System):
     def __init__(self, api, location_info: dict) -> None:
         """Initialize."""
         super().__init__(api, location_info)
-        self._settings_info = {}  # type: Dict[str, Any]
+
+        self._settings_info: dict = {}
 
     @property
     def alarm_duration(self) -> int:
@@ -398,18 +417,21 @@ class SystemV3(System):
     @staticmethod
     def _create_pin_payload(pins: dict) -> dict:
         """Transform the internal PINs structure to a V3-compatible payload."""
-        payload = {
+        payload: dict = {
             "pins": {
                 CONF_DURESS_PIN: {"pin": pins.pop(CONF_DURESS_PIN)},
                 CONF_MASTER_PIN: {"pin": pins.pop(CONF_MASTER_PIN)},
                 "users": {},
             }
-        }  # type: Dict[str, Any]
+        }
 
+        idx: int
+        label: str
+        pin: str
         for idx, (label, pin) in enumerate(pins.items()):
             payload["pins"]["users"][str(idx)] = {"name": label, "pin": pin}
 
-        empty_user_index = len(pins)
+        empty_user_index: int = len(pins)
         for idx in range(DEFAULT_MAX_USER_PINS - empty_user_index):
             payload["pins"]["users"][str(idx + empty_user_index)] = {
                 "name": "",
@@ -431,7 +453,7 @@ class SystemV3(System):
         if self._state == value:
             return
 
-        state_resp = await self.api.request(
+        state_resp: dict = await self.api.request(
             "post", f"ss3/subscriptions/{self.system_id}/state/{value.name}"
         )
 
@@ -444,7 +466,7 @@ class SystemV3(System):
 
     async def _update_sensors(self, cached: bool = True) -> None:
         """Update sensors to the latest values."""
-        sensor_resp = await self.api.request(
+        sensor_resp: dict = await self.api.request(
             "get",
             f"ss3/subscriptions/{self.system_id}/sensors",
             params={"forceUpdate": str(not cached).lower()},
@@ -455,6 +477,7 @@ class SystemV3(System):
         if not sensor_resp:
             return
 
+        sensor_data: dict
         for sensor_data in sensor_resp["sensors"]:
             if sensor_data["serial"] in self.sensors:
                 sensor = self.sensors[sensor_data["serial"]]
@@ -464,7 +487,7 @@ class SystemV3(System):
 
     async def _update_settings(self, cached: bool = True) -> None:
         """Update system settings."""
-        settings_resp = await self.api.request(
+        settings_resp: dict = await self.api.request(
             "get",
             f"ss3/subscriptions/{self.system_id}/settings/pins",
             params={"forceUpdate": str(not cached).lower()},
@@ -477,11 +500,12 @@ class SystemV3(System):
         """Return all of the set PINs, including master and duress."""
         await self._update_settings(cached)
 
-        pins = {
+        pins: Dict[str, str] = {
             CONF_MASTER_PIN: self._settings_info["settings"]["pins"]["master"]["pin"],
             CONF_DURESS_PIN: self._settings_info["settings"]["pins"]["duress"]["pin"],
         }
 
+        user_pin: dict
         for user_pin in [
             p for p in self._settings_info["settings"]["pins"]["users"] if p["pin"]
         ]:

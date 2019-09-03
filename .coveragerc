@@ -2,6 +2,8 @@
 exclude_lines =
     # Don't complain if tests don't hit defensive assertion code:
     raise NotImplementedError
+    # Don't include lines that are specifically in place for type-checking:
+    TYPE_CHECKING
 
 [run]
 source = simplipy

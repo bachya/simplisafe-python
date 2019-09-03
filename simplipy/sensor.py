@@ -32,10 +32,10 @@ class Sensor:
 
     def __init__(self, sensor_data: dict) -> None:
         """Initialize."""
-        self.sensor_data = sensor_data
+        self.sensor_data: dict = sensor_data
 
         try:
-            self._type = SensorTypes(sensor_data["type"])
+            self._type: SensorTypes = SensorTypes(sensor_data["type"])
         except ValueError:
             _LOGGER.error("Unknown sensor type: %s", self.sensor_data["type"])
             self._type = SensorTypes.unknown

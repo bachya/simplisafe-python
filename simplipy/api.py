@@ -1,10 +1,9 @@
 """Define a SimpliSafe account."""
-# pylint: disable=protected-access,too-many-instance-attributes
-
+# pylint: disable=protected-access
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, Optional, Type, TypeVar
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from aiohttp import BasicAuth, ClientSession
 from aiohttp.client_exceptions import ClientError
@@ -14,31 +13,31 @@ from .system import System, SystemV2, SystemV3  # noqa
 
 _LOGGER = logging.getLogger(__name__)
 
-DEFAULT_USER_AGENT = "SimpliSafe/2105 CFNetwork/902.2 Darwin/17.7.0"
-DEFAULT_AUTH_USERNAME = "{0}.2074.0.0.com.simplisafe.mobile"
+DEFAULT_USER_AGENT: str = "SimpliSafe/2105 CFNetwork/902.2 Darwin/17.7.0"
+DEFAULT_AUTH_USERNAME: str = "{0}.2074.0.0.com.simplisafe.mobile"
 
-SYSTEM_MAP = {2: SystemV2, 3: SystemV3}
+SYSTEM_MAP: Dict[int, Type[System]] = {2: SystemV2, 3: SystemV3}
 
-URL_HOSTNAME = "api.simplisafe.com"
-URL_BASE = f"https://{URL_HOSTNAME}/v1"
+URL_HOSTNAME: str = "api.simplisafe.com"
+URL_BASE: str = f"https://{URL_HOSTNAME}/v1"
 
 ApiType = TypeVar("ApiType", bound="API")
 
 
-class API:
+class API:  # pylint: disable=too-many-instance-attributes
     """Define an API object to interact with the SimpliSafe cloud."""
 
     def __init__(self, websession: ClientSession) -> None:
         """Initialize."""
-        self._access_token = ""
-        self._access_token_expire = None  # type: Optional[datetime]
-        self._actively_refreshing = False
-        self._email = None  # type: Optional[str]
-        self._refresh_token = ""
-        self._uuid = uuid4()
-        self._websession = websession
-        self.refresh_token_dirty = False
-        self.user_id = None
+        self._access_token: str = ""
+        self._access_token_expire: Optional[datetime] = None
+        self._actively_refreshing: bool = False
+        self._email: Optional[str] = None
+        self._refresh_token: str = ""
+        self._uuid: UUID = uuid4()
+        self._websession: ClientSession = websession
+        self.refresh_token_dirty: bool = False
+        self.user_id: Optional[str] = None
 
     @property
     def refresh_token(self) -> str:
@@ -82,7 +81,7 @@ class API:
 
     async def _authenticate(self, payload_data: dict) -> None:
         """Request token data and parse it."""
-        token_resp = await self.request(
+        token_resp: dict = await self.request(
             "post",
             "api/token",
             data=payload_data,
@@ -99,7 +98,7 @@ class API:
         )
         self.refresh_token = token_resp["refresh_token"]
 
-        auth_check_resp = await self.request("get", "api/authCheck")
+        auth_check_resp: dict = await self.request("get", "api/authCheck")
         self.user_id = auth_check_resp["userId"]
 
     async def _refresh_access_token(self, refresh_token: str) -> None:
@@ -116,9 +115,9 @@ class API:
 
     async def get_systems(self) -> Dict[str, System]:
         """Get systems associated to this account."""
-        subscription_resp = await self.get_subscription_data()
+        subscription_resp: dict = await self.get_subscription_data()
 
-        systems = {}
+        systems: Dict[str, System] = {}
         for system_data in subscription_resp["subscriptions"]:
             version = system_data["location"]["system"]["version"]
             system_class = SYSTEM_MAP[version]
@@ -130,7 +129,7 @@ class API:
 
     async def get_subscription_data(self) -> dict:
         """Get the latest location-level data."""
-        subscription_resp = await self.request(
+        subscription_resp: dict = await self.request(
             "get", f"users/{self.user_id}/subscriptions", params={"activeOnly": "true"}
         )
 
@@ -158,7 +157,7 @@ class API:
             self._actively_refreshing = True
             await self._refresh_access_token(self._refresh_token)
 
-        url = f"{URL_BASE}/{endpoint}"
+        url: str = f"{URL_BASE}/{endpoint}"
 
         if not headers:
             headers = {}

@@ -128,7 +128,5 @@ def unavailable_feature_json():
     return {
         "errorType": "NoRemoteManagement",
         "code": 403,
-        "message": "Subscription {0} does not support remote management".format(
-            TEST_SUBSCRIPTION_ID
-        ),
+        "message": f"Subscription {TEST_SUBSCRIPTION_ID} does not support remote management",
     }

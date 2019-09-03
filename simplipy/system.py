@@ -131,7 +131,7 @@ class System:
             params["numEvents"] = num_events
 
         events_resp = await self.api.request(
-            "get", "subscriptions/{0}/events".format(self.system_id), params=params
+            "get", f"subscriptions/{self.system_id}/events", params=params
         )
 
         _LOGGER.debug("Events response: %s", events_resp)
@@ -155,12 +155,12 @@ class System:
         latest_pins = await self.get_pins(cached=False)
 
         if pin_or_label in RESERVED_PIN_LABELS:
-            raise PinError("Refusing to delete reserved PIN: {0}".format(pin_or_label))
+            raise PinError(f"Refusing to delete reserved PIN: {pin_or_label}")
 
         try:
             label = next((k for k, v in latest_pins.items() if pin_or_label in (k, v)))
         except StopIteration:
-            raise PinError("Cannot delete nonexistent PIN: {0}".format(pin_or_label))
+            raise PinError(f"Cannot delete nonexistent PIN: {pin_or_label}")
 
         del latest_pins[label]
 
@@ -181,7 +181,7 @@ class System:
     async def set_pin(self, label: str, pin: str) -> None:
         """Set a PIN."""
         if len(pin) != MAX_PIN_LENGTH:
-            raise PinError("PINs must be {0} digits long".format(MAX_PIN_LENGTH))
+            raise PinError(f"PINs must be {MAX_PIN_LENGTH} digits long")
 
         try:
             int(pin)
@@ -194,13 +194,11 @@ class System:
         latest_pins = await self.get_pins(cached=False)
 
         if pin in latest_pins.values():
-            raise PinError("Refusing to create duplicate PIN: {0}".format(pin))
+            raise PinError(f"Refusing to create duplicate PIN: {pin}")
 
         max_pins = DEFAULT_MAX_USER_PINS + len(RESERVED_PIN_LABELS)
         if len(latest_pins) == max_pins and label not in RESERVED_PIN_LABELS:
-            raise PinError(
-                "Refusing to create more than {0} user PINs".format(max_pins)
-            )
+            raise PinError(f"Refusing to create more than {max_pins} user PINs")
 
         latest_pins[label] = pin
 
@@ -239,11 +237,11 @@ class SystemV2(System):
         }
 
         for idx, (label, pin) in enumerate(pins.items()):
-            payload["pins"]["pin{0}".format(idx + 2)] = {"name": label, "value": pin}
+            payload["pins"][f"pin{idx + 2}"] = {"name": label, "value": pin}
 
         empty_user_index = len(pins)
         for idx in range(DEFAULT_MAX_USER_PINS - empty_user_index):
-            payload["pins"]["pin{0}".format(str(idx + 2 + empty_user_index))] = {
+            payload["pins"][f"pin{str(idx + 2 + empty_user_index)}"] = {
                 "name": "",
                 "pin": "",
             }
@@ -254,7 +252,7 @@ class SystemV2(System):
         """Post new PINs."""
         await self.api.request(
             "post",
-            "subscriptions/{0}/pins".format(self.system_id),
+            f"subscriptions/{self.system_id}/pins",
             json=self._create_pin_payload(pins),
         )
 
@@ -265,7 +263,7 @@ class SystemV2(System):
 
         state_resp = await self.api.request(
             "post",
-            "subscriptions/{0}/state".format(self.system_id),
+            f"subscriptions/{self.system_id}/state",
             params={"state": value.name},
         )
 
@@ -281,7 +279,7 @@ class SystemV2(System):
         """Update sensors to the latest values."""
         sensor_resp = await self.api.request(
             "get",
-            "subscriptions/{0}/settings".format(self.system_id),
+            f"subscriptions/{self.system_id}/settings",
             params={"settingsType": "all", "cached": str(cached).lower()},
         )
 
@@ -304,7 +302,7 @@ class SystemV2(System):
         """Return all of the set PINs, including master and duress."""
         pins_resp = await self.api.request(
             "get",
-            "subscriptions/{0}/pins".format(self.system_id),
+            f"subscriptions/{self.system_id}/pins",
             params={"settingsType": "all", "cached": str(cached).lower()},
         )
 
@@ -424,7 +422,7 @@ class SystemV3(System):
         """Post new PINs."""
         self._settings_info = await self.api.request(
             "post",
-            "ss3/subscriptions/{0}/settings/pins".format(self.system_id),
+            f"ss3/subscriptions/{self.system_id}/settings/pins",
             json=self._create_pin_payload(pins),
         )
 
@@ -434,7 +432,7 @@ class SystemV3(System):
             return
 
         state_resp = await self.api.request(
-            "post", "ss3/subscriptions/{0}/state/{1}".format(self.system_id, value.name)
+            "post", f"ss3/subscriptions/{self.system_id}/state/{value.name}"
         )
 
         _LOGGER.debug('Set "%s" response: %s', value.name, state_resp)
@@ -448,7 +446,7 @@ class SystemV3(System):
         """Update sensors to the latest values."""
         sensor_resp = await self.api.request(
             "get",
-            "ss3/subscriptions/{0}/sensors".format(self.system_id),
+            f"ss3/subscriptions/{self.system_id}/sensors",
             params={"forceUpdate": str(not cached).lower()},
         )
 
@@ -468,7 +466,7 @@ class SystemV3(System):
         """Update system settings."""
         settings_resp = await self.api.request(
             "get",
-            "ss3/subscriptions/{0}/settings/pins".format(self.system_id),
+            f"ss3/subscriptions/{self.system_id}/settings/pins",
             params={"forceUpdate": str(not cached).lower()},
         )
 

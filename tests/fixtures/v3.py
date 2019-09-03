@@ -38,19 +38,19 @@ def v3_server(
     )
     server.add(
         "api.simplisafe.com",
-        "/v1/users/{0}/subscriptions".format(TEST_USER_ID),
+        f"/v1/users/{TEST_USER_ID}/subscriptions",
         "get",
         aresponses.Response(text=json.dumps(v3_subscriptions_json), status=200),
     )
     server.add(
         "api.simplisafe.com",
-        "/v1/ss3/subscriptions/{0}/sensors".format(TEST_SUBSCRIPTION_ID),
+        f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/sensors",
         "get",
         aresponses.Response(text=json.dumps(v3_sensors_json), status=200),
     )
     server.add(
         "api.simplisafe.com",
-        "/v1/ss3/subscriptions/{0}/settings/pins".format(TEST_SUBSCRIPTION_ID),
+        f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/pins",
         "get",
         aresponses.Response(text=json.dumps(v3_settings_json), status=200),
     )

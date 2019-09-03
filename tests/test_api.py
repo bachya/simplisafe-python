@@ -47,13 +47,13 @@ async def test_401_refresh_token_failure(
     async with v2_server:
         v2_server.add(
             "api.simplisafe.com",
-            "/v1/users/{0}/subscriptions".format(TEST_USER_ID),
+            f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
             aresponses.Response(text=json.dumps(v2_subscriptions_json), status=200),
         )
         v2_server.add(
             "api.simplisafe.com",
-            "/v1/subscriptions/{0}/settings".format(TEST_SUBSCRIPTION_ID),
+            f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/settings",
             "get",
             aresponses.Response(text="", status=401),
         )
@@ -88,7 +88,7 @@ async def test_401_refresh_token_success(
     async with v2_server:
         v2_server.add(
             "api.simplisafe.com",
-            "/v1/users/{0}/subscriptions".format(TEST_USER_ID),
+            f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
             aresponses.Response(text="", status=401),
         )
@@ -106,13 +106,13 @@ async def test_401_refresh_token_success(
         )
         v2_server.add(
             "api.simplisafe.com",
-            "/v1/users/{0}/subscriptions".format(TEST_USER_ID),
+            f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
             aresponses.Response(text=json.dumps(v2_subscriptions_json), status=200),
         )
         v2_server.add(
             "api.simplisafe.com",
-            "/v1/subscriptions/{0}/settings".format(TEST_SUBSCRIPTION_ID),
+            f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/settings",
             "get",
             aresponses.Response(text=json.dumps(v2_settings_json), status=200),
         )
@@ -261,19 +261,19 @@ async def test_unavailable_feature_v2(
         )
         v2_server.add(
             "api.simplisafe.com",
-            "/v1/users/{0}/subscriptions".format(TEST_USER_ID),
+            f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
             aresponses.Response(text=json.dumps(v2_subscriptions_json), status=200),
         )
         v2_server.add(
             "api.simplisafe.com",
-            "/v1/subscriptions/{0}/settings".format(TEST_SUBSCRIPTION_ID),
+            f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/settings",
             "get",
             aresponses.Response(text=json.dumps(unavailable_feature_json), status=403),
         )
         v2_server.add(
             "api.simplisafe.com",
-            "/v1/subscriptions/{0}/state".format(TEST_SUBSCRIPTION_ID),
+            f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/state",
             "post",
             aresponses.Response(text=json.dumps(unavailable_feature_json), status=403),
         )
@@ -322,25 +322,25 @@ async def test_unavailable_feature_v3(
         )
         v3_server.add(
             "api.simplisafe.com",
-            "/v1/users/{0}/subscriptions".format(TEST_USER_ID),
+            f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
             aresponses.Response(text=json.dumps(v3_subscriptions_json), status=200),
         )
         v3_server.add(
             "api.simplisafe.com",
-            "/v1/ss3/subscriptions/{0}/sensors".format(TEST_SUBSCRIPTION_ID),
+            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/sensors",
             "get",
             aresponses.Response(text=json.dumps(unavailable_feature_json), status=403),
         )
         v3_server.add(
             "api.simplisafe.com",
-            "/v1/ss3/subscriptions/{0}/settings/pins".format(TEST_SUBSCRIPTION_ID),
+            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/pins",
             "get",
             aresponses.Response(text=json.dumps(v3_settings_json), status=200),
         )
         v3_server.add(
             "api.simplisafe.com",
-            "/v1/ss3/subscriptions/{0}/state/{1}".format(TEST_SUBSCRIPTION_ID, "away"),
+            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/state/away",
             "post",
             aresponses.Response(text=json.dumps(unavailable_feature_json), status=403),
         )

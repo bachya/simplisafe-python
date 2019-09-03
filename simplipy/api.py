@@ -20,7 +20,7 @@ DEFAULT_AUTH_USERNAME = "{0}.2074.0.0.com.simplisafe.mobile"
 SYSTEM_MAP = {2: SystemV2, 3: SystemV3}
 
 URL_HOSTNAME = "api.simplisafe.com"
-URL_BASE = "https://{0}/v1".format(URL_HOSTNAME)
+URL_BASE = f"https://{URL_HOSTNAME}/v1"
 
 ApiType = TypeVar("ApiType", bound="API")
 
@@ -131,9 +131,7 @@ class API:
     async def get_subscription_data(self) -> dict:
         """Get the latest location-level data."""
         subscription_resp = await self.request(
-            "get",
-            "users/{0}/subscriptions".format(self.user_id),
-            params={"activeOnly": "true"},
+            "get", f"users/{self.user_id}/subscriptions", params={"activeOnly": "true"}
         )
 
         _LOGGER.debug("Subscription response: %s", subscription_resp)
@@ -149,7 +147,7 @@ class API:
         params: dict = None,
         data: dict = None,
         json: dict = None,
-        **kwargs
+        **kwargs,
     ) -> dict:
         """Make a request."""
         if (
@@ -160,12 +158,12 @@ class API:
             self._actively_refreshing = True
             await self._refresh_access_token(self._refresh_token)
 
-        url = "{0}/{1}".format(URL_BASE, endpoint)
+        url = f"{URL_BASE}/{endpoint}"
 
         if not headers:
             headers = {}
         if not kwargs.get("auth") and self._access_token:
-            headers["Authorization"] = "Bearer {0}".format(self._access_token)
+            headers["Authorization"] = f"Bearer {self._access_token}"
         headers.update({"Host": URL_HOSTNAME, "User-Agent": DEFAULT_USER_AGENT})
 
         try:
@@ -176,7 +174,7 @@ class API:
                 params=params,
                 data=data,
                 json=json,
-                **kwargs
+                **kwargs,
             ) as resp:
                 resp.raise_for_status()
                 return await resp.json(content_type=None)
@@ -195,7 +193,7 @@ class API:
                         params=params,
                         data=data,
                         json=json,
-                        **kwargs
+                        **kwargs,
                     )
                 raise InvalidCredentialsError
             if "403" in str(err):
@@ -204,6 +202,4 @@ class API:
                     return {}
                 raise InvalidCredentialsError
 
-            raise RequestError(
-                "Error requesting data from {0}: {1}".format(endpoint, err)
-            )
+            raise RequestError(f"Error requesting data from {endpoint}: {err}")

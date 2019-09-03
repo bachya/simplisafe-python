@@ -90,9 +90,7 @@ class SensorV2(Sensor):
         if self.type == SensorTypes.entry:
             return self.sensor_data.get("entryStatus", "closed") == "open"
 
-        raise SimplipyError(
-            "Cannot determine triggered state for sensor: {0}".format(self.name)
-        )
+        raise SimplipyError(f"Cannot determine triggered state for sensor: {self.name}")
 
 
 class SensorV3(Sensor):

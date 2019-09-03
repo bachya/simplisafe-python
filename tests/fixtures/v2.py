@@ -33,13 +33,13 @@ def v2_server(
     )
     server.add(
         "api.simplisafe.com",
-        "/v1/users/{0}/subscriptions".format(TEST_USER_ID),
+        f"/v1/users/{TEST_USER_ID}/subscriptions",
         "get",
         aresponses.Response(text=json.dumps(v2_subscriptions_json), status=200),
     )
     server.add(
         "api.simplisafe.com",
-        "/v1/subscriptions/{0}/settings".format(TEST_SUBSCRIPTION_ID),
+        f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/settings",
         "get",
         aresponses.Response(text=json.dumps(v2_settings_json), status=200),
     )

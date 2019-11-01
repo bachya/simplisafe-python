@@ -26,6 +26,7 @@ hard work!
 
 * Python 3.6
 * Python 3.7
+* Python 3.8
 
 # Standard vs. Interactive SimpliSafe™ Plans
 

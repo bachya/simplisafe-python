@@ -1,146 +1,98 @@
 """Define a SimpliSafe sensor."""
 import logging
-from enum import Enum
 from typing import Optional
 
+from .entity import Entity, EntityTypes
 from .errors import SimplipyError
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class SensorTypes(Enum):
-    """Define sensor types."""
-
-    remote = 0
-    keypad = 1
-    keychain = 2
-    panic_button = 3
-    motion = 4
-    entry = 5
-    glass_break = 6
-    carbon_monoxide = 7
-    smoke = 8
-    leak = 9
-    temperature = 10
-    camera = 12
-    siren = 13
-    unknown = 99
-
-
-class Sensor:
-    """Define a base SimpliSafe sensor."""
-
-    def __init__(self, sensor_data: dict) -> None:
-        """Initialize."""
-        self.sensor_data: dict = sensor_data
-
-        try:
-            self._type: SensorTypes = SensorTypes(sensor_data["type"])
-        except ValueError:
-            _LOGGER.error("Unknown sensor type: %s", self.sensor_data["type"])
-            self._type = SensorTypes.unknown
-
-    @property
-    def name(self) -> str:
-        """Return the sensor name."""
-        return self.sensor_data["name"]
-
-    @property
-    def serial(self) -> str:
-        """Return the serial number."""
-        return self.sensor_data["serial"]
-
-    @property
-    def type(self) -> SensorTypes:
-        """Return the sensor type."""
-        return self._type
-
-
-class SensorV2(Sensor):
+class SensorV2(Entity):
     """Define a V2 (old) sensor."""
 
     @property
     def data(self) -> int:
         """Return the sensor's current data."""
-        return self.sensor_data["sensorData"]
+        return self.entity_data["sensorData"]
 
     @property
     def error(self) -> bool:
         """Return the sensor's error status."""
-        return self.sensor_data["error"]
+        return self.entity_data["error"]
 
     @property
     def low_battery(self) -> bool:
         """Return whether the sensor's battery is low."""
-        return self.sensor_data.get("battery", "ok") != "ok"
+        return self.entity_data.get("battery", "ok") != "ok"
 
     @property
     def settings(self) -> bool:
         """Return the sensor's settings."""
-        return self.sensor_data["setting"]
+        return self.entity_data["setting"]
 
     @property
     def trigger_instantly(self) -> bool:
         """Return whether the sensor will trigger instantly."""
-        return self.sensor_data["instant"]
+        return self.entity_data["instant"]
 
     @property
     def triggered(self) -> bool:
         """Return the current sensor state."""
-        if self.type == SensorTypes.entry:
-            return self.sensor_data.get("entryStatus", "closed") == "open"
+        if self.type == EntityTypes.entry:
+            return self.entity_data.get("entryStatus", "closed") == "open"
 
         raise SimplipyError(f"Cannot determine triggered state for sensor: {self.name}")
 
 
-class SensorV3(Sensor):
+class SensorV3(Entity):
     """Define a V3 (new) sensor."""
 
     @property
     def error(self) -> bool:
         """Return the sensor's error status."""
-        return self.sensor_data["status"].get("malfunction", False)
+        return self.entity_data["status"].get("malfunction", False)
 
     @property
     def low_battery(self) -> bool:
         """Return whether the sensor's battery is low."""
-        return self.sensor_data["flags"]["lowBattery"]
+        return self.entity_data["flags"]["lowBattery"]
 
     @property
     def offline(self) -> bool:
         """Return whether the sensor is offline."""
-        return self.sensor_data["flags"]["offline"]
+        return self.entity_data["flags"]["offline"]
 
     @property
     def settings(self) -> dict:
         """Return the sensor's settings."""
-        return self.sensor_data["setting"]
+        return self.entity_data["setting"]
 
     @property
     def trigger_instantly(self) -> bool:
         """Return whether the sensor will trigger instantly."""
-        return self.sensor_data["setting"]["instantTrigger"]
+        return self.entity_data["setting"]["instantTrigger"]
 
     @property
     def triggered(self) -> bool:
         """Return the sensor's status info."""
         if self.type in (
-            SensorTypes.motion,
-            SensorTypes.entry,
-            SensorTypes.glass_break,
-            SensorTypes.carbon_monoxide,
-            SensorTypes.smoke,
-            SensorTypes.leak,
-            SensorTypes.temperature,
+            EntityTypes.motion,
+            EntityTypes.entry,
+            EntityTypes.glass_break,
+            EntityTypes.carbon_monoxide,
+            EntityTypes.smoke,
+            EntityTypes.leak,
+            EntityTypes.temperature,
         ):
-            return self.sensor_data["status"].get("triggered", False)
+            return self.entity_data["status"].get("triggered", False)
 
         return False
 
     @property
     def temperature(self) -> Optional[int]:
         """Return the sensor's status info."""
-        if self.type != SensorTypes.temperature:
+        if self.type != EntityTypes.temperature:
             raise AttributeError("Non-temperature sensor cannot have a temperature")
 
-        return self.sensor_data["status"]["temperature"]
+        return self.entity_data["status"]["temperature"]

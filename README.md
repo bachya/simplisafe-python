@@ -323,7 +323,7 @@ async def main() -> None:
 
                 # Return the sensor's type:
                 sensor.type
-                # >>> simplipy.sensor.SensorTypes.glass_break
+                # >>> simplipy.EntityTypes.glass_break
 
                 # Return whether the sensor is in an error state:
                 sensor.error

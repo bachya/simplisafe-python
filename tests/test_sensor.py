@@ -5,8 +5,8 @@ import aiohttp
 import pytest
 
 from simplipy import API
+from simplipy.entity import EntityTypes
 from simplipy.errors import SimplipyError
-from simplipy.sensor import SensorTypes
 
 from .const import TEST_EMAIL, TEST_PASSWORD, TEST_SYSTEM_ID
 from .fixtures import *
@@ -26,7 +26,7 @@ async def test_properties_base(event_loop, v2_server):
             sensor = system.sensors["195"]
             assert sensor.name == "Garage Keypad"
             assert sensor.serial == "195"
-            assert sensor.type == SensorTypes.keypad
+            assert sensor.type == EntityTypes.keypad
 
 
 @pytest.mark.asyncio

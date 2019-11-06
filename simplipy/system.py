@@ -2,10 +2,10 @@
 import asyncio
 import logging
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Coroutine, Dict, List, Set
+from typing import TYPE_CHECKING, Any, Coroutine, Dict, List, Set, Union
 
 from .errors import InvalidCredentialsError, PinError, SimplipyError
-from .sensor import Sensor, SensorV2, SensorV3
+from .sensor import SensorV2, SensorV3
 from .util.string import convert_to_underscore
 
 if TYPE_CHECKING:
@@ -44,7 +44,7 @@ class System:
         """Initialize."""
         self._location_info: dict = location_info
         self.api: "API" = api
-        self.sensors: Dict[str, Sensor] = {}
+        self.sensors: Dict[str, Union[SensorV2, SensorV3]] = {}
 
         self._state: SystemStates = self._coerce_state_from_string(
             location_info["system"]["alarmState"]
@@ -311,7 +311,7 @@ class SystemV2(System):
 
             if sensor_data["serial"] in self.sensors:
                 sensor = self.sensors[sensor_data["serial"]]
-                sensor.sensor_data = sensor_data
+                sensor.entity_data = sensor_data
             else:
                 self.sensors[sensor_data["serial"]] = SensorV2(sensor_data)
 
@@ -481,7 +481,7 @@ class SystemV3(System):
         for sensor_data in sensor_resp["sensors"]:
             if sensor_data["serial"] in self.sensors:
                 sensor = self.sensors[sensor_data["serial"]]
-                sensor.sensor_data = sensor_data
+                sensor.entity_data = sensor_data
             else:
                 self.sensors[sensor_data["serial"]] = SensorV3(sensor_data)
 

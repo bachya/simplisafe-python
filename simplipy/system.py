@@ -2,8 +2,9 @@
 import asyncio
 import logging
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Coroutine, Dict, List, Set, Union
+from typing import TYPE_CHECKING, Any, Coroutine, Dict, List, Set, Type, Union
 
+from .entity import EntityTypes
 from .errors import InvalidCredentialsError, PinError, SimplipyError
 from .sensor import SensorV2, SensorV3
 from .util.string import convert_to_underscore
@@ -18,8 +19,41 @@ CONF_MASTER_PIN: str = "master"
 
 DEFAULT_MAX_USER_PINS: int = 4
 MAX_PIN_LENGTH: int = 4
-
 RESERVED_PIN_LABELS: Set[str] = {CONF_DURESS_PIN, CONF_MASTER_PIN}
+
+V2_ENTITY_MAP = {
+    EntityTypes.remote: SensorV2,
+    EntityTypes.keypad: SensorV2,
+    EntityTypes.keychain: SensorV2,
+    EntityTypes.panic_button: SensorV2,
+    EntityTypes.motion: SensorV2,
+    EntityTypes.entry: SensorV2,
+    EntityTypes.glass_break: SensorV2,
+    EntityTypes.carbon_monoxide: SensorV2,
+    EntityTypes.smoke: SensorV2,
+    EntityTypes.leak: SensorV2,
+    EntityTypes.temperature: SensorV2,
+    EntityTypes.camera: SensorV2,
+    EntityTypes.siren: SensorV2,
+    EntityTypes.unknown: SensorV2,
+}
+
+V3_ENTITY_MAP = {
+    EntityTypes.remote: SensorV3,
+    EntityTypes.keypad: SensorV3,
+    EntityTypes.keychain: SensorV3,
+    EntityTypes.panic_button: SensorV3,
+    EntityTypes.motion: SensorV3,
+    EntityTypes.entry: SensorV3,
+    EntityTypes.glass_break: SensorV3,
+    EntityTypes.carbon_monoxide: SensorV3,
+    EntityTypes.smoke: SensorV3,
+    EntityTypes.leak: SensorV3,
+    EntityTypes.temperature: SensorV3,
+    EntityTypes.camera: SensorV3,
+    EntityTypes.siren: SensorV3,
+    EntityTypes.unknown: SensorV3,
+}
 
 
 class SystemStates(Enum):
@@ -35,6 +69,13 @@ class SystemStates(Enum):
     home_count = 8
     off = 9
     unknown = 99
+
+
+def get_sensor_class(version: int) -> Union[Type[SensorV2], Type[SensorV3]]:
+    """Return the appropriate sensor class based on system version."""
+    if version == 2:
+        return SensorV2
+    return SensorV3
 
 
 class System:
@@ -94,6 +135,10 @@ class System:
             _LOGGER.error("Unknown system state: %s", value)
             return SystemStates.unknown
 
+    async def _get_sensor_payload(self, cached: bool = False) -> dict:
+        """Return the current sensor payload."""
+        raise NotImplementedError()
+
     async def _send_updated_pins(self, pins: dict) -> None:
         """Post new PINs."""
         raise NotImplementedError()
@@ -120,7 +165,29 @@ class System:
 
     async def _update_sensors(self, cached: bool = True) -> None:
         """Update sensors to the latest values."""
-        raise NotImplementedError()
+        sensors: dict = await self._get_sensor_payload(cached)
+
+        _LOGGER.debug("Sensor response: %s", sensors)
+
+        sensor_data: dict
+        for sensor_data in sensors:
+            if not sensor_data:
+                continue
+
+            try:
+                sensor_type: EntityTypes = EntityTypes(sensor_data["type"])
+            except ValueError:
+                _LOGGER.error("Unknown entity type: %s", sensor_data["type"])
+                sensor_type = EntityTypes.unknown
+
+            if sensor_data["serial"] in self.sensors:
+                sensor = self.sensors[sensor_data["serial"]]
+                sensor.entity_data = sensor_data
+            else:
+                sensor_klass = get_sensor_class(self.version)
+                self.sensors[sensor_data["serial"]] = sensor_klass(
+                    sensor_type, sensor_data
+                )
 
     async def _update_settings(self, cached: bool = True) -> None:
         """Update system settings."""
@@ -264,6 +331,16 @@ class SystemV2(System):
 
         return payload
 
+    async def _get_sensor_payload(self, cached: bool = True) -> dict:
+        """Update sensors to the latest values."""
+        sensor_resp = await self.api.request(
+            "get",
+            f"subscriptions/{self.system_id}/settings",
+            params={"settingsType": "all", "cached": str(cached).lower()},
+        )
+
+        return sensor_resp["settings"]["sensors"]
+
     async def _send_updated_pins(self, pins: dict) -> None:
         """Post new PINs."""
         await self.api.request(
@@ -290,30 +367,6 @@ class SystemV2(System):
 
         if state_resp["success"]:
             self._state = SystemStates[state_resp["requestedState"]]
-
-    async def _update_sensors(self, cached: bool = True) -> None:
-        """Update sensors to the latest values."""
-        sensor_resp: dict = await self.api.request(
-            "get",
-            f"subscriptions/{self.system_id}/settings",
-            params={"settingsType": "all", "cached": str(cached).lower()},
-        )
-
-        _LOGGER.debug("Sensor response: %s", sensor_resp)
-
-        if not sensor_resp:
-            return
-
-        sensor_data: dict
-        for sensor_data in sensor_resp["settings"]["sensors"]:
-            if not sensor_data:
-                continue
-
-            if sensor_data["serial"] in self.sensors:
-                sensor = self.sensors[sensor_data["serial"]]
-                sensor.entity_data = sensor_data
-            else:
-                self.sensors[sensor_data["serial"]] = SensorV2(sensor_data)
 
     async def get_pins(self, cached: bool = True) -> Dict[str, str]:
         """Return all of the set PINs, including master and duress."""
@@ -440,6 +493,16 @@ class SystemV3(System):
 
         return payload
 
+    async def _get_sensor_payload(self, cached: bool = True) -> dict:
+        """Update sensors to the latest values."""
+        sensor_resp = await self.api.request(
+            "get",
+            f"ss3/subscriptions/{self.system_id}/sensors",
+            params={"forceUpdate": str(not cached).lower()},
+        )
+
+        return sensor_resp["sensors"]
+
     async def _send_updated_pins(self, pins: dict) -> None:
         """Post new PINs."""
         self._settings_info = await self.api.request(
@@ -463,27 +526,6 @@ class SystemV3(System):
             return
 
         self._state = self._coerce_state_from_string(state_resp["state"])
-
-    async def _update_sensors(self, cached: bool = True) -> None:
-        """Update sensors to the latest values."""
-        sensor_resp: dict = await self.api.request(
-            "get",
-            f"ss3/subscriptions/{self.system_id}/sensors",
-            params={"forceUpdate": str(not cached).lower()},
-        )
-
-        _LOGGER.debug("Sensor response: %s", sensor_resp)
-
-        if not sensor_resp:
-            return
-
-        sensor_data: dict
-        for sensor_data in sensor_resp["sensors"]:
-            if sensor_data["serial"] in self.sensors:
-                sensor = self.sensors[sensor_data["serial"]]
-                sensor.entity_data = sensor_data
-            else:
-                self.sensors[sensor_data["serial"]] = SensorV3(sensor_data)
 
     async def _update_settings(self, cached: bool = True) -> None:
         """Update system settings."""

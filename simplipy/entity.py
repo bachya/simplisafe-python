@@ -27,15 +27,10 @@ class EntityTypes(Enum):
 class Entity:
     """Define a base SimpliSafe entity."""
 
-    def __init__(self, entity_data: dict) -> None:
+    def __init__(self, entity_type: EntityTypes, entity_data: dict) -> None:
         """Initialize."""
+        self._type = entity_type
         self.entity_data: dict = entity_data
-
-        try:
-            self._type: EntityTypes = EntityTypes(entity_data["type"])
-        except ValueError:
-            _LOGGER.error("Unknown entity type: %s", self.entity_data["type"])
-            self._type = EntityTypes.unknown
 
     @property
     def name(self) -> str:

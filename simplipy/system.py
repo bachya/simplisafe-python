@@ -4,8 +4,9 @@ import logging
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Coroutine, Dict, List, Set, Type, Union
 
-from .entity import EntityTypes
+from .entity import Entity, EntityTypes
 from .errors import InvalidCredentialsError, PinError, SimplipyError
+from .lock import Lock
 from .sensor import SensorV2, SensorV3
 from .util.string import convert_to_underscore
 
@@ -22,36 +23,38 @@ MAX_PIN_LENGTH: int = 4
 RESERVED_PIN_LABELS: Set[str] = {CONF_DURESS_PIN, CONF_MASTER_PIN}
 
 V2_ENTITY_MAP = {
-    EntityTypes.remote: SensorV2,
-    EntityTypes.keypad: SensorV2,
-    EntityTypes.keychain: SensorV2,
-    EntityTypes.panic_button: SensorV2,
-    EntityTypes.motion: SensorV2,
+    EntityTypes.camera: SensorV2,
+    EntityTypes.carbon_monoxide: SensorV2,
     EntityTypes.entry: SensorV2,
     EntityTypes.glass_break: SensorV2,
-    EntityTypes.carbon_monoxide: SensorV2,
-    EntityTypes.smoke: SensorV2,
+    EntityTypes.keychain: SensorV2,
+    EntityTypes.keypad: SensorV2,
     EntityTypes.leak: SensorV2,
-    EntityTypes.temperature: SensorV2,
-    EntityTypes.camera: SensorV2,
+    EntityTypes.motion: SensorV2,
+    EntityTypes.panic_button: SensorV2,
+    EntityTypes.remote: SensorV2,
     EntityTypes.siren: SensorV2,
+    EntityTypes.smoke: SensorV2,
+    EntityTypes.temperature: SensorV2,
     EntityTypes.unknown: SensorV2,
 }
 
 V3_ENTITY_MAP = {
-    EntityTypes.remote: SensorV3,
-    EntityTypes.keypad: SensorV3,
-    EntityTypes.keychain: SensorV3,
-    EntityTypes.panic_button: SensorV3,
-    EntityTypes.motion: SensorV3,
+    EntityTypes.camera: SensorV3,
+    EntityTypes.carbon_monoxide: SensorV3,
     EntityTypes.entry: SensorV3,
     EntityTypes.glass_break: SensorV3,
-    EntityTypes.carbon_monoxide: SensorV3,
-    EntityTypes.smoke: SensorV3,
+    EntityTypes.keychain: SensorV3,
+    EntityTypes.keypad: SensorV3,
     EntityTypes.leak: SensorV3,
-    EntityTypes.temperature: SensorV3,
-    EntityTypes.camera: SensorV3,
+    EntityTypes.lock: Lock,
+    EntityTypes.lock_keypad: SensorV3,
+    EntityTypes.motion: SensorV3,
+    EntityTypes.panic_button: SensorV3,
+    EntityTypes.remote: SensorV3,
     EntityTypes.siren: SensorV3,
+    EntityTypes.smoke: SensorV3,
+    EntityTypes.temperature: SensorV3,
     EntityTypes.unknown: SensorV3,
 }
 
@@ -71,11 +74,11 @@ class SystemStates(Enum):
     unknown = 99
 
 
-def get_sensor_class(version: int) -> Union[Type[SensorV2], Type[SensorV3]]:
-    """Return the appropriate sensor class based on system version."""
+def get_entity_class(version: int, entity_type: EntityTypes) -> Type[Entity]:
+    """Return the appropriate entity class based on version and entity type."""
     if version == 2:
-        return SensorV2
-    return SensorV3
+        return V2_ENTITY_MAP[entity_type]
+    return V3_ENTITY_MAP[entity_type]
 
 
 class System:
@@ -85,6 +88,7 @@ class System:
         """Initialize."""
         self._location_info: dict = location_info
         self.api: "API" = api
+        self.locks: Dict[str, Lock] = {}
         self.sensors: Dict[str, Union[SensorV2, SensorV3]] = {}
 
         self._state: SystemStates = self._coerce_state_from_string(
@@ -135,7 +139,7 @@ class System:
             _LOGGER.error("Unknown system state: %s", value)
             return SystemStates.unknown
 
-    async def _get_sensor_payload(self, cached: bool = False) -> dict:
+    async def _get_entities_payload(self, cached: bool = False) -> dict:
         """Return the current sensor payload."""
         raise NotImplementedError()
 
@@ -146,6 +150,37 @@ class System:
     async def _set_state(self, value: SystemStates) -> None:
         """Raise if calling this undefined based method."""
         raise NotImplementedError()
+
+    async def _update_entities(self, cached: bool = True) -> None:
+        """Update sensors to the latest values."""
+        entities: dict = await self._get_entities_payload(cached)
+
+        _LOGGER.debug("Get entities response: %s", entities)
+
+        entity_data: dict
+        for entity_data in entities:
+            if not entity_data:
+                continue
+
+            try:
+                entity_type: EntityTypes = EntityTypes(entity_data["type"])
+            except ValueError:
+                _LOGGER.error("Unknown entity type: %s", entity_data["type"])
+                entity_type = EntityTypes.unknown
+
+            if entity_type == EntityTypes.lock:
+                prop = self.locks
+            else:
+                prop = self.sensors  # type: ignore
+
+            if entity_data["serial"] in prop:
+                entity = prop[entity_data["serial"]]
+                entity.entity_data = entity_data
+            else:
+                klass = get_entity_class(self.version, entity_type)
+                prop[entity_data["serial"]] = klass(  # type: ignore
+                    entity_type, entity_data
+                )
 
     async def _update_location_info(self) -> None:
         """Update information on the system."""
@@ -165,7 +200,7 @@ class System:
 
     async def _update_sensors(self, cached: bool = True) -> None:
         """Update sensors to the latest values."""
-        sensors: dict = await self._get_sensor_payload(cached)
+        sensors: dict = await self._get_entities_payload(cached)
 
         _LOGGER.debug("Sensor response: %s", sensors)
 
@@ -184,7 +219,7 @@ class System:
                 sensor = self.sensors[sensor_data["serial"]]
                 sensor.entity_data = sensor_data
             else:
-                sensor_klass = get_sensor_class(self.version)
+                sensor_klass = get_entity_class(self.version, sensor_type)
                 self.sensors[sensor_data["serial"]] = sensor_klass(
                     self.api, self.system_id, sensor_type, sensor_data
                 )
@@ -282,7 +317,7 @@ class System:
     async def update(self, refresh_location: bool = True, cached: bool = True) -> None:
         """Update to the latest data (including entities)."""
         tasks: Dict[str, Coroutine] = {
-            "sensors": self._update_sensors(cached),
+            "entities": self._update_entities(cached),
             "settings": self._update_settings(cached),
         }
         if refresh_location:
@@ -331,7 +366,7 @@ class SystemV2(System):
 
         return payload
 
-    async def _get_sensor_payload(self, cached: bool = True) -> dict:
+    async def _get_entities_payload(self, cached: bool = True) -> dict:
         """Update sensors to the latest values."""
         sensor_resp = await self.api.request(
             "get",
@@ -493,7 +528,7 @@ class SystemV3(System):
 
         return payload
 
-    async def _get_sensor_payload(self, cached: bool = True) -> dict:
+    async def _get_entities_payload(self, cached: bool = True) -> dict:
         """Update sensors to the latest values."""
         sensor_resp = await self.api.request(
             "get",

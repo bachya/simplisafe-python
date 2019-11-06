@@ -25,6 +25,8 @@ class EntityTypes(Enum):
     temperature = 10
     camera = 12
     siren = 13
+    lock = 16
+    lock_keypad = 253
     unknown = 99
 
 

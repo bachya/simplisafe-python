@@ -46,3 +46,27 @@ class Entity:
     def type(self) -> EntityTypes:
         """Return the entity type."""
         return self._type
+
+
+class EntityV3(Entity):
+    """Define a base SimpliSafe V3 entity."""
+
+    @property
+    def error(self) -> bool:
+        """Return the entity's error status."""
+        return self.entity_data["status"].get("malfunction", False)
+
+    @property
+    def low_battery(self) -> bool:
+        """Return whether the entity's battery is low."""
+        return self.entity_data["flags"]["lowBattery"]
+
+    @property
+    def offline(self) -> bool:
+        """Return whether the entity is offline."""
+        return self.entity_data["flags"]["offline"]
+
+    @property
+    def settings(self) -> dict:
+        """Return the entity's settings."""
+        return self.entity_data["setting"]

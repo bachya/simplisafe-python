@@ -2,7 +2,7 @@
 import logging
 from typing import Optional
 
-from .entity import Entity, EntityTypes
+from .entity import Entity, EntityTypes, EntityV3
 from .errors import SimplipyError
 
 _LOGGER: logging.Logger = logging.getLogger(__name__)
@@ -45,28 +45,8 @@ class SensorV2(Entity):
         raise SimplipyError(f"Cannot determine triggered state for sensor: {self.name}")
 
 
-class SensorV3(Entity):
+class SensorV3(EntityV3):
     """Define a V3 (new) sensor."""
-
-    @property
-    def error(self) -> bool:
-        """Return the sensor's error status."""
-        return self.entity_data["status"].get("malfunction", False)
-
-    @property
-    def low_battery(self) -> bool:
-        """Return whether the sensor's battery is low."""
-        return self.entity_data["flags"]["lowBattery"]
-
-    @property
-    def offline(self) -> bool:
-        """Return whether the sensor is offline."""
-        return self.entity_data["flags"]["offline"]
-
-    @property
-    def settings(self) -> dict:
-        """Return the sensor's settings."""
-        return self.entity_data["setting"]
 
     @property
     def trigger_instantly(self) -> bool:

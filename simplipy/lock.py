@@ -1,8 +1,13 @@
 """Define a SimpliSafe lock."""
 from enum import Enum
 import logging
+from typing import TYPE_CHECKING
 
-from .entity import EntityV3
+from .entity import EntityTypes, EntityV3
+
+if TYPE_CHECKING:
+    from .api import API  # pylint: disable=cyclic-import
+    from .system import System  # pylint: disable=cyclic-import
 
 _LOGGER: logging.Logger = logging.getLogger(__name__)
 
@@ -19,6 +24,13 @@ SET_STATE_MAP = {LockStates.locked: "lock", LockStates.unlocked: "unlock"}
 
 class Lock(EntityV3):
     """Define a lock."""
+
+    def __init__(
+        self, api: "API", system: "System", entity_type: EntityTypes, entity_data: dict
+    ) -> None:
+        """Initialize."""
+        super().__init__(api, system, entity_type, entity_data)
+        self._state = LockStates(self.entity_data["status"]["lockState"])
 
     @property
     def disabled(self) -> bool:
@@ -48,7 +60,7 @@ class Lock(EntityV3):
     @property
     def state(self) -> LockStates:
         """Return the current state of the lock."""
-        return LockStates(self.entity_data["status"]["lockState"])
+        return self._state
 
     async def _set_lock_state(self, state: LockStates) -> None:
         """Set the lock state."""

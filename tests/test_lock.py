@@ -5,6 +5,7 @@ import pytest
 from simplipy import API
 from simplipy.entity import EntityTypes
 from simplipy.errors import SimplipyError
+from simplipy.lock import LockStates
 
 from .const import TEST_EMAIL, TEST_PASSWORD, TEST_SYSTEM_ID
 from .fixtures import *
@@ -26,8 +27,9 @@ async def test_properties(event_loop, v3_server):
             assert not lock.error
             assert not lock.jammed
             assert not lock.lock_low_battery
-            assert lock.locked is True
             assert not lock.low_battery
             assert not lock.offline
             assert not lock.pin_pad_low_battery
             assert not lock.pin_pad_offline
+
+            assert lock.state is LockStates.locked

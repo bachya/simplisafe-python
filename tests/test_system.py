@@ -235,7 +235,7 @@ async def test_get_systems_v3(
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.system_id == TEST_SYSTEM_ID
             assert system.api._access_token == TEST_ACCESS_TOKEN
-            assert len(system.sensors) == 21
+            assert len(system.sensors) == 22
 
             token_api = await API.login_via_token(TEST_REFRESH_TOKEN, websession)
             systems = await token_api.get_systems()
@@ -246,7 +246,7 @@ async def test_get_systems_v3(
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.system_id == TEST_SYSTEM_ID
             assert system.api._access_token == TEST_ACCESS_TOKEN
-            assert len(system.sensors) == 21
+            assert len(system.sensors) == 22
 
 
 @pytest.mark.asyncio
@@ -782,7 +782,7 @@ async def test_update_system_data_v3(
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.system_id == TEST_SYSTEM_ID
             assert system.api._access_token == TEST_ACCESS_TOKEN
-            assert len(system.sensors) == 21
+            assert len(system.sensors) == 22
 
 
 @pytest.mark.asyncio

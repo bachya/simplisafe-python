@@ -179,7 +179,7 @@ class System:
             else:
                 klass = get_entity_class(self.version, entity_type)
                 prop[entity_data["serial"]] = klass(  # type: ignore
-                    entity_type, entity_data
+                    self.api, self, entity_type, entity_data
                 )
 
     async def _update_location_info(self) -> None:

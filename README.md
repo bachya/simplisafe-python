@@ -280,7 +280,7 @@ which they relate.
 
 **NOTE:** Individual sensors cannot be updated directly; instead,
 the `update()` method on their parent `System` object should be used. It is
-crucial to remember that sensor values are only as current as the last time
+crucial to remember that sensor states are only as current as the last time
 `system.update()` was called.
 
 Like their `System` cousins, two types of objects can be returned:
@@ -396,6 +396,95 @@ async def main() -> None:
                 # For temperature sensors, return the current temperature:
                 sensor.temperature
                 # >>> 67
+
+
+asyncio.get_event_loop().run_until_complete(main())
+```
+
+## The `Lock` Object
+
+`Lock` objects correspond to SimpliSafe locks and allows users to retrieve information
+on them and alter their state by locking/unlocking them.
+
+**NOTE:** Individual locks cannot be updated directly; instead,
+the `update()` method on their parent `System` object should be used. It is
+crucial to remember that lock states are only as current as the last time
+`system.update()` was called. The only exception to this rule is when `lock.lock()` or
+`lock.unlock()` are called, which will automatically update the lock state.
+
+### Base Properties and Methods
+
+```python
+from simplipy import API
+
+
+async def main() -> None:
+    """Create the aiohttp session and run."""
+    async with ClientSession() as websession:
+        simplisafe = await API.login_via_credentials(
+            "<EMAIL>", "<PASSWORD>", websession
+        )
+
+        systems = await simplisafe.get_systems()
+        for system_id, system in systems.items():
+            for serial, lock in system.locks.items():
+                # Return the lock's name:
+                lock.name
+                # >>> Kitchen Window
+
+                # Return the lock's serial number through the index:
+                serial
+                # >>> 1234ABCD
+
+                # ...or through the property:
+                lock.serial
+                # >>> 1234ABCD
+
+                # Return the state of the lock:
+                lock.state
+                # >>> simplipy.lock.LockStates.locked
+
+                # Return whether the lock is in an error state:
+                lock.error
+                # >>> False
+
+                # Return whether the lock has a low battery:
+                lock.low_battery
+                # >>> False
+
+                # Return whether the lock is offline:
+                lock.offline
+                # >>> False
+
+                # Return a settings dictionary for the lock:
+                lock.settings
+                # >>> {"autoLock": 3, "away": 1, "home": 1}
+
+                # Return whether the lock is disabled:
+                lock.disabled
+                # >>> False
+
+                # Return whether the lock's battery is low:
+                lock.lock_low_battery
+                # >>> False
+
+                # Return whether the lock is jammed:
+                lock.jammed
+                # >>> False
+
+                # Return whether the pin pad's battery is low:
+                lock.pin_pad_low_battery
+                # >>> False
+
+                # Return whether the pin pad is offline:
+                lock.pin_pad_offline
+                # >>> False
+
+                # Lock the lock:
+                await lock.lock()
+
+                # Unlock the lock:
+                await lock.unlock()
 
 
 asyncio.get_event_loop().run_until_complete(main())

@@ -26,16 +26,20 @@ async def main() -> None:
             systems = await simplisafe.get_systems()
             for system in systems.values():
                 for serial, lock in system.locks.items():
-                    _LOGGER.info("Lock %s: (name: %s", serial, lock.name)
+                    _LOGGER.info(
+                        "Lock %s: (name: %s, state: %s)", serial, lock.name, lock.state
+                    )
                     if lock.state == LockStates.unlocked:
-                        _LOGGER.info("Locking, then unlocking")
+                        _LOGGER.info("Locking...")
                         await lock.lock()
                         await asyncio.sleep(3)
+                        _LOGGER.info("Unlocking...")
                         await lock.unlock()
                     else:
-                        _LOGGER.info("Unlocking, then locking")
+                        _LOGGER.info("Unlocking...")
                         await lock.unlock()
                         await asyncio.sleep(3)
+                        _LOGGER.info("Locking...")
                         await lock.lock()
         except InvalidCredentialsError:
             _LOGGER.error("Invalid credentials")

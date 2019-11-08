@@ -6,6 +6,7 @@ import pytest
 
 from ..const import (
     TEST_ACCOUNT_ID,
+    TEST_LOCK_ID,
     TEST_SUBSCRIPTION_ID,
     TEST_SYSTEM_ID,
     TEST_SYSTEM_SERIAL_NO,
@@ -56,6 +57,18 @@ def v3_server(
     )
 
     return server
+
+
+@pytest.fixture()
+def v3_lock_lock_response_json():
+    """Return a /v1/doorlock/<SUBSCRIPTION_ID>/<LOCK_ID>/state response from locking."""
+    return {"state": "lock"}
+
+
+@pytest.fixture()
+def v3_lock_unlock_response_json():
+    """Return a /v1/doorlock/<SUBSCRIPTION_ID>/<LOCK_ID>/state response from unlocking."""
+    return {"state": "unlock"}
 
 
 @pytest.fixture()
@@ -410,7 +423,7 @@ def v3_sensors_json():
                 },
             },
             {
-                "serial": "987",
+                "serial": TEST_LOCK_ID,
                 "type": 16,
                 "status": {
                     "pinPadState": 0,

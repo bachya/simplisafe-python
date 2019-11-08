@@ -1,4 +1,6 @@
 """Define tests for the Lock objects."""
+import json
+
 import aiohttp
 import pytest
 
@@ -7,10 +9,58 @@ from simplipy.entity import EntityTypes
 from simplipy.errors import SimplipyError
 from simplipy.lock import LockStates
 
-from .const import TEST_EMAIL, TEST_PASSWORD, TEST_SYSTEM_ID
+from .const import (
+    TEST_EMAIL,
+    TEST_LOCK_ID,
+    TEST_PASSWORD,
+    TEST_SUBSCRIPTION_ID,
+    TEST_SYSTEM_ID,
+)
 from .fixtures import *
 from .fixtures.v2 import *
 from .fixtures.v3 import *
+
+
+@pytest.mark.asyncio
+async def test_lock_unlock(
+    aresponses,
+    event_loop,
+    v3_server,
+    v3_lock_lock_response_json,
+    v3_lock_unlock_response_json,
+):
+    """Test locking the lock."""
+    async with v3_server:
+        v3_server.add(
+            "api.simplisafe.com",
+            f"/v1/doorlock/{TEST_SUBSCRIPTION_ID}/{TEST_LOCK_ID}/state",
+            "post",
+            aresponses.Response(
+                text=json.dumps(v3_lock_unlock_response_json), status=200
+            ),
+        )
+        v3_server.add(
+            "api.simplisafe.com",
+            f"/v1/doorlock/{TEST_SUBSCRIPTION_ID}/{TEST_LOCK_ID}/state",
+            "post",
+            aresponses.Response(
+                text=json.dumps(v3_lock_lock_response_json), status=200
+            ),
+        )
+
+        async with aiohttp.ClientSession(loop=event_loop) as websession:
+            api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
+
+            lock = system.locks["987"]
+            assert lock.state == LockStates.locked
+
+            await lock.unlock()
+            assert lock.state == LockStates.unlocked
+
+            await lock.lock()
+            assert lock.state == LockStates.locked
 
 
 @pytest.mark.asyncio

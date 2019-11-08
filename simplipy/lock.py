@@ -1,13 +1,8 @@
 """Define a SimpliSafe lock."""
 from enum import Enum
 import logging
-from typing import TYPE_CHECKING
 
-from .entity import EntityTypes, EntityV3
-
-if TYPE_CHECKING:
-    from .api import API  # pylint: disable=cyclic-import
-    from .system import System  # pylint: disable=cyclic-import
+from .entity import EntityV3
 
 _LOGGER: logging.Logger = logging.getLogger(__name__)
 
@@ -15,8 +10,8 @@ _LOGGER: logging.Logger = logging.getLogger(__name__)
 class LockStates(Enum):
     """Define states that the lock can be in."""
 
-    unlocked = 0
     locked = 1
+    unlocked = 0
 
 
 SET_STATE_MAP = {LockStates.locked: "lock", LockStates.unlocked: "unlock"}
@@ -24,13 +19,6 @@ SET_STATE_MAP = {LockStates.locked: "lock", LockStates.unlocked: "unlock"}
 
 class Lock(EntityV3):
     """Define a lock."""
-
-    def __init__(
-        self, api: "API", system: "System", entity_type: EntityTypes, entity_data: dict
-    ) -> None:
-        """Initialize."""
-        super().__init__(api, system, entity_type, entity_data)
-        self._state = LockStates(self.entity_data["status"]["lockState"])
 
     @property
     def disabled(self) -> bool:
@@ -60,15 +48,20 @@ class Lock(EntityV3):
     @property
     def state(self) -> LockStates:
         """Return the current state of the lock."""
-        return self._state
+        return LockStates(self.entity_data["status"]["lockState"])
 
     async def _set_lock_state(self, state: LockStates) -> None:
         """Set the lock state."""
-        await self._api.request(
+        set_lock_resp = await self._api.request(
             "post",
             f"doorlock/{self._system.system_id}/{self.serial}/state",
             json={"state": SET_STATE_MAP[state]},
         )
+
+        result_state = next(
+            (k for k, v in SET_STATE_MAP.items() if v == set_lock_resp["state"])
+        )
+        self.entity_data["status"]["lockState"] = result_state.value
 
     async def lock(self) -> None:
         """Lock the lock."""

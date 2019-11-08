@@ -179,7 +179,7 @@ class System:
             else:
                 klass = get_entity_class(self.version, entity_type)
                 prop[entity_data["serial"]] = klass(  # type: ignore
-                    self.api, self, entity_type, entity_data
+                    self.api, self.system_id, entity_type, entity_data
                 )
 
     async def _update_location_info(self) -> None:
@@ -197,32 +197,6 @@ class System:
         self._state = self._coerce_state_from_string(
             location_info["system"]["alarmState"]
         )
-
-    async def _update_sensors(self, cached: bool = True) -> None:
-        """Update sensors to the latest values."""
-        sensors: dict = await self._get_entities_payload(cached)
-
-        _LOGGER.debug("Sensor response: %s", sensors)
-
-        sensor_data: dict
-        for sensor_data in sensors:
-            if not sensor_data:
-                continue
-
-            try:
-                sensor_type: EntityTypes = EntityTypes(sensor_data["type"])
-            except ValueError:
-                _LOGGER.error("Unknown entity type: %s", sensor_data["type"])
-                sensor_type = EntityTypes.unknown
-
-            if sensor_data["serial"] in self.sensors:
-                sensor = self.sensors[sensor_data["serial"]]
-                sensor.entity_data = sensor_data
-            else:
-                sensor_klass = get_entity_class(self.version, sensor_type)
-                self.sensors[sensor_data["serial"]] = sensor_klass(
-                    self.api, self.system_id, sensor_type, sensor_data
-                )
 
     async def _update_settings(self, cached: bool = True) -> None:
         """Update system settings."""

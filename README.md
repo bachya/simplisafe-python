@@ -410,7 +410,7 @@ on them and alter their state by locking/unlocking them.
 the `update()` method on their parent `System` object should be used. It is
 crucial to remember that lock states are only as current as the last time
 `system.update()` was called. The only exception to this rule is when `lock.lock()` or
-`lock.unlock()` are called, which will automatically update the lock state.
+`lock.unlock()` are called; both of these will automatically update the lock state.
 
 ### Base Properties and Methods
 

@@ -1,9 +1,20 @@
 """Define a SimpliSafe lock."""
+from enum import Enum
 import logging
 
 from .entity import EntityV3
 
 _LOGGER: logging.Logger = logging.getLogger(__name__)
+
+
+class LockStates(Enum):
+    """Define states that the lock can be in."""
+
+    unlocked = 0
+    locked = 1
+
+
+SET_STATE_MAP = {LockStates.locked: "lock", LockStates.unlocked: "unlock"}
 
 
 class Lock(EntityV3):
@@ -25,11 +36,6 @@ class Lock(EntityV3):
         return bool(self.entity_data["status"]["lockJamState"])
 
     @property
-    def locked(self) -> bool:
-        """Return whether the lock is locked."""
-        return bool(self.entity_data["status"]["lockState"])
-
-    @property
     def pin_pad_low_battery(self) -> bool:
         """Return whether the pin pad's battery is low."""
         return self.entity_data["status"]["pinPadLowBattery"]
@@ -38,3 +44,24 @@ class Lock(EntityV3):
     def pin_pad_offline(self) -> bool:
         """Return whether the pin pad is offline."""
         return self.entity_data["status"]["pinPadOffline"]
+
+    @property
+    def state(self) -> LockStates:
+        """Return the current state of the lock."""
+        return LockStates(self.entity_data["status"]["lockState"])
+
+    async def _set_lock_state(self, state: LockStates) -> None:
+        """Set the lock state."""
+        await self._api.request(
+            "post",
+            f"doorlock/{self._system.system_id}/{self.serial}/state",
+            json={"state": SET_STATE_MAP[state]},
+        )
+
+    async def lock(self) -> None:
+        """Lock the lock."""
+        await self._set_lock_state(LockStates.locked)
+
+    async def unlock(self) -> None:
+        """Unlock the lock."""
+        await self._set_lock_state(LockStates.unlocked)

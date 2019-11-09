@@ -106,6 +106,21 @@ class System:
         return self._location_info["system"]["isAlarming"]
 
     @property
+    def connection_type(self) -> str:
+        """Return the system's connection type (cell or WiFi)."""
+        return self._location_info["system"]["connType"]
+
+    @property
+    def offline(self) -> bool:
+        """Return whether the system is offline."""
+        return self._location_info["system"]["isOffline"]
+
+    @property
+    def power_outage(self) -> bool:
+        """Return whether the system is experiencing a power outage."""
+        return self._location_info["system"]["isOffline"]
+
+    @property
     def serial(self) -> str:
         """Return the system's serial number."""
         return self._location_info["system"]["serial"]

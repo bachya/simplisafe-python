@@ -427,12 +427,15 @@ async def test_properties_v3(event_loop, v3_server):
             assert system.alarm_duration == 240
             assert system.alarm_volume == 3
             assert system.battery_backup_power_level == 5293
+            assert system.connection_type == "wifi"
             assert system.entry_delay_away == 30
             assert system.entry_delay_home == 30
             assert system.exit_delay_away == 60
             assert system.exit_delay_home == 0
             assert system.gsm_strength == -73
             assert system.light is True
+            assert system.offline is False
+            assert system.power_outage is False
             assert system.rf_jamming is False
             assert system.voice_prompt_volume == 2
             assert system.wall_power_level == 5933

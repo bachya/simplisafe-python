@@ -10,8 +10,9 @@ _LOGGER: logging.Logger = logging.getLogger(__name__)
 class LockStates(Enum):
     """Define states that the lock can be in."""
 
-    locked = 1
     unlocked = 0
+    locked = 1
+    jammed = 2
 
 
 SET_STATE_MAP = {LockStates.locked: "lock", LockStates.unlocked: "unlock"}
@@ -31,11 +32,6 @@ class Lock(EntityV3):
         return self.entity_data["status"]["lockLowBattery"]
 
     @property
-    def jammed(self) -> bool:
-        """Return whether the lock is jammed."""
-        return bool(self.entity_data["status"]["lockJamState"])
-
-    @property
     def pin_pad_low_battery(self) -> bool:
         """Return whether the pin pad's battery is low."""
         return self.entity_data["status"]["pinPadLowBattery"]
@@ -48,6 +44,8 @@ class Lock(EntityV3):
     @property
     def state(self) -> LockStates:
         """Return the current state of the lock."""
+        if bool(self.entity_data["status"]["lockJamState"]):
+            return LockStates.jammed
         return LockStates(self.entity_data["status"]["lockState"])
 
     async def _set_lock_state(self, state: LockStates) -> None:

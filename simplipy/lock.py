@@ -52,16 +52,13 @@ class Lock(EntityV3):
 
     async def _set_lock_state(self, state: LockStates) -> None:
         """Set the lock state."""
-        set_lock_resp = await self._api.request(
+        await self._api.request(
             "post",
             f"doorlock/{self._system_id}/{self.serial}/state",
             json={"state": SET_STATE_MAP[state]},
         )
 
-        result_state = next(
-            (k for k, v in SET_STATE_MAP.items() if v == set_lock_resp["state"])
-        )
-        self.entity_data["status"]["lockState"] = result_state.value
+        self.entity_data["status"]["lockState"] = state.value
 
     async def lock(self) -> None:
         """Lock the lock."""

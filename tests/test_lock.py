@@ -6,7 +6,7 @@ import pytest
 
 from simplipy import API
 from simplipy.entity import EntityTypes
-from simplipy.errors import SimplipyError
+from simplipy.errors import InvalidCredentialsError
 from simplipy.lock import LockStates
 
 from .const import (
@@ -65,7 +65,7 @@ async def test_lock_unlock(
 
 @pytest.mark.asyncio
 async def test_no_state_change_on_failure(aresponses, event_loop, v3_server):
-    """Test locking the lock."""
+    """Test that the lock doesn't change state on error."""
     async with v3_server:
         v3_server.add(
             "api.simplisafe.com",
@@ -88,9 +88,8 @@ async def test_no_state_change_on_failure(aresponses, event_loop, v3_server):
             lock = system.locks["987"]
             assert lock.state == LockStates.locked
 
-            with pytest.raises(SimplipyError):
+            with pytest.raises(InvalidCredentialsError):
                 await lock.unlock()
-
             assert lock.state == LockStates.locked
 
 

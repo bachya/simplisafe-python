@@ -137,6 +137,10 @@ async def main() -> None:
             system.alarm_going_off
             # >>> False
 
+            # Return the type of connection the system is using:
+            system.connection_type
+            # >>> "cell"
+
             # Return a list of sensors attached to this sytem (detailed later):
             system.sensors
             # >>> [<simplipy.sensor.SensorV2 object at 0x10661e3c8>, ...]
@@ -238,6 +242,14 @@ async def main() -> None:
             # Return whether the base station light is on:
             system.light
             # >>> True
+
+            # Return whether the system is offline:
+            system.offline
+            # >>> False
+
+            # Return whether the system is experiencing a power outage:
+            system.power_outage
+            # >>> False
 
             # Return whether the base station is noticing RF jamming:
             system.rf_jamming

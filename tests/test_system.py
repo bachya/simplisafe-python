@@ -406,8 +406,9 @@ async def test_properties(event_loop, v2_server):
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
 
-            assert system.address == TEST_ADDRESS
             assert not system.alarm_going_off
+            assert system.address == TEST_ADDRESS
+            assert system.connection_type == "cell"
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.state == SystemStates.off
             assert system.system_id == TEST_SYSTEM_ID

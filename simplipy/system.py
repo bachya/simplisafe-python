@@ -111,16 +111,6 @@ class System:
         return self._location_info["system"]["connType"]
 
     @property
-    def offline(self) -> bool:
-        """Return whether the system is offline."""
-        return self._location_info["system"]["isOffline"]
-
-    @property
-    def power_outage(self) -> bool:
-        """Return whether the system is experiencing a power outage."""
-        return self._location_info["system"]["isOffline"]
-
-    @property
     def serial(self) -> str:
         """Return the system's serial number."""
         return self._location_info["system"]["serial"]
@@ -465,6 +455,16 @@ class SystemV3(System):
     def light(self) -> bool:
         """Return whether the base station light is on."""
         return self._settings_info["settings"]["normal"]["light"]
+
+    @property
+    def offline(self) -> bool:
+        """Return whether the system is offline."""
+        return self._location_info["system"]["isOffline"]
+
+    @property
+    def power_outage(self) -> bool:
+        """Return whether the system is experiencing a power outage."""
+        return self._location_info["system"]["powerOutage"]
 
     @property
     def rf_jamming(self) -> bool:

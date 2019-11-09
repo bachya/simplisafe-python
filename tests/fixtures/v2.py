@@ -660,6 +660,7 @@ def v2_subscriptions_json():
                         "cameras": [],
                         "stateUpdated": 1534625833,
                         "messages": [],
+                        "connType": "cell",
                     },
                 },
                 "currency": "USD",

@@ -13,6 +13,7 @@ from .const import (
     TEST_EMAIL,
     TEST_LOCK_ID,
     TEST_LOCK_ID_2,
+    TEST_LOCK_ID_3,
     TEST_PASSWORD,
     TEST_SUBSCRIPTION_ID,
     TEST_SYSTEM_ID,
@@ -54,7 +55,7 @@ async def test_lock_unlock(
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
 
-            lock = system.locks["987"]
+            lock = system.locks[TEST_LOCK_ID]
             assert lock.state == LockStates.locked
 
             await lock.unlock()
@@ -73,7 +74,7 @@ async def test_jammed(event_loop, v3_server):
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
 
-            lock = system.locks["654"]
+            lock = system.locks[TEST_LOCK_ID_2]
             assert lock.state is LockStates.jammed
 
 
@@ -99,7 +100,7 @@ async def test_no_state_change_on_failure(aresponses, event_loop, v3_server):
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
 
-            lock = system.locks["987"]
+            lock = system.locks[TEST_LOCK_ID]
             assert lock.state == LockStates.locked
 
             with pytest.raises(InvalidCredentialsError):
@@ -116,7 +117,7 @@ async def test_properties(event_loop, v3_server):
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
 
-            lock = system.locks["987"]
+            lock = system.locks[TEST_LOCK_ID]
             assert not lock.disabled
             assert not lock.error
             assert not lock.lock_low_battery
@@ -136,7 +137,7 @@ async def test_properties(event_loop, v3_server):
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
 
-            lock = system.locks["987"]
+            lock = system.locks[TEST_LOCK_ID]
             assert not lock.disabled
             assert not lock.error
             assert not lock.lock_low_battery
@@ -145,3 +146,18 @@ async def test_properties(event_loop, v3_server):
             assert not lock.pin_pad_low_battery
             assert not lock.pin_pad_offline
             assert lock.state is LockStates.locked
+
+
+@pytest.mark.asyncio
+async def test_unknown_state(caplog, event_loop, v3_server):
+    """Test handling a generic error during update."""
+    async with v3_server:
+        async with aiohttp.ClientSession(loop=event_loop) as websession:
+            api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
+            lock = system.locks[TEST_LOCK_ID_3]
+
+            assert lock.state == LockStates.unknown
+
+            assert any("Unknown raw lock state" in e.message for e in caplog.records)

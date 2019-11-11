@@ -13,6 +13,7 @@ class LockStates(Enum):
     unlocked = 0
     locked = 1
     jammed = 2
+    unknown = 99
 
 
 SET_STATE_MAP = {LockStates.locked: "lock", LockStates.unlocked: "unlock"}
@@ -46,7 +47,14 @@ class Lock(EntityV3):
         """Return the current state of the lock."""
         if bool(self.entity_data["status"]["lockJamState"]):
             return LockStates.jammed
-        return LockStates(self.entity_data["status"]["lockState"])
+
+        raw_state = self.entity_data["status"]["lockState"]
+
+        try:
+            return LockStates(raw_state)
+        except ValueError:
+            _LOGGER.error("Unknown raw lock state: %s", raw_state)
+            return LockStates.unknown
 
     async def _set_lock_state(self, state: LockStates) -> None:
         """Set the lock state."""

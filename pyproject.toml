@@ -61,7 +61,7 @@ commands=
 
 [testenv:lint]
 commands=
-    pip install flake8 pydocstyle pylint
+    pip install aiohttp flake8 pydocstyle pylint
     flake8 simplipy
     pydocstyle simplipy
     pylint simplipy

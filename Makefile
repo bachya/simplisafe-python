@@ -4,7 +4,7 @@ clean:
 coverage:
 	.venv/bin/py.test -s --verbose --cov-report term-missing --cov-report xml --cov=simplipy tests
 init:
-	python3 -m venv .venv
+	virtualenv .venv
 	.venv/bin/pip3 install poetry
 	. .venv/bin/activate; poetry lock; poetry install; pre-commit install
 lint:

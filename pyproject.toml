@@ -51,24 +51,24 @@ whitelist_externals=
 
 [testenv]
 commands=
-    pip install aresponses pytest-aiohttp
+    poetry install
     py.test
 
 [testenv:cov]
 commands=
-    pip install aresponses pytest-aiohttp pytest-cov
+    poetry install
     py.test -s --verbose --cov-report term-missing --cov-report xml --cov=simplipy tests
 
 [testenv:lint]
 commands=
-    pip install aiohttp flake8 pydocstyle pylint
+    poetry install
     flake8 simplipy
     pydocstyle simplipy
     pylint simplipy
 
 [testenv:typing]
 commands=
-    pip install mypy
+    poetry install
     mypy --ignore-missing-imports simplipy
 """
 

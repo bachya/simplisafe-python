@@ -4,9 +4,8 @@ clean:
 coverage:
 	./.venv/bin/py.test -s --verbose --cov-report term-missing --cov-report xml --cov=simplipy tests
 init:
-	pip3 install --upgrade pip
 	python3 -m venv ./.venv
-	./.venv/bin/pip3 install poetry
+	./.venv/bin/pip install poetry
 	. ./.venv/bin/activate; poetry lock; poetry install; pre-commit install
 lint:
 	./.venv/bin/flake8 simplipy

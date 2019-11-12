@@ -25,16 +25,14 @@ python = "^3.6"
 aiohttp = "^3.6.2"
 
 [tool.poetry.dev-dependencies]
-tox = "^3.14.0"
-mypy = "^0.740"
 aresponses = "^1.1.1"
+flake8 = "^3.7.9"
+mypy = "^0.740"
+pre-commit = "^1.20.0"
 pydocstyle = "^4.0.1"
 pylint = "^2.4.3"
-twine = "^2.0.0"
 pytest-aiohttp = "^0.3.0"
-pre-commit = "^1.20.0"
 pytest-cov = "^2.8.1"
-flake8 = "^3.7.9"
 
 [tool.tox]
 legacy_tox_ini = """
@@ -53,28 +51,24 @@ whitelist_externals=
 
 [testenv]
 commands=
-    poetry lock
-    poetry install
+    pip install aresponses pytest-aiohttp
     py.test
 
 [testenv:cov]
 commands=
-    poetry lock
-    poetry install
+    pip install aresponses pytest-aiohttp pytest-cov
     py.test -s --verbose --cov-report term-missing --cov-report xml --cov=simplipy tests
 
 [testenv:lint]
 commands=
-    poetry lock
-    poetry install
+    pip install flake8 pydocstyle pylint
     flake8 simplipy
     pydocstyle simplipy
     pylint simplipy
 
 [testenv:typing]
 commands=
-    poetry lock
-    poetry install
+    pip install mypy
     mypy --ignore-missing-imports simplipy
 """
 

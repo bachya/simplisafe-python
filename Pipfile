@@ -1,19 +1,11 @@
 [[source]]
-url = "https://pypi.python.org/simple"
+name = "pypi"
+url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
-"flake8" = "*"
-aresponses = "*"
-mypy = "*"
-pre-commit = "*"
-pydocstyle = "*"
-pylint = "*"
-pytest-aiohttp = "*"
-pytest-cov = "*"
-tox = "*"
-twine = "*"
 
 [packages]
-aiohttp = "*"
-async-timeout = "*"
+
+[requires]
+python_version = "3.7"

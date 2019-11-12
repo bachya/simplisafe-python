@@ -7,7 +7,3 @@ exclude_lines =
 
 [run]
 source = simplipy
-
-omit =
-    simplipy/__version__.py
-

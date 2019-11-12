@@ -36,6 +36,48 @@ pre-commit = "^1.20.0"
 pytest-cov = "^2.8.1"
 flake8 = "^3.7.9"
 
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = py36, py37, py38, cov, lint, typing
+skip_missing_interpreters = True
+skipsdist=True
+whitelist_externals=
+    flake8
+    make
+    mypy
+    poetry
+    py.test
+    pydocstyle
+    pylint
+
+[testenv]
+commands=
+    poetry lock
+    poetry install
+    py.test
+
+[testenv:cov]
+commands=
+    poetry lock
+    poetry install
+    py.test -s --verbose --cov-report term-missing --cov-report xml --cov=simplipy tests
+
+[testenv:lint]
+commands=
+    poetry lock
+    poetry install
+    flake8 simplipy
+    pydocstyle simplipy
+    pylint simplipy
+
+[testenv:typing]
+commands=
+    poetry lock
+    poetry install
+    mypy --ignore-missing-imports simplipy
+"""
+
 [build-system]
-requires = ["poetry>=0.12"]
+requires = ["setuptools >= 35.0.2", "wheel >= 0.29.0", "poetry>=0.12"]
 build-backend = "poetry.masonry.api"

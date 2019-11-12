@@ -6,7 +6,9 @@ coverage:
 init:
 	python3 -m venv ./.venv
 	./.venv/bin/python3 -m pip install poetry
-	. ./.venv/bin/activate; poetry lock; poetry install; pre-commit install
+	./.venv/bin/poetry lock
+	./.venv/bin/poetry install
+	./.venv/bin/pre-commit install
 lint:
 	./.venv/bin/flake8 simplipy
 	./.venv/bin/pydocstyle simplipy

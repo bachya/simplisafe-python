@@ -1,6 +1,6 @@
 # 🚨 simplisafe-python: A Python3, async interface to the SimpliSafe™ API
 
-[![Travis CI](https://travis-ci.org/bachya/simplisafe-python.svg?branch=master)](https://travis-ci.org/bachya/simplisafe-python)
+[![CI](https://github.com/bachya/simplisafe-python/workflows/CI/badge.svg)](https://github.com/bachya/simplisafe-python/actions)
 [![PyPi](https://img.shields.io/pypi/v/simplisafe-python.svg)](https://pypi.python.org/pypi/simplisafe-python)
 [![Version](https://img.shields.io/pypi/pyversions/simplisafe-python.svg)](https://pypi.python.org/pypi/simplisafe-python)
 [![License](https://img.shields.io/pypi/l/simplisafe-python.svg)](https://github.com/bachya/simplisafe-python/blob/master/LICENSE)

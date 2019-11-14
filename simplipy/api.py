@@ -177,8 +177,9 @@ class API:  # pylint: disable=too-many-instance-attributes
         except ClientError as err:
             if "401" in str(err):
                 if self._actively_refreshing:
-                    _LOGGER.error("Refresh token was unsuccessful on 401")
-                    raise InvalidCredentialsError
+                    raise InvalidCredentialsError(
+                        "Repeated 401s despite refreshing access token"
+                    )
                 if self._refresh_token:
                     _LOGGER.info("401 detected; attempting refresh token")
                     self._access_token_expire = datetime.now()
@@ -191,11 +192,13 @@ class API:  # pylint: disable=too-many-instance-attributes
                         json=json,
                         **kwargs,
                     )
-                raise InvalidCredentialsError
+                raise InvalidCredentialsError("Invalid username/password")
             if "403" in str(err):
                 if self.user_id:
                     _LOGGER.info("Endpoint unavailable in plan: %s", endpoint)
                     return {}
-                raise InvalidCredentialsError
+                raise InvalidCredentialsError(
+                    f"User does not have permission to access {endpoint}"
+                )
 
             raise RequestError(f"Error requesting data from {endpoint}: {err}")

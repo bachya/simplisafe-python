@@ -27,8 +27,6 @@ async def main() -> None:
                 await system.set_home()
                 await asyncio.sleep(3)
                 await system.set_off()
-        except InvalidCredentialsError:
-            _LOGGER.error("Invalid credentials")
         except SimplipyError as err:
             _LOGGER.error(err)
 

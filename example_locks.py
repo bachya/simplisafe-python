@@ -41,8 +41,6 @@ async def main() -> None:
                         await asyncio.sleep(3)
                         _LOGGER.info("Locking...")
                         await lock.lock()
-        except InvalidCredentialsError:
-            _LOGGER.error("Invalid credentials")
         except SimplipyError as err:
             _LOGGER.error(err)
 

@@ -42,8 +42,6 @@ async def main() -> None:
                         sensor.type,
                         sensor.triggered,
                     )
-        except InvalidCredentialsError:
-            _LOGGER.error("Invalid credentials")
         except SimplipyError as err:
             _LOGGER.error(err)
 

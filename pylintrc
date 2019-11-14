@@ -1,9 +1,11 @@
 [MESSAGES CONTROL]
 # Reasons disabled:
 # bad-continuation - Invalid attack on black
+# cyclic-import - Imports under TYPE_CHECKING still get evaluated
 # unnecessary-pass - This can hurt readability
 disable=
   bad-continuation,
+  cyclic-import,
   unnecessary-pass
 
 [REPORTS]
@@ -12,3 +14,17 @@ reports=no
 [FORMAT]
 expected-line-ending-format=LF
 
+[SIMILARITIES]
+# Minimum lines number of a similarity.
+# We set this higher because of some cases where V2 and V3 functionality are
+# similar, but abstracting them isn't feasible.
+min-similarity-lines=4
+
+# Ignore comments when computing similarities.
+ignore-comments=yes
+
+# Ignore docstrings when computing similarities.
+ignore-docstrings=yes
+
+# Ignore imports when computing similarities.
+ignore-imports=yes

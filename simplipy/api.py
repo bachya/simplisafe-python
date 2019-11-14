@@ -7,8 +7,10 @@ from uuid import UUID, uuid4
 from aiohttp import BasicAuth, ClientSession
 from aiohttp.client_exceptions import ClientError
 
-from .errors import InvalidCredentialsError, RequestError
-from .system import System, SystemV2, SystemV3
+from simplipy.errors import InvalidCredentialsError, RequestError
+from simplipy.system import System
+from simplipy.system.v2 import SystemV2
+from simplipy.system.v3 import SystemV3
 
 _LOGGER: logging.Logger = logging.getLogger(__name__)
 

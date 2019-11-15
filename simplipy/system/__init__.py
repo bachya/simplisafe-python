@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING, Any, Coroutine, Dict, List, Type, Set, Union
 from simplipy.entity import Entity, EntityTypes
 from simplipy.errors import InvalidCredentialsError, PinError, SimplipyError
 from simplipy.lock import Lock
-from simplipy.sensor import SensorV2, SensorV3
+from simplipy.sensor.v2 import SensorV2
+from simplipy.sensor.v3 import SensorV3
 from simplipy.util.string import convert_to_underscore
 
 if TYPE_CHECKING:

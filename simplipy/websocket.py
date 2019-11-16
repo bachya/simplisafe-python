@@ -1,6 +1,5 @@
 """Define a connection to the SimpliSafe websocket."""
-import asyncio
-from typing import Awaitable, Callable, Optional, Union
+from typing import Awaitable, Callable, Optional
 from urllib.parse import urlencode
 
 from socketio import AsyncClient
@@ -16,7 +15,7 @@ class Websocket:
 
     def __init__(self, access_token: str, user_id: int) -> None:
         """Initialize."""
-        self._async_disconnect_handler: Optional[Awaitable] = None
+        self._async_disconnect_handler: Optional[Callable[..., Awaitable]] = None
         self._namespace = f"/v1/user/{user_id}"
         self._sio: AsyncClient = AsyncClient()
         self._sync_disconnect_handler: Optional[Callable] = None
@@ -43,7 +42,7 @@ class Websocket:
         elif self._sync_disconnect_handler:
             self._sync_disconnect_handler()
 
-    async def async_on_connect(self, target: Awaitable) -> None:
+    async def async_on_connect(self, target: Callable[..., Awaitable]) -> None:
         """Define a coroutine to be called when connecting."""
         self.on_connect(target)
 
@@ -51,7 +50,7 @@ class Websocket:
         """Define a synchronous method to be called when connecting."""
         self._sio.on("connect", target)
 
-    async def async_on_disconnect(self, target: Awaitable) -> None:
+    async def async_on_disconnect(self, target: Callable[..., Awaitable]) -> None:
         """Define a coroutine to be called when disconnecting."""
         self._async_disconnect_handler = target
 
@@ -59,7 +58,7 @@ class Websocket:
         """Define a synchronous method to be called when disconnecting."""
         self._sync_disconnect_handler = target
 
-    async def async_on_event(self, target: Awaitable) -> None:
+    async def async_on_event(self, target: Callable[..., Awaitable]) -> None:
         """Define a coroutine to be called an event is received."""
         self.on_event(target)
 

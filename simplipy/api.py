@@ -39,7 +39,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         self._websession: ClientSession = websession
         self.email: Optional[str] = None
         self.refresh_token_dirty: bool = False
-        self.user_id: Optional[str] = None
+        self.user_id: Optional[int] = None
         self.websocket: Optional[Websocket] = None
 
     @property
@@ -107,7 +107,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         if self.websocket:
             self.websocket.access_token = self._access_token
         else:
-            self.websocket = Websocket(self._access_token, self.user_id)
+            self.websocket = Websocket(self._access_token, self.user_id)  # type: ignore
 
     async def get_systems(self) -> Dict[str, System]:
         """Get systems associated to this account."""

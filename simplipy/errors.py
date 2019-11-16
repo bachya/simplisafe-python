@@ -23,3 +23,9 @@ class RequestError(SimplipyError):
     """Define an error related to invalid requests."""
 
     pass
+
+
+class WebsocketError(SimplipyError):
+    """Define an error related to generic websocket errors."""
+
+    pass

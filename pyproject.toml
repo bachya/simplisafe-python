@@ -21,8 +21,11 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.6"
 aiohttp = "^3.6.2"
+python = "^3.6.1"
+python-engineio = ">= 3.9.3"
+python-socketio = ">=4.3.1"
+websockets = "^8.1"
 
 [tool.poetry.dev-dependencies]
 Sphinx = "^2.2.1"

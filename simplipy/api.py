@@ -11,6 +11,7 @@ from simplipy.errors import InvalidCredentialsError, RequestError
 from simplipy.system import System
 from simplipy.system.v2 import SystemV2
 from simplipy.system.v3 import SystemV3
+from simplipy.websocket import Websocket
 
 _LOGGER: logging.Logger = logging.getLogger(__name__)
 
@@ -19,8 +20,8 @@ DEFAULT_AUTH_USERNAME: str = "{0}.2074.0.0.com.simplisafe.mobile"
 
 SYSTEM_MAP: Dict[int, Type[System]] = {2: SystemV2, 3: SystemV3}
 
-URL_HOSTNAME: str = "api.simplisafe.com"
-URL_BASE: str = f"https://{URL_HOSTNAME}/v1"
+API_URL_HOSTNAME: str = "api.simplisafe.com"
+API_URL_BASE: str = f"https://{API_URL_HOSTNAME}/v1"
 
 ApiType = TypeVar("ApiType", bound="API")
 
@@ -39,6 +40,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         self.email: Optional[str] = None
         self.refresh_token_dirty: bool = False
         self.user_id: Optional[str] = None
+        self.websocket: Optional[Websocket] = None
 
     @property
     def refresh_token(self) -> str:
@@ -102,6 +104,11 @@ class API:  # pylint: disable=too-many-instance-attributes
         auth_check_resp: dict = await self.request("get", "api/authCheck")
         self.user_id = auth_check_resp["userId"]
 
+        if self.websocket:
+            self.websocket.access_token = self._access_token
+        else:
+            self.websocket = Websocket(self._access_token, self.user_id)
+
     async def get_systems(self) -> Dict[str, System]:
         """Get systems associated to this account."""
         subscription_resp: dict = await self.get_subscription_data()
@@ -162,12 +169,12 @@ class API:  # pylint: disable=too-many-instance-attributes
             headers = {}
         if not kwargs.get("auth") and self._access_token:
             headers["Authorization"] = f"Bearer {self._access_token}"
-        headers.update({"Host": URL_HOSTNAME, "User-Agent": DEFAULT_USER_AGENT})
+        headers.update({"Host": API_URL_HOSTNAME, "User-Agent": DEFAULT_USER_AGENT})
 
         try:
             async with self._websession.request(
                 method,
-                f"{URL_BASE}/{endpoint}",
+                f"{API_URL_BASE}/{endpoint}",
                 headers=headers,
                 params=params,
                 data=data,

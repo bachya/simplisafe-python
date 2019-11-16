@@ -25,6 +25,7 @@ python = "^3.6"
 aiohttp = "^3.6.2"
 
 [tool.poetry.dev-dependencies]
+Sphinx = "^2.2.1"
 aresponses = "^1.1.1"
 black = "^19.10b0"
 flake8 = "^3.7.9"

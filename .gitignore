@@ -4,6 +4,7 @@
 .venv
 __pycache__/
 coverage.xml
+docs/_build
 poetry.lock
 simplisafe_python.egg-info
 tags

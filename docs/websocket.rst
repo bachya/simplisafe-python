@@ -75,9 +75,3 @@ connection is established:
 
     simplisafe.websocket.async_on_disconnect(async_event_handler)
     simplisafe.websocket.on_disconnect(sync_event_handler)
-
-Full Example
-------------
-
-A full example can be found within the `GitHub repo <https://github.com/bachya/simplisafe-python/blob/dev/tests/test_websocket.py>`_
-at ``scripts/test_websocket.py``.

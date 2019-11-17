@@ -9,8 +9,8 @@ from simplipy.errors import SimplipyError
 
 _LOGGER = logging.getLogger()
 
-SIMPLISAFE_EMAIL = "<EMAIL>"
-SIMPLISAFE_PASSWORD = "<PASSWORD>"
+SIMPLISAFE_EMAIL = "bachya1208@gmail.com"
+SIMPLISAFE_PASSWORD = "rkzmPyb*2*o6vT4ENJNCpAq3k"
 
 
 async def main() -> None:

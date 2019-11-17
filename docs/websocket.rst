@@ -75,3 +75,31 @@ connection is established:
 
     simplisafe.websocket.async_on_disconnect(async_event_handler)
     simplisafe.websocket.on_disconnect(sync_event_handler)
+
+The data returned in the ``data`` argument has the same schema as data returned from
+``system.get_events()``. For example, when the system is armed in home mode, users may
+expect a ``data`` argument with this value:
+
+.. code:: json
+
+    {
+      "eventId": 1231231231,
+      "eventTimestamp": 1231231231,
+      "eventCid": 1231,
+      "zoneCid": "3",
+      "sensorType": 0,
+      "sensorSerial": "",
+      "account": "xxxxxxxx",
+      "userId": 123123,
+      "sid": 123123,
+      "info": "System Armed (Home) by Remote Management",
+      "pinName": "",
+      "sensorName": "",
+      "messageSubject": "SimpliSafe System Armed (home mode)",
+      "messageBody": "System Armed (home mode)",
+      "eventType": "activity",
+      "timezone": 2,
+      "locationOffset": -420,
+      "videoStartedBy": "",
+      "video": {}
+    }

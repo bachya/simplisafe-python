@@ -1,7 +1,7 @@
 Locks
 =====
 
-``Lock`` objects correspond to SimpliSafe locks (only available for V3 systems) and
+``Lock`` objects correspond to SimpliSafe™ locks (only available for V3 systems) and
 allows users to retrieve information on them and alter their state by
 locking/unlocking them.
 

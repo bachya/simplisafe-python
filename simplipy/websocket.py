@@ -42,7 +42,7 @@ class Websocket:
         elif self._sync_disconnect_handler:
             self._sync_disconnect_handler()
 
-    async def async_on_connect(self, target: Callable[..., Awaitable]) -> None:
+    def async_on_connect(self, target: Callable[..., Awaitable]) -> None:
         """Define a coroutine to be called when connecting."""
         self.on_connect(target)
 
@@ -50,7 +50,7 @@ class Websocket:
         """Define a synchronous method to be called when connecting."""
         self._sio.on("connect", target)
 
-    async def async_on_disconnect(self, target: Callable[..., Awaitable]) -> None:
+    def async_on_disconnect(self, target: Callable[..., Awaitable]) -> None:
         """Define a coroutine to be called when disconnecting."""
         self._async_disconnect_handler = target
 
@@ -58,7 +58,7 @@ class Websocket:
         """Define a synchronous method to be called when disconnecting."""
         self._sync_disconnect_handler = target
 
-    async def async_on_event(self, target: Callable[..., Awaitable]) -> None:
+    def async_on_event(self, target: Callable[..., Awaitable]) -> None:
         """Define a coroutine to be called an event is received."""
         self.on_event(target)
 

@@ -5,13 +5,6 @@ Locks
 allows users to retrieve information on them and alter their state by
 locking/unlocking them.
 
-**NOTE:** Individual locks cannot be updated directly; instead, the ``update()``
-method on their parent ``System`` object should be used. It is crucial to remember
-that lock states are only as current as the last time ``system.update()`` was
-called. The only exception to this rule is when ``lock.lock()`` or
-``lock.unlock()`` are called; both of these will automatically update the lock
-state.
-
 Core Properties
 ---------------
 
@@ -78,3 +71,13 @@ Locking and unlocking a lock is accomplished via two coroutines:
     for serial, lock in system.locks.items():
         await lock.lock()
         await lock.unlock()
+
+
+Updating the Lock
+-----------------
+
+To retrieve the sensor's latest state/properties/etc., simply:
+
+.. code:: python
+
+    await lock.update()

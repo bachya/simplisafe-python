@@ -4,11 +4,6 @@ Sensors
 ``Sensor`` objects provide information about the SimpliSafe™ sensors to
 which they relate.
 
-**NOTE:** Individual sensors cannot be updated directly; instead,
-the ``update()`` method on their parent ``System`` object should be used. It is
-crucial to remember that sensor states are only as current as the last time
-``system.update()`` was called.
-
 Like their ``System`` cousins, two types of objects can be returned:
 
 * ``SensorV2``: an object to view V2 (classic) SimpliSafe™ sensors
@@ -61,31 +56,38 @@ V2 Properties
 
 .. code:: python
 
-    for serial, sensor in system.sensors.items():
-        # Return the sensor's data as a currently
-        # non-understood integer:
-        sensor.data
-        # >>> 0
+    # Return the sensor's data as a currently
+    # non-understood integer:
+    sensor.data
+    # >>> 0
 
-        # Return the sensor's settings as a currently
-        # non-understood integer:
-        sensor.settings
-        # >>> 1
+    # Return the sensor's settings as a currently
+    # non-understood integer:
+    sensor.settings
+    # >>> 1
 
 V3 Properties
 -------------
 
 .. code:: python
 
-    for serial, sensor in system.sensors.items():
-        # Return whether the sensor is offline:
-        sensor.offline
-        # >>> False
+    # Return whether the sensor is offline:
+    sensor.offline
+    # >>> False
 
-        # Return a settings dictionary for the sensor:
-        sensor.settings
-        # >>> {"instantTrigger": False, "away2": 1, "away": 1, ...}
+    # Return a settings dictionary for the sensor:
+    sensor.settings
+    # >>> {"instantTrigger": False, "away2": 1, "away": 1, ...}
 
-        # For temperature sensors, return the current temperature:
-        sensor.temperature
-        # >>> 67
+    # For temperature sensors, return the current temperature:
+    sensor.temperature
+    # >>> 67
+
+Updating the Sensor
+-------------------
+
+To retrieve the sensor's latest state/properties/etc., simply:
+
+.. code:: python
+
+    await sensor.update()

@@ -5,7 +5,6 @@ import aiohttp
 import pytest
 
 from simplipy import API
-from simplipy.entity import EntityTypes
 from simplipy.errors import InvalidCredentialsError
 from simplipy.lock import LockStates
 
@@ -17,6 +16,7 @@ from .const import (
     TEST_PASSWORD,
     TEST_SUBSCRIPTION_ID,
     TEST_SYSTEM_ID,
+    TEST_USER_ID,
 )
 from .fixtures import *
 from .fixtures.v2 import *
@@ -129,26 +129,6 @@ async def test_properties(event_loop, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_properties(event_loop, v3_server):
-    """Test that lock properties are created properly."""
-    async with v3_server:
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
-            api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
-            systems = await api.get_systems()
-            system = systems[TEST_SYSTEM_ID]
-
-            lock = system.locks[TEST_LOCK_ID]
-            assert not lock.disabled
-            assert not lock.error
-            assert not lock.lock_low_battery
-            assert not lock.low_battery
-            assert not lock.offline
-            assert not lock.pin_pad_low_battery
-            assert not lock.pin_pad_offline
-            assert lock.state is LockStates.locked
-
-
-@pytest.mark.asyncio
 async def test_unknown_state(caplog, event_loop, v3_server):
     """Test handling a generic error during update."""
     async with v3_server:
@@ -161,3 +141,75 @@ async def test_unknown_state(caplog, event_loop, v3_server):
             assert lock.state == LockStates.unknown
 
             assert any("Unknown raw lock state" in e.message for e in caplog.records)
+
+
+@pytest.mark.asyncio
+async def test_update(
+    aresponses,
+    event_loop,
+    v3_lock_lock_response_json,
+    v3_lock_unlock_response_json,
+    v3_sensors_json,
+    v3_server,
+    v3_settings_json,
+    v3_subscriptions_json,
+):
+    """Test updating the lock."""
+    async with v3_server:
+        v3_server.add(
+            "api.simplisafe.com",
+            f"/v1/doorlock/{TEST_SUBSCRIPTION_ID}/{TEST_LOCK_ID}/state",
+            "post",
+            aresponses.Response(
+                text=json.dumps(v3_lock_unlock_response_json), status=200
+            ),
+        )
+        v3_server.add(
+            "api.simplisafe.com",
+            f"/v1/doorlock/{TEST_SUBSCRIPTION_ID}/{TEST_LOCK_ID}/state",
+            "post",
+            aresponses.Response(
+                text=json.dumps(v3_lock_lock_response_json), status=200
+            ),
+        )
+        v3_server.add(
+            "api.simplisafe.com",
+            f"/v1/users/{TEST_USER_ID}/subscriptions",
+            "get",
+            aresponses.Response(text=json.dumps(v3_subscriptions_json), status=200),
+        )
+        v3_server.add(
+            "api.simplisafe.com",
+            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/sensors",
+            "get",
+            aresponses.Response(text=json.dumps(v3_sensors_json), status=200),
+        )
+        v3_server.add(
+            "api.simplisafe.com",
+            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/pins",
+            "get",
+            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
+        )
+        v3_server.add(
+            "api.simplisafe.com",
+            f"/v1/doorlock/{TEST_SUBSCRIPTION_ID}/{TEST_LOCK_ID}/state",
+            "post",
+            aresponses.Response(
+                text=json.dumps(v3_lock_lock_response_json), status=200
+            ),
+        )
+
+        async with aiohttp.ClientSession(loop=event_loop) as websession:
+            api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
+            systems = await api.get_systems()
+            system = systems[TEST_SYSTEM_ID]
+
+            lock = system.locks[TEST_LOCK_ID]
+            assert lock.state == LockStates.locked
+
+            await lock.unlock()
+            assert lock.state == LockStates.unlocked
+
+            # Simulate a manual lock and an update some time later:
+            await lock.update()
+            assert lock.state == LockStates.locked

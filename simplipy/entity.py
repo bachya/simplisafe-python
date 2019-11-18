@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from simplipy.api import API
+    from simplipy.system import System
 
 _LOGGER: logging.Logger = logging.getLogger(__name__)
 
@@ -34,11 +35,11 @@ class Entity:
     """Define a base SimpliSafe entity."""
 
     def __init__(
-        self, api: "API", system_id: int, entity_type: EntityTypes, entity_data: dict
+        self, api: "API", system: "System", entity_type: EntityTypes, entity_data: dict
     ) -> None:
         """Initialize."""
         self._api: "API" = api
-        self._system_id: int = system_id
+        self._system: "System" = system
         self._type: EntityTypes = entity_type
         self.entity_data: dict = entity_data
 
@@ -56,6 +57,10 @@ class Entity:
     def type(self) -> EntityTypes:
         """Return the entity type."""
         return self._type
+
+    async def update(self, refresh_location: bool = True, cached: bool = True) -> None:
+        """Retrieve the latest state/properties for the entity."""
+        await self._system.update(refresh_location, cached)
 
 
 class EntityV3(Entity):

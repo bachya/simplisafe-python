@@ -82,50 +82,9 @@ class API:  # pylint: disable=too-many-instance-attributes
         await klass.refresh_access_token(refresh_token)
         return klass
 
-    async def authenticate(self, payload_data: dict) -> None:
-        """Request token data and parse it."""
-        token_resp: dict = await self.request(
-            "post",
-            "api/token",
-            data=payload_data,
-            auth=BasicAuth(
-                login=DEFAULT_AUTH_USERNAME.format(self._uuid),
-                password="",
-                encoding="latin1",
-            ),
-        )
-
-        self._access_token = token_resp["access_token"]
-        self._access_token_expire = datetime.now() + timedelta(
-            seconds=int(token_resp["expires_in"]) - 60
-        )
-        self.refresh_token = token_resp["refresh_token"]
-
-        auth_check_resp: dict = await self.request("get", "api/authCheck")
-        self.user_id = auth_check_resp["userId"]
-
-        if self.websocket:
-            self.websocket.access_token = self._access_token
-        else:
-            self.websocket = Websocket(self._access_token, self.user_id)  # type: ignore
-
-    async def get_systems(self) -> Dict[str, System]:
-        """Get systems associated to this account."""
-        subscription_resp: dict = await self.get_subscription_data()
-
-        systems: Dict[str, System] = {}
-        for system_data in subscription_resp["subscriptions"]:
-            version = system_data["location"]["system"]["version"]
-            system_class = SYSTEM_MAP[version]
-            system = system_class(self, system_data["location"])
-            await system.update(refresh_location=False)
-            systems[system_data["sid"]] = system
-
-        return systems
-
-    async def get_subscription_data(self) -> dict:
+    async def _get_subscription_data(self) -> dict:
         """Get the latest location-level data."""
-        subscription_resp: dict = await self.request(
+        subscription_resp: dict = await self._request(
             "get", f"users/{self.user_id}/subscriptions", params={"activeOnly": "true"}
         )
 
@@ -133,19 +92,7 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         return subscription_resp
 
-    async def refresh_access_token(self, refresh_token: str) -> None:
-        """Regenerate an access token."""
-        await self.authenticate(
-            {
-                "grant_type": "refresh_token",
-                "username": self.email,
-                "refresh_token": refresh_token,
-            }
-        )
-
-        self._actively_refreshing = False
-
-    async def request(
+    async def _request(
         self,
         method: str,
         endpoint: str,
@@ -192,7 +139,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 if self._refresh_token:
                     _LOGGER.info("401 detected; attempting refresh token")
                     self._access_token_expire = datetime.now()
-                    return await self.request(
+                    return await self._request(
                         method,
                         endpoint,
                         headers=headers,
@@ -211,3 +158,58 @@ class API:  # pylint: disable=too-many-instance-attributes
                 )
 
             raise RequestError(f"Error requesting data from {endpoint}: {err}")
+
+    async def authenticate(self, payload_data: dict) -> None:
+        """Request token data and parse it."""
+        token_resp: dict = await self._request(
+            "post",
+            "api/token",
+            data=payload_data,
+            auth=BasicAuth(
+                login=DEFAULT_AUTH_USERNAME.format(self._uuid),
+                password="",
+                encoding="latin1",
+            ),
+        )
+
+        self._access_token = token_resp["access_token"]
+        self._access_token_expire = datetime.now() + timedelta(
+            seconds=int(token_resp["expires_in"]) - 60
+        )
+        self.refresh_token = token_resp["refresh_token"]
+
+        auth_check_resp: dict = await self._request("get", "api/authCheck")
+        self.user_id = auth_check_resp["userId"]
+
+        if self.websocket:
+            self.websocket.access_token = self._access_token
+        else:
+            self.websocket = Websocket(self._access_token, self.user_id)  # type: ignore
+
+    async def get_systems(self) -> Dict[str, System]:
+        """Get systems associated to this account."""
+        subscription_resp: dict = await self._get_subscription_data()
+
+        systems: Dict[str, System] = {}
+        for system_data in subscription_resp["subscriptions"]:
+            version = system_data["location"]["system"]["version"]
+            system_class = SYSTEM_MAP[version]
+            system = system_class(
+                system_data["location"], self._request, self._get_subscription_data
+            )
+            await system.update(include_system=False, cached=False)
+            systems[system_data["sid"]] = system
+
+        return systems
+
+    async def refresh_access_token(self, refresh_token: str) -> None:
+        """Regenerate an access token."""
+        await self.authenticate(
+            {
+                "grant_type": "refresh_token",
+                "username": self.email,
+                "refresh_token": refresh_token,
+            }
+        )
+
+        self._actively_refreshing = False

@@ -1,11 +1,7 @@
 """Define a base SimpliSafe entity."""
 from enum import Enum
 import logging
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from simplipy.api import API
-    from simplipy.system import System
+from typing import Callable, Coroutine
 
 _LOGGER: logging.Logger = logging.getLogger(__name__)
 
@@ -34,13 +30,19 @@ class EntityTypes(Enum):
 class Entity:
     """Define a base SimpliSafe entity."""
 
-    def __init__(
-        self, api: "API", system: "System", entity_type: EntityTypes, entity_data: dict
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        request: Callable[..., Coroutine],
+        update_func: Callable[..., Coroutine],
+        system_id: int,
+        entity_type: EntityTypes,
+        entity_data: dict,
     ) -> None:
         """Initialize."""
-        self._api: "API" = api
-        self._system: "System" = system
+        self._request: Callable[..., Coroutine] = request
+        self._system_id: int = system_id
         self._type: EntityTypes = entity_type
+        self._update_func: Callable[..., Coroutine] = update_func
         self.entity_data: dict = entity_data
 
     @property
@@ -60,7 +62,7 @@ class Entity:
 
     async def update(self, cached: bool = True) -> None:
         """Retrieve the latest state/properties for the entity."""
-        await self._system.update_entities(cached)
+        await self._update_func(cached)
 
 
 class EntityV3(Entity):

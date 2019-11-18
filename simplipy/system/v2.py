@@ -19,7 +19,7 @@ class SystemV2(System):
 
     async def _get_entities_payload(self, cached: bool = True) -> dict:
         """Update sensors to the latest values."""
-        sensor_resp = await self.api.request(
+        sensor_resp = await self._request(
             "get",
             f"subscriptions/{self.system_id}/settings",
             params={"settingsType": "all", "cached": str(cached).lower()},
@@ -29,7 +29,7 @@ class SystemV2(System):
 
     async def _send_updated_pins(self, pins: dict) -> None:
         """Post new PINs."""
-        await self.api.request(
+        await self._request(
             "post",
             f"subscriptions/{self.system_id}/pins",
             json=create_pin_payload(pins, version=2),
@@ -37,7 +37,7 @@ class SystemV2(System):
 
     async def _set_state(self, value: Enum) -> None:
         """Set the state of the system."""
-        state_resp: dict = await self.api.request(
+        state_resp: dict = await self._request(
             "post",
             f"subscriptions/{self.system_id}/state",
             params={"state": value.name},
@@ -53,7 +53,7 @@ class SystemV2(System):
 
     async def get_pins(self, cached: bool = True) -> Dict[str, str]:
         """Return all of the set PINs, including master and duress."""
-        pins_resp: dict = await self.api.request(
+        pins_resp: dict = await self._request(
             "get",
             f"subscriptions/{self.system_id}/pins",
             params={"settingsType": "all", "cached": str(cached).lower()},

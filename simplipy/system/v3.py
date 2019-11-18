@@ -11,10 +11,9 @@ _LOGGER: logging.Logger = logging.getLogger(__name__)
 class SystemV3(System):
     """Define a V3 (new) system."""
 
-    def __init__(self, api, location_info: dict) -> None:
+    def __init__(self, location_info, request, get_subscription_data) -> None:
         """Initialize."""
-        super().__init__(api, location_info)
-
+        super().__init__(location_info, request, get_subscription_data)
         self._settings_info: dict = {}
 
     @property
@@ -99,7 +98,7 @@ class SystemV3(System):
 
     async def _get_entities_payload(self, cached: bool = True) -> dict:
         """Update sensors to the latest values."""
-        sensor_resp = await self.api.request(
+        sensor_resp = await self._request(
             "get",
             f"ss3/subscriptions/{self.system_id}/sensors",
             params={"forceUpdate": str(not cached).lower()},
@@ -107,9 +106,20 @@ class SystemV3(System):
 
         return sensor_resp["sensors"]
 
+    async def _get_settings(self, cached: bool = True) -> None:
+        """Update system settings."""
+        settings_resp: dict = await self._request(
+            "get",
+            f"ss3/subscriptions/{self.system_id}/settings/pins",
+            params={"forceUpdate": str(not cached).lower()},
+        )
+
+        if settings_resp:
+            self._settings_info = settings_resp
+
     async def _send_updated_pins(self, pins: dict) -> None:
         """Post new PINs."""
-        self._settings_info = await self.api.request(
+        self._settings_info = await self._request(
             "post",
             f"ss3/subscriptions/{self.system_id}/settings/pins",
             json=create_pin_payload(pins),
@@ -117,7 +127,7 @@ class SystemV3(System):
 
     async def _set_state(self, value: Enum) -> None:
         """Set the state of the system."""
-        state_resp: dict = await self.api.request(
+        state_resp: dict = await self._request(
             "post", f"ss3/subscriptions/{self.system_id}/state/{value.name}"
         )
 
@@ -128,20 +138,9 @@ class SystemV3(System):
 
         self._state = self._coerce_state_from_string(state_resp["state"])
 
-    async def _update_settings(self, cached: bool = True) -> None:
-        """Update system settings."""
-        settings_resp: dict = await self.api.request(
-            "get",
-            f"ss3/subscriptions/{self.system_id}/settings/pins",
-            params={"forceUpdate": str(not cached).lower()},
-        )
-
-        if settings_resp:
-            self._settings_info = settings_resp
-
     async def get_pins(self, cached: bool = True) -> Dict[str, str]:
         """Return all of the set PINs, including master and duress."""
-        await self._update_settings(cached)
+        await self._get_settings(cached)
 
         pins: Dict[str, str] = {
             CONF_MASTER_PIN: self._settings_info["settings"]["pins"]["master"]["pin"],

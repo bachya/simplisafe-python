@@ -1,4 +1,5 @@
 """Define tests for the Lock objects."""
+# pylint: disable=redefined-outer-name,unused-import
 import json
 
 import aiohttp
@@ -16,20 +17,26 @@ from .const import (
     TEST_PASSWORD,
     TEST_SUBSCRIPTION_ID,
     TEST_SYSTEM_ID,
-    TEST_USER_ID,
 )
-from .fixtures import *
-from .fixtures.v2 import *
-from .fixtures.v3 import *
+from .fixtures import (  # noqa
+    api_token_json,
+    auth_check_json,
+    invalid_credentials_json,
+    unavailable_feature_json,
+)
+from .fixtures.v3 import (  # noqa
+    v3_sensors_json,
+    v3_server,
+    v3_settings_json,
+    v3_subscriptions_json,
+    v3_lock_lock_response_json,
+    v3_lock_unlock_response_json,
+)
 
 
 @pytest.mark.asyncio
 async def test_lock_unlock(
-    aresponses,
-    event_loop,
-    v3_server,
-    v3_lock_lock_response_json,
-    v3_lock_unlock_response_json,
+    aresponses, v3_server, v3_lock_lock_response_json, v3_lock_unlock_response_json
 ):
     """Test locking the lock."""
     async with v3_server:
@@ -50,7 +57,7 @@ async def test_lock_unlock(
             ),
         )
 
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
@@ -66,10 +73,10 @@ async def test_lock_unlock(
 
 
 @pytest.mark.asyncio
-async def test_jammed(event_loop, v3_server):
+async def test_jammed(v3_server):
     """Test that a jammed lock shows the correct state."""
     async with v3_server:
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
@@ -79,7 +86,7 @@ async def test_jammed(event_loop, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_no_state_change_on_failure(aresponses, event_loop, v3_server):
+async def test_no_state_change_on_failure(aresponses, v3_server):
     """Test that the lock doesn't change state on error."""
     async with v3_server:
         v3_server.add(
@@ -95,7 +102,7 @@ async def test_no_state_change_on_failure(aresponses, event_loop, v3_server):
             aresponses.Response(text="", status=401),
         )
 
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
@@ -109,10 +116,10 @@ async def test_no_state_change_on_failure(aresponses, event_loop, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_properties(event_loop, v3_server):
+async def test_properties(v3_server):
     """Test that lock properties are created properly."""
     async with v3_server:
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
@@ -129,10 +136,10 @@ async def test_properties(event_loop, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_unknown_state(caplog, event_loop, v3_server):
+async def test_unknown_state(caplog, v3_server):
     """Test handling a generic error during update."""
     async with v3_server:
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
@@ -144,15 +151,12 @@ async def test_unknown_state(caplog, event_loop, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_update(
+async def test_update(  # pylint: disable=too-many-arguments
     aresponses,
-    event_loop,
     v3_lock_lock_response_json,
     v3_lock_unlock_response_json,
     v3_sensors_json,
     v3_server,
-    v3_settings_json,
-    v3_subscriptions_json,
 ):
     """Test updating the lock."""
     async with v3_server:
@@ -187,7 +191,7 @@ async def test_update(
             ),
         )
 
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]

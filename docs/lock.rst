@@ -80,4 +80,4 @@ To retrieve the sensor's latest state/properties/etc., simply:
 
 .. code:: python
 
-    await lock.update()
+    await sensor.update(cached=True)

@@ -2,7 +2,7 @@
 import asyncio
 import logging
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Coroutine, Dict, List, Type, Set, Union
+from typing import Any, Callable, Coroutine, Dict, List, Type, Set, Union
 
 from simplipy.entity import Entity, EntityTypes
 from simplipy.errors import InvalidCredentialsError, PinError, SimplipyError
@@ -10,9 +10,6 @@ from simplipy.lock import Lock
 from simplipy.sensor.v2 import SensorV2
 from simplipy.sensor.v3 import SensorV3
 from simplipy.util.string import convert_to_underscore
-
-if TYPE_CHECKING:
-    from simplipy.api import API
 
 _LOGGER: logging.Logger = logging.getLogger(__name__)
 
@@ -105,10 +102,16 @@ class SystemStates(Enum):
 class System:
     """Define a system."""
 
-    def __init__(self, api: "API", location_info: dict) -> None:
+    def __init__(
+        self,
+        location_info: dict,
+        request: Callable[..., Coroutine],
+        get_subscription_data: Callable[..., Coroutine],
+    ) -> None:
         """Initialize."""
+        self._get_subscription_data: Callable[..., Coroutine] = get_subscription_data
         self._location_info: dict = location_info
-        self.api: "API" = api
+        self._request: Callable[..., Coroutine] = request
         self.locks: Dict[str, Lock] = {}
         self.sensors: Dict[str, Union[SensorV2, SensorV3]] = {}
 
@@ -165,21 +168,52 @@ class System:
             _LOGGER.error("Unknown system state: %s", value)
             return SystemStates.unknown
 
+    async def _get_entities(self, cached: bool = True) -> None:
+        """Update sensors to the latest values."""
+        entities: dict = await self._get_entities_payload(cached)
+
+        _LOGGER.debug("Get entities response: %s", entities)
+
+        entity_data: dict
+        for entity_data in entities:
+            if not entity_data:
+                continue
+
+            try:
+                entity_type: EntityTypes = EntityTypes(entity_data["type"])
+            except ValueError:
+                _LOGGER.error("Unknown entity type: %s", entity_data["type"])
+                entity_type = EntityTypes.unknown
+
+            if entity_type == EntityTypes.lock:
+                prop = self.locks
+            else:
+                prop = self.sensors  # type: ignore
+
+            if entity_data["serial"] in prop:
+                entity = prop[entity_data["serial"]]
+                entity.entity_data = entity_data
+            else:
+                klass = get_entity_class(entity_type, version=self.version)
+                prop[entity_data["serial"]] = klass(  # type: ignore
+                    self._request,
+                    self._get_entities,
+                    self.system_id,
+                    entity_type,
+                    entity_data,
+                )
+
     async def _get_entities_payload(self, cached: bool = False) -> dict:
         """Return the current sensor payload."""
         raise NotImplementedError()
 
-    async def _send_updated_pins(self, pins: dict) -> None:
-        """Post new PINs."""
-        raise NotImplementedError()
+    async def _get_settings(self, cached: bool = True) -> None:
+        """Update system settings."""
+        pass
 
-    async def _set_state(self, value: SystemStates) -> None:
-        """Raise if calling this undefined based method."""
-        raise NotImplementedError()
-
-    async def _update_location_info(self) -> None:
+    async def _get_system_info(self) -> None:
         """Update information on the system."""
-        subscription_resp: dict = await self.api.get_subscription_data()
+        subscription_resp: dict = await self._get_subscription_data()
         location_info: dict = next(
             (
                 system["location"]
@@ -193,9 +227,13 @@ class System:
             location_info["system"]["alarmState"]
         )
 
-    async def _update_settings(self, cached: bool = True) -> None:
-        """Update system settings."""
-        pass
+    async def _send_updated_pins(self, pins: dict) -> None:
+        """Post new PINs."""
+        raise NotImplementedError()
+
+    async def _set_state(self, value: SystemStates) -> None:
+        """Raise if calling this undefined based method."""
+        raise NotImplementedError()
 
     async def get_events(
         self, from_timestamp: int = None, num_events: int = None
@@ -207,7 +245,7 @@ class System:
         if num_events:
             params["numEvents"] = num_events
 
-        events_resp: dict = await self.api.request(
+        events_resp: dict = await self._request(
             "get", f"subscriptions/{self.system_id}/events", params=params
         )
 
@@ -283,54 +321,33 @@ class System:
 
         await self._send_updated_pins(latest_pins)
 
-    async def update(self, refresh_location: bool = True, cached: bool = True) -> None:
+    async def update(
+        self,
+        *,
+        include_system: bool = True,
+        include_settings: bool = True,
+        include_entities: bool = True,
+        cached: bool = True,
+    ) -> None:
         """Update to the latest data (including entities)."""
-        tasks: Dict[str, Coroutine] = {
-            "entities": self.update_entities(cached),
-            "settings": self._update_settings(cached),
-        }
-        if refresh_location:
-            tasks["location"] = self._update_location_info()
+        tasks: Dict[str, Coroutine] = {}
+        if include_system:
+            tasks["system"] = self._get_system_info()
+        if include_settings:
+            tasks["settings"] = self._get_settings(cached)
+        if include_entities:
+            tasks["entity"] = self._get_entities(cached)
 
         results: List[Any] = await asyncio.gather(
             *tasks.values(), return_exceptions=True
         )
 
         operation: str
-        result: Any
+        result: dict
         for operation, result in zip(tasks, results):
             if isinstance(result, InvalidCredentialsError):
                 raise result
             if isinstance(result, SimplipyError):
-                _LOGGER.error("Error while retrieving %s: %s", operation, result)
-
-    async def update_entities(self, cached: bool = True) -> None:
-        """Update sensors to the latest values."""
-        entities: dict = await self._get_entities_payload(cached)
-
-        _LOGGER.debug("Get entities response: %s", entities)
-
-        entity_data: dict
-        for entity_data in entities:
-            if not entity_data:
-                continue
-
-            try:
-                entity_type: EntityTypes = EntityTypes(entity_data["type"])
-            except ValueError:
-                _LOGGER.error("Unknown entity type: %s", entity_data["type"])
-                entity_type = EntityTypes.unknown
-
-            if entity_type == EntityTypes.lock:
-                prop = self.locks
-            else:
-                prop = self.sensors  # type: ignore
-
-            if entity_data["serial"] in prop:
-                entity = prop[entity_data["serial"]]
-                entity.entity_data = entity_data
-            else:
-                klass = get_entity_class(entity_type, version=self.version)
-                prop[entity_data["serial"]] = klass(  # type: ignore
-                    self.api, self, entity_type, entity_data
+                _LOGGER.error(
+                    "Error while getting latest %s values: %s", operation, result
                 )

@@ -1,4 +1,5 @@
 """Define tests for the Sensor objects."""
+# pylint: disable=redefined-outer-name,unused-import
 import aiohttp
 import pytest
 
@@ -7,16 +8,21 @@ from simplipy.entity import EntityTypes
 from simplipy.errors import SimplipyError
 
 from .const import TEST_EMAIL, TEST_PASSWORD, TEST_SYSTEM_ID
-from .fixtures import *
-from .fixtures.v2 import *
-from .fixtures.v3 import *
+from .fixtures import api_token_json, auth_check_json  # noqa
+from .fixtures.v2 import v2_server, v2_settings_json, v2_subscriptions_json  # noqa
+from .fixtures.v3 import (  # noqa
+    v3_sensors_json,
+    v3_settings_json,
+    v3_server,
+    v3_subscriptions_json,
+)
 
 
 @pytest.mark.asyncio
-async def test_properties_base(event_loop, v2_server):
+async def test_properties_base(v2_server):
     """Test that base sensor properties are created properly."""
     async with v2_server:
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
@@ -28,10 +34,10 @@ async def test_properties_base(event_loop, v2_server):
 
 
 @pytest.mark.asyncio
-async def test_properties_v2(event_loop, v2_server):
+async def test_properties_v2(v2_server):
     """Test that v2 sensor properties are created properly."""
     async with v2_server:
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
@@ -57,10 +63,10 @@ async def test_properties_v2(event_loop, v2_server):
 
 
 @pytest.mark.asyncio
-async def test_properties_v3(event_loop, v3_server):
+async def test_properties_v3(v3_server):
     """Test that v3 sensor properties are created properly."""
     async with v3_server:
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
@@ -86,10 +92,10 @@ async def test_properties_v3(event_loop, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_unknown_sensor_type(caplog, event_loop, v2_server):
+async def test_unknown_sensor_type(caplog, v2_server):
     """Test that a message is logged when unknown sensors types are found."""
     async with v2_server:
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             _ = await api.get_systems()  # noqa
             assert any("Unknown" in e.message for e in caplog.records)

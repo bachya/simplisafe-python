@@ -90,4 +90,4 @@ To retrieve the sensor's latest state/properties/etc., simply:
 
 .. code:: python
 
-    await sensor.update()
+    await sensor.update(cached=True)

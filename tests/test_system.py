@@ -1,4 +1,5 @@
 """Define tests for the System object."""
+# pylint: disable=protected-access,redefined-outer-name,unused-import
 import json
 
 import aiohttp
@@ -9,6 +10,7 @@ from simplipy import API
 from simplipy.errors import InvalidCredentialsError, PinError
 from simplipy.system import System, SystemStates
 
+from .common import async_mock
 from .const import (
     TEST_ACCESS_TOKEN,
     TEST_ADDRESS,
@@ -20,13 +22,38 @@ from .const import (
     TEST_SYSTEM_SERIAL_NO,
     TEST_USER_ID,
 )
-from .fixtures import *  # noqa
-from .fixtures.v2 import *  # noqa
-from .fixtures.v3 import *  # noqa
+from .fixtures import (  # noqa
+    api_token_json,
+    auth_check_json,
+    events_json,
+    latest_event_json,
+)
+from .fixtures.v2 import (  # noqa
+    v2_new_pins_json,
+    v2_pins_json,
+    v2_server,
+    v2_settings_json,
+    v2_state_away_json,
+    v2_state_home_json,
+    v2_state_off_json,
+    v2_subscriptions_json,
+)
+from .fixtures.v3 import (  # noqa
+    v3_sensors_json,
+    v3_server,
+    v3_settings_deleted_pin_json,
+    v3_settings_json,
+    v3_settings_full_pins_json,
+    v3_settings_new_pin_json,
+    v3_state_away_json,
+    v3_state_home_json,
+    v3_state_off_json,
+    v3_subscriptions_json,
+)
 
 
 @pytest.mark.asyncio
-async def test_get_events(events_json, event_loop, v2_server):
+async def test_get_events(events_json, v2_server):
     """Test getting events from a system."""
     async with v2_server:
         v2_server.add(
@@ -36,7 +63,7 @@ async def test_get_events(events_json, event_loop, v2_server):
             aresponses.Response(text=json.dumps(events_json), status=200),
         )
 
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
@@ -47,7 +74,7 @@ async def test_get_events(events_json, event_loop, v2_server):
 
 
 @pytest.mark.asyncio
-async def test_get_last_event(event_loop, v3_server, latest_event_json):
+async def test_get_last_event(v3_server, latest_event_json):
     """Test getting the latest event."""
     async with v3_server:
         v3_server.add(
@@ -57,7 +84,7 @@ async def test_get_last_event(event_loop, v3_server, latest_event_json):
             aresponses.Response(text=json.dumps(latest_event_json), status=200),
         )
 
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
@@ -67,7 +94,7 @@ async def test_get_last_event(event_loop, v3_server, latest_event_json):
 
 
 @pytest.mark.asyncio
-async def test_get_pins_v2(event_loop, v2_pins_json, v2_server):
+async def test_get_pins_v2(v2_pins_json, v2_server):
     """Test getting PINs associated with a V3 system."""
     async with v2_server:
         v2_server.add(
@@ -77,7 +104,7 @@ async def test_get_pins_v2(event_loop, v2_pins_json, v2_server):
             aresponses.Response(text=json.dumps(v2_pins_json), status=200),
         )
 
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
@@ -91,7 +118,7 @@ async def test_get_pins_v2(event_loop, v2_pins_json, v2_server):
 
 
 @pytest.mark.asyncio
-async def test_get_pins_v3(event_loop, v3_server, v3_settings_json):
+async def test_get_pins_v3(v3_server, v3_settings_json):
     """Test getting PINs associated with a V3 system."""
     async with v3_server:
         v3_server.add(
@@ -101,7 +128,7 @@ async def test_get_pins_v3(event_loop, v3_server, v3_settings_json):
             aresponses.Response(text=json.dumps(v3_settings_json), status=200),
         )
 
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
@@ -115,13 +142,8 @@ async def test_get_pins_v3(event_loop, v3_server, v3_settings_json):
 
 
 @pytest.mark.asyncio
-async def test_get_systems_v2(
-    api_token_json,
-    auth_check_json,
-    event_loop,
-    v2_server,
-    v2_settings_json,
-    v2_subscriptions_json,
+async def test_get_systems_v2(  # pylint: disable=too-many-arguments
+    api_token_json, auth_check_json, v2_server, v2_settings_json, v2_subscriptions_json
 ):
     """Test the ability to get systems attached to a v2 account."""
     async with v2_server:
@@ -153,7 +175,7 @@ async def test_get_systems_v2(
             aresponses.Response(text=json.dumps(v2_settings_json), status=200),
         )
 
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             credentials_api = await API.login_via_credentials(
                 TEST_EMAIL, TEST_PASSWORD, websession
             )
@@ -163,7 +185,7 @@ async def test_get_systems_v2(
             system = systems[TEST_SYSTEM_ID]
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.system_id == TEST_SYSTEM_ID
-            assert system.api._access_token == TEST_ACCESS_TOKEN
+            assert credentials_api._access_token == TEST_ACCESS_TOKEN
             assert len(system.sensors) == 35
 
             token_api = await API.login_via_token(TEST_REFRESH_TOKEN, websession)
@@ -173,15 +195,14 @@ async def test_get_systems_v2(
             system = systems[TEST_SYSTEM_ID]
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.system_id == TEST_SYSTEM_ID
-            assert system.api._access_token == TEST_ACCESS_TOKEN
+            assert credentials_api._access_token == TEST_ACCESS_TOKEN
             assert len(system.sensors) == 35
 
 
 @pytest.mark.asyncio
-async def test_get_systems_v3(
+async def test_get_systems_v3(  # pylint: disable=too-many-arguments
     api_token_json,
     auth_check_json,
-    event_loop,
     v3_sensors_json,
     v3_server,
     v3_settings_json,
@@ -223,7 +244,7 @@ async def test_get_systems_v3(
             aresponses.Response(text=json.dumps(v3_settings_json), status=200),
         )
 
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             credentials_api = await API.login_via_credentials(
                 TEST_EMAIL, TEST_PASSWORD, websession
             )
@@ -234,7 +255,7 @@ async def test_get_systems_v3(
 
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.system_id == TEST_SYSTEM_ID
-            assert system.api._access_token == TEST_ACCESS_TOKEN
+            assert credentials_api._access_token == TEST_ACCESS_TOKEN
             assert len(system.sensors) == 22
 
             token_api = await API.login_via_token(TEST_REFRESH_TOKEN, websession)
@@ -245,12 +266,12 @@ async def test_get_systems_v3(
 
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.system_id == TEST_SYSTEM_ID
-            assert system.api._access_token == TEST_ACCESS_TOKEN
+            assert credentials_api._access_token == TEST_ACCESS_TOKEN
             assert len(system.sensors) == 22
 
 
 @pytest.mark.asyncio
-async def test_no_state_change_on_failure(aresponses, event_loop, v3_server):
+async def test_no_state_change_on_failure(aresponses, v3_server):
     """Test that the system doesn't change state on an error."""
     async with v3_server:
         v3_server.add(
@@ -266,7 +287,7 @@ async def test_no_state_change_on_failure(aresponses, event_loop, v3_server):
             aresponses.Response(text="", status=401),
         )
 
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
@@ -279,7 +300,7 @@ async def test_no_state_change_on_failure(aresponses, event_loop, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_remove_nonexistent_pin_v3(event_loop, v3_server, v3_settings_json):
+async def test_remove_nonexistent_pin_v3(v3_server, v3_settings_json):
     """Test throwing an error when removing a nonexistent PIN."""
     async with v3_server:
         v3_server.add(
@@ -289,7 +310,7 @@ async def test_remove_nonexistent_pin_v3(event_loop, v3_server, v3_settings_json
             aresponses.Response(text=json.dumps(v3_settings_json), status=200),
         )
 
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
@@ -300,9 +321,7 @@ async def test_remove_nonexistent_pin_v3(event_loop, v3_server, v3_settings_json
 
 
 @pytest.mark.asyncio
-async def test_remove_pin_v3(
-    event_loop, v3_server, v3_settings_json, v3_settings_deleted_pin_json
-):
+async def test_remove_pin_v3(v3_server, v3_settings_json, v3_settings_deleted_pin_json):
     """Test removing a PIN in a V3 system."""
     async with v3_server:
         v3_server.add(
@@ -334,7 +353,7 @@ async def test_remove_pin_v3(
             ),
         )
 
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
@@ -348,7 +367,7 @@ async def test_remove_pin_v3(
 
 
 @pytest.mark.asyncio
-async def test_remove_reserved_pin_v3(event_loop, v3_server, v3_settings_json):
+async def test_remove_reserved_pin_v3(v3_server, v3_settings_json):
     """Test throwing an error when removing a reserved PIN."""
     async with v3_server:
         v3_server.add(
@@ -358,7 +377,7 @@ async def test_remove_reserved_pin_v3(event_loop, v3_server, v3_settings_json):
             aresponses.Response(text=json.dumps(v3_settings_json), status=200),
         )
 
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
@@ -369,7 +388,7 @@ async def test_remove_reserved_pin_v3(event_loop, v3_server, v3_settings_json):
 
 
 @pytest.mark.asyncio
-async def test_set_duplicate_pin(event_loop, v3_server, v3_settings_json):
+async def test_set_duplicate_pin(v3_server, v3_settings_json):
     """Test throwing an error when setting a duplicate PIN."""
     async with v3_server:
         v3_server.add(
@@ -385,7 +404,7 @@ async def test_set_duplicate_pin(event_loop, v3_server, v3_settings_json):
             aresponses.Response(text=json.dumps(v3_settings_json), status=200),
         )
 
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             with pytest.raises(PinError) as err:
                 api = await API.login_via_credentials(
                     TEST_EMAIL, TEST_PASSWORD, websession
@@ -398,10 +417,10 @@ async def test_set_duplicate_pin(event_loop, v3_server, v3_settings_json):
 
 
 @pytest.mark.asyncio
-async def test_properties(event_loop, v2_server):
+async def test_properties(v2_server):
     """Test that base system properties are created properly."""
     async with v2_server:
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
@@ -417,10 +436,10 @@ async def test_properties(event_loop, v2_server):
 
 
 @pytest.mark.asyncio
-async def test_properties_v3(event_loop, v3_server):
+async def test_properties_v3(v3_server):
     """Test that v3 system properties are available."""
     async with v3_server:
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
@@ -446,7 +465,7 @@ async def test_properties_v3(event_loop, v3_server):
 
 @pytest.mark.asyncio
 async def test_set_max_user_pins(
-    event_loop, v3_server, v3_settings_json, v3_settings_full_pins_json
+    v3_server, v3_settings_json, v3_settings_full_pins_json
 ):
     """Test throwing an error when setting too many user PINs."""
     async with v3_server:
@@ -465,7 +484,7 @@ async def test_set_max_user_pins(
             aresponses.Response(text=json.dumps(v3_settings_json), status=200),
         )
 
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             with pytest.raises(PinError) as err:
                 api = await API.login_via_credentials(
                     TEST_EMAIL, TEST_PASSWORD, websession
@@ -478,7 +497,7 @@ async def test_set_max_user_pins(
 
 
 @pytest.mark.asyncio
-async def test_set_pin_v2(event_loop, v2_new_pins_json, v2_pins_json, v2_server):
+async def test_set_pin_v2(v2_new_pins_json, v2_pins_json, v2_server):
     """Test setting a PIN in a V2 system."""
     async with v2_server:
         v2_server.add(
@@ -506,7 +525,7 @@ async def test_set_pin_v2(event_loop, v2_new_pins_json, v2_pins_json, v2_server)
             aresponses.Response(text=json.dumps(v2_new_pins_json), status=200),
         )
 
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
@@ -520,9 +539,7 @@ async def test_set_pin_v2(event_loop, v2_new_pins_json, v2_pins_json, v2_server)
 
 
 @pytest.mark.asyncio
-async def test_set_pin_v3(
-    event_loop, v3_server, v3_settings_json, v3_settings_new_pin_json
-):
+async def test_set_pin_v3(v3_server, v3_settings_json, v3_settings_new_pin_json):
     """Test setting a PIN in a V3 system."""
     async with v3_server:
         v3_server.add(
@@ -550,7 +567,7 @@ async def test_set_pin_v3(
             aresponses.Response(text=json.dumps(v3_settings_new_pin_json), status=200),
         )
 
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
@@ -564,10 +581,10 @@ async def test_set_pin_v3(
 
 
 @pytest.mark.asyncio
-async def test_set_pin_wrong_chars(event_loop, v3_server):
+async def test_set_pin_wrong_chars(v3_server):
     """Test throwing an error when setting a PIN with non-digits."""
     async with v3_server:
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             with pytest.raises(PinError) as err:
                 api = await API.login_via_credentials(
                     TEST_EMAIL, TEST_PASSWORD, websession
@@ -580,10 +597,10 @@ async def test_set_pin_wrong_chars(event_loop, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_set_pin_wrong_length(event_loop, v3_server):
+async def test_set_pin_wrong_length(v3_server):
     """Test throwing an error when setting a PIN with the wrong length."""
     async with v3_server:
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             with pytest.raises(PinError) as err:
                 api = await API.login_via_credentials(
                     TEST_EMAIL, TEST_PASSWORD, websession
@@ -597,7 +614,7 @@ async def test_set_pin_wrong_length(event_loop, v3_server):
 
 @pytest.mark.asyncio
 async def test_set_states_v2(
-    event_loop, v2_server, v2_state_away_json, v2_state_home_json, v2_state_off_json
+    v2_server, v2_state_away_json, v2_state_home_json, v2_state_off_json
 ):
     """Test the ability to set the state of a v2 system."""
     async with v2_server:
@@ -629,7 +646,7 @@ async def test_set_states_v2(
             aresponses.Response(text=json.dumps(v2_state_off_json), status=200),
         )
 
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
@@ -649,7 +666,7 @@ async def test_set_states_v2(
 
 @pytest.mark.asyncio
 async def test_set_states_v3(
-    event_loop, v3_server, v3_state_away_json, v3_state_home_json, v3_state_off_json
+    v3_server, v3_state_away_json, v3_state_home_json, v3_state_off_json
 ):
     """Test the ability to set the state of the system."""
     async with v3_server:
@@ -681,7 +698,7 @@ async def test_set_states_v3(
             aresponses.Response(text=json.dumps(v3_state_off_json), status=200),
         )
 
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
@@ -700,19 +717,17 @@ async def test_set_states_v3(
 
 
 @pytest.mark.asyncio
-async def test_unknown_initial_state(caplog, event_loop):
+async def test_unknown_initial_state(caplog):
     """Test handling of an initially unknown state."""
-    async with aiohttp.ClientSession(loop=event_loop) as websession:
-        _ = System(API(websession), {"system": {"alarmState": "fake"}})  # noqa
-
-        assert any("Unknown" in e.message for e in caplog.records)
+    _ = System({"system": {"alarmState": "fake"}}, async_mock, async_mock)
+    assert any("Unknown" in e.message for e in caplog.records)
 
 
 @pytest.mark.asyncio
-async def test_unknown_sensor_type(caplog, event_loop, v2_server):
+async def test_unknown_sensor_type(caplog, v2_server):
     """Test whether a message is logged upon finding an unknown sensor type."""
     async with v2_server:
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             _ = await api.get_systems()  # noqa
 
@@ -721,7 +736,7 @@ async def test_unknown_sensor_type(caplog, event_loop, v2_server):
 
 @pytest.mark.asyncio
 async def test_update_system_data_v2(
-    event_loop, v2_server, v2_settings_json, v2_subscriptions_json
+    v2_server, v2_settings_json, v2_subscriptions_json
 ):
     """Test getting updated data for a v2 system."""
     async with v2_server:
@@ -738,7 +753,7 @@ async def test_update_system_data_v2(
             aresponses.Response(text=json.dumps(v2_settings_json), status=200),
         )
 
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
@@ -747,13 +762,13 @@ async def test_update_system_data_v2(
 
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.system_id == TEST_SYSTEM_ID
-            assert system.api._access_token == TEST_ACCESS_TOKEN
+            assert api._access_token == TEST_ACCESS_TOKEN
             assert len(system.sensors) == 35
 
 
 @pytest.mark.asyncio
 async def test_update_system_data_v3(
-    event_loop, v3_server, v3_sensors_json, v3_settings_json, v3_subscriptions_json
+    v3_server, v3_sensors_json, v3_settings_json, v3_subscriptions_json
 ):
     """Test getting updated data for a v3 system."""
     async with v3_server:
@@ -776,7 +791,7 @@ async def test_update_system_data_v3(
             aresponses.Response(text=json.dumps(v3_settings_json), status=200),
         )
 
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
@@ -785,18 +800,13 @@ async def test_update_system_data_v3(
 
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.system_id == TEST_SYSTEM_ID
-            assert system.api._access_token == TEST_ACCESS_TOKEN
+            assert api._access_token == TEST_ACCESS_TOKEN
             assert len(system.sensors) == 22
 
 
 @pytest.mark.asyncio
-async def test_update_error_v3(
-    caplog,
-    event_loop,
-    v3_server,
-    v3_sensors_json,
-    v3_settings_json,
-    v3_subscriptions_json,
+async def test_update_error_v3(  # pylint: disable=too-many-arguments
+    caplog, v3_server, v3_sensors_json, v3_settings_json, v3_subscriptions_json
 ):
     """Test handling a generic error during update."""
     async with v3_server:
@@ -819,7 +829,7 @@ async def test_update_error_v3(
             aresponses.Response(text=json.dumps(v3_settings_json), status=500),
         )
 
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             systems = await api.get_systems()
             system = systems[TEST_SYSTEM_ID]
@@ -827,5 +837,6 @@ async def test_update_error_v3(
             await system.update()
 
             assert any(
-                "Error while retrieving settings" in e.message for e in caplog.records
+                "Error while getting latest settings values" in e.message
+                for e in caplog.records
             )

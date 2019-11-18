@@ -1,35 +1,31 @@
 """Define tests for the Websocket API."""
-import aiohttp
-import pytest
-from unittest.mock import patch, MagicMock
+# pylint: disable=protected-access,redefined-outer-name,unused-import
+from unittest.mock import MagicMock
 from urllib.parse import urlencode
 
+import aiohttp
+import pytest
 from socketio.exceptions import SocketIOError
 
 from simplipy import API
 from simplipy.errors import WebsocketError
 
+from .common import async_mock
 from .const import TEST_ACCESS_TOKEN, TEST_EMAIL, TEST_PASSWORD, TEST_USER_ID
-from .fixtures import *  # noqa
-from .fixtures.v3 import *  # noqa
-
-
-def async_mock(*args, **kwargs):
-    """Return a mock asynchronous function."""
-    m = MagicMock(*args, **kwargs)
-
-    async def mock_coro(*args, **kwargs):
-        return m(*args, **kwargs)
-
-    mock_coro.mock = m
-    return mock_coro
+from .fixtures import api_token_json, auth_check_json  # noqa
+from .fixtures.v3 import (  # noqa
+    v3_sensors_json,
+    v3_settings_json,
+    v3_server,
+    v3_subscriptions_json,
+)
 
 
 @pytest.mark.asyncio
-async def test_connect_async_success(event_loop, v3_server):
+async def test_connect_async_success(v3_server):
     """Test triggering an async handler upon connection to the websocket."""
     async with v3_server:
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             api.websocket._sio.eio._trigger_event = async_mock()
             api.websocket._sio.eio.connect = async_mock()
@@ -55,10 +51,10 @@ async def test_connect_async_success(event_loop, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_connect_sync_success(event_loop, v3_server):
+async def test_connect_sync_success(v3_server):
     """Test triggering a synchronous handler upon connection to the websocket."""
     async with v3_server:
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             api.websocket._sio.eio._trigger_event = async_mock()
             api.websocket._sio.eio.connect = async_mock()
@@ -84,10 +80,10 @@ async def test_connect_sync_success(event_loop, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_connect_failure(event_loop, v3_server):
+async def test_connect_failure(v3_server):
     """Test connecting to the socket and an exception occurring."""
     async with v3_server:
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             api.websocket._sio.eio.connect = async_mock(side_effect=SocketIOError())
 
@@ -96,10 +92,10 @@ async def test_connect_failure(event_loop, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_async_events(event_loop, v3_server):
+async def test_async_events(v3_server):
     """Test events with async handlers."""
     async with v3_server:
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             api.websocket._sio.eio._trigger_event = async_mock()
             api.websocket._sio.eio.connect = async_mock()
@@ -141,10 +137,10 @@ async def test_async_events(event_loop, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_sync_events(event_loop, v3_server):
+async def test_sync_events(v3_server):
     """Test events with synchronous handlers."""
     async with v3_server:
-        async with aiohttp.ClientSession(loop=event_loop) as websession:
+        async with aiohttp.ClientSession() as websession:
             api = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
             api.websocket._sio.eio._trigger_event = async_mock()
             api.websocket._sio.eio.connect = async_mock()

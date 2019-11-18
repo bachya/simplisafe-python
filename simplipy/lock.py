@@ -58,9 +58,9 @@ class Lock(EntityV3):
 
     async def _set_lock_state(self, state: LockStates) -> None:
         """Set the lock state."""
-        await self._api.request(
+        await self._request(
             "post",
-            f"doorlock/{self._system.system_id}/{self.serial}/state",
+            f"doorlock/{self._system_id}/{self.serial}/state",
             json={"state": SET_STATE_MAP[state]},
         )
 

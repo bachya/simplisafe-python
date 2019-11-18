@@ -168,15 +168,29 @@ additional properties:
     system.wifi_strength
     # >>> -43
 
-Refreshing the System
----------------------
+Getting the Latest System Info
+------------------------------
 
-Refreshing the ``System`` object, which gets the latest state, the latest sensor
-info, etc., is done via the ``update()`` coroutine:
+Refreshing the ``System`` object is done via the ``update()`` coroutine:
 
 .. code:: python
 
     await system.update()
+
+Note that this method can be supplied with four optional parameters (all of which
+default to ``True``):
+
+* ``include_system``: update the system state and properties
+* ``include_settings``: update system settings (like PINs)
+* ``include_entities``: update all sensors/locks/etc. associated with a system
+* ``cached``: use the last values provides by the base station
+
+For instance, if a user only wanted to update sensors and wanted to force a new data
+refresh:
+
+.. code:: python
+
+    await system.update(include_system=False, include_settings=False, cached=False)
 
 There are two crucial differences between V2 and V3 systems when updating:
 

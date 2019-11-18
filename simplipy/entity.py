@@ -58,9 +58,9 @@ class Entity:
         """Return the entity type."""
         return self._type
 
-    async def update(self, refresh_location: bool = True, cached: bool = True) -> None:
+    async def update(self, cached: bool = True) -> None:
         """Retrieve the latest state/properties for the entity."""
-        await self._system.update(refresh_location, cached)
+        await self._system.update_entities(cached)
 
 
 class EntityV3(Entity):

@@ -177,37 +177,6 @@ class System:
         """Raise if calling this undefined based method."""
         raise NotImplementedError()
 
-    async def _update_entities(self, cached: bool = True) -> None:
-        """Update sensors to the latest values."""
-        entities: dict = await self._get_entities_payload(cached)
-
-        _LOGGER.debug("Get entities response: %s", entities)
-
-        entity_data: dict
-        for entity_data in entities:
-            if not entity_data:
-                continue
-
-            try:
-                entity_type: EntityTypes = EntityTypes(entity_data["type"])
-            except ValueError:
-                _LOGGER.error("Unknown entity type: %s", entity_data["type"])
-                entity_type = EntityTypes.unknown
-
-            if entity_type == EntityTypes.lock:
-                prop = self.locks
-            else:
-                prop = self.sensors  # type: ignore
-
-            if entity_data["serial"] in prop:
-                entity = prop[entity_data["serial"]]
-                entity.entity_data = entity_data
-            else:
-                klass = get_entity_class(entity_type, version=self.version)
-                prop[entity_data["serial"]] = klass(  # type: ignore
-                    self.api, self, entity_type, entity_data
-                )
-
     async def _update_location_info(self) -> None:
         """Update information on the system."""
         subscription_resp: dict = await self.api.get_subscription_data()
@@ -317,7 +286,7 @@ class System:
     async def update(self, refresh_location: bool = True, cached: bool = True) -> None:
         """Update to the latest data (including entities)."""
         tasks: Dict[str, Coroutine] = {
-            "entities": self._update_entities(cached),
+            "entities": self.update_entities(cached),
             "settings": self._update_settings(cached),
         }
         if refresh_location:
@@ -334,3 +303,34 @@ class System:
                 raise result
             if isinstance(result, SimplipyError):
                 _LOGGER.error("Error while retrieving %s: %s", operation, result)
+
+    async def update_entities(self, cached: bool = True) -> None:
+        """Update sensors to the latest values."""
+        entities: dict = await self._get_entities_payload(cached)
+
+        _LOGGER.debug("Get entities response: %s", entities)
+
+        entity_data: dict
+        for entity_data in entities:
+            if not entity_data:
+                continue
+
+            try:
+                entity_type: EntityTypes = EntityTypes(entity_data["type"])
+            except ValueError:
+                _LOGGER.error("Unknown entity type: %s", entity_data["type"])
+                entity_type = EntityTypes.unknown
+
+            if entity_type == EntityTypes.lock:
+                prop = self.locks
+            else:
+                prop = self.sensors  # type: ignore
+
+            if entity_data["serial"] in prop:
+                entity = prop[entity_data["serial"]]
+                entity.entity_data = entity_data
+            else:
+                klass = get_entity_class(entity_type, version=self.version)
+                prop[entity_data["serial"]] = klass(  # type: ignore
+                    self.api, self, entity_type, entity_data
+                )

@@ -174,21 +174,9 @@ async def test_update(
         )
         v3_server.add(
             "api.simplisafe.com",
-            f"/v1/users/{TEST_USER_ID}/subscriptions",
-            "get",
-            aresponses.Response(text=json.dumps(v3_subscriptions_json), status=200),
-        )
-        v3_server.add(
-            "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/sensors",
             "get",
             aresponses.Response(text=json.dumps(v3_sensors_json), status=200),
-        )
-        v3_server.add(
-            "api.simplisafe.com",
-            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/pins",
-            "get",
-            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
         )
         v3_server.add(
             "api.simplisafe.com",

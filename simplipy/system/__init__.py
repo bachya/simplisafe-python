@@ -85,7 +85,7 @@ def get_entity_class(
 
 
 class SystemStates(Enum):
-    """Define states that the system can be in."""
+    """States that the system can be in."""
 
     alarm_count = 1
     away = 2
@@ -100,13 +100,24 @@ class SystemStates(Enum):
 
 
 class System:
-    """Define a system."""
+    """Define a system.
+
+    Note that this class shouldn't be instantiated directly; it will be instantiated as
+    appropriate via :meth:`simplipy.API.get_systems`.
+
+    :param request: A method to make authenticated API requests.
+    :type request: ``Callable[..., Coroutine]``
+    :param get_subscription_data: A method to get the latest subscription data
+    :type get_subscription_data: ``Callable[..., Coroutine]``
+    :param location_info: A raw data dict representing the system's state and properties.
+    :type location_info: ``dict``
+    """
 
     def __init__(
         self,
-        location_info: dict,
         request: Callable[..., Coroutine],
         get_subscription_data: Callable[..., Coroutine],
+        location_info: dict,
     ) -> None:
         """Initialize."""
         self._get_subscription_data: Callable[..., Coroutine] = get_subscription_data
@@ -120,43 +131,67 @@ class System:
         )
 
     @property
-    def address(self) -> bool:
-        """Return the street address of the system."""
+    def address(self) -> str:
+        """Return the street address of the system.
+
+        :rtype: ``str``
+        """
         return self._location_info["street1"]
 
     @property
     def alarm_going_off(self) -> bool:
-        """Return whether the alarm is going off."""
+        """Return whether the alarm is going off.
+
+        :rtype: ``bool``
+        """
         return self._location_info["system"]["isAlarming"]
 
     @property
     def connection_type(self) -> str:
-        """Return the system's connection type (cell or WiFi)."""
+        """Return the system's connection type (cell or WiFi).
+
+        :rtype: ``str``
+        """
         return self._location_info["system"]["connType"]
 
     @property
     def serial(self) -> str:
-        """Return the system's serial number."""
+        """Return the system's serial number.
+
+        :rtype: ``str``
+        """
         return self._location_info["system"]["serial"]
 
     @property
     def state(self) -> SystemStates:
-        """Return the current state of the system."""
+        """Return the current state of the system.
+
+        :rtype: :meth:`simplipy.system.SystemStates`
+        """
         return self._state
 
     @property
     def system_id(self) -> int:
-        """Return the SimpliSafe identifier for this system."""
+        """Return the SimpliSafe identifier for this system.
+
+        :rtype: ``int``
+        """
         return self._location_info["sid"]
 
     @property
     def temperature(self) -> int:
-        """Return the overall temperature measured by the system."""
+        """Return the overall temperature measured by the system.
+
+        :rtype: ``int``
+        """
         return self._location_info["system"]["temperature"]
 
     @property
     def version(self) -> int:
-        """Return the system version."""
+        """Return the system version.
+
+        :rtype: ``int``
+        """
         return self._location_info["system"]["version"]
 
     @staticmethod
@@ -238,7 +273,16 @@ class System:
     async def get_events(
         self, from_timestamp: int = None, num_events: int = None
     ) -> list:
-        """Get events with optional start time and number of events."""
+        """Get events recorded by the base station.
+
+        If no parameters are provided, this will return the most recent 50 events.
+
+        :param from_timestamp: The starting timestamp (if desired)
+        :type from_timestamp: ``int``
+        :param num_events: The number of events to return.
+        :type num_events: ``int``
+        :rtype: ``list``
+        """
         params: Dict[str, Any] = {}
         if from_timestamp:
             params["fromTimestamp"] = from_timestamp
@@ -254,16 +298,31 @@ class System:
         return events_resp["events"]
 
     async def get_latest_event(self) -> dict:
-        """Get the most recent system event."""
+        """Get the most recent system event.
+
+        :rtype: ``dict``
+        """
         events: list = await self.get_events(num_events=1)
         return events[0]
 
-    async def get_pins(self, cached: bool = True) -> dict:
-        """Return all of the set PINs, including master and duress."""
+    async def get_pins(self, cached: bool = True) -> Dict[str, str]:
+        """Return all of the set PINs, including master and duress.
+
+        The ``cached`` parameter determines whether the SimpliSafe Cloud uses the last
+        known values retrieved from the base station (``True``) or retrieves new data.
+
+        :param cached: Whether to used cached data.
+        :type cached: ``bool``
+        :rtype: ``Dict[str, str]``
+        """
         raise NotImplementedError()
 
     async def remove_pin(self, pin_or_label: str) -> None:
-        """Remove a PIN by its value or label."""
+        """Remove a PIN by its value or label.
+
+        :param pin_or_label: The PIN value or label to remove
+        :type pin_or_label: ``str``
+        """
         # Because SimpliSafe's API works by sending the entire payload of PINs, we
         # can't reasonably check a local cache for up-to-date PIN data; so, we fetch the
         # latest each time:
@@ -296,7 +355,13 @@ class System:
         await self._set_state(SystemStates.off)
 
     async def set_pin(self, label: str, pin: str) -> None:
-        """Set a PIN."""
+        """Set a PIN.
+
+        :param label: The label to use for the PIN (shown in the SimpliSafe app)
+        :type label: str
+        :param pin: The pin value
+        :type pin: str
+        """
         if len(pin) != MAX_PIN_LENGTH:
             raise PinError(f"PINs must be {MAX_PIN_LENGTH} digits long")
 
@@ -329,7 +394,20 @@ class System:
         include_entities: bool = True,
         cached: bool = True,
     ) -> None:
-        """Update to the latest data (including entities)."""
+        """Get the latest system data.
+
+        The ``cached`` parameter determines whether the SimpliSafe Cloud uses the last
+        known values retrieved from the base station (``True``) or retrieves new data.
+
+        :param include_system: Whether system state/properties should be updated
+        :type include_system: ``bool``
+        :param include_settings: Whether system settings (like PINs) should be updated
+        :type include_settings: ``bool``
+        :param include_entities: Whether sensors/locks/etc. should be updated
+        :type include_entities: ``bool``
+        :param cached: Whether to used cached data.
+        :type cached: ``bool``
+        """
         tasks: Dict[str, Coroutine] = {}
         if include_system:
             tasks["system"] = self._get_system_info()

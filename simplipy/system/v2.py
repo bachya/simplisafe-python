@@ -52,7 +52,15 @@ class SystemV2(System):
             self._state = SystemStates[state_resp["requestedState"]]
 
     async def get_pins(self, cached: bool = True) -> Dict[str, str]:
-        """Return all of the set PINs, including master and duress."""
+        """Return all of the set PINs, including master and duress.
+
+        The ``cached`` parameter determines whether the SimpliSafe Cloud uses the last
+        known values retrieved from the base station (``True``) or retrieves new data.
+
+        :param cached: Whether to used cached data.
+        :type cached: ``bool``
+        :rtype: ``Dict[str, str]``
+        """
         pins_resp: dict = await self._request(
             "get",
             f"subscriptions/{self.system_id}/pins",

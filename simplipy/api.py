@@ -27,7 +27,15 @@ ApiType = TypeVar("ApiType", bound="API")
 
 
 class API:  # pylint: disable=too-many-instance-attributes
-    """Define an API object to interact with the SimpliSafe cloud."""
+    """An API object to interact with the SimpliSafe cloud.
+
+    Note that this class shouldn't be instantiated directly; instead, the
+    :meth:`simplipy.API.login_via_credentials` and :meth:`simplipy.API.login_via_token`
+    class methods should be used.
+
+    :param websession: The ``aiohttp`` ``ClientSession`` session used for all HTTP requests
+    :type websession: ``aiohttp.client.ClientSession``
+    """
 
     def __init__(self, websession: ClientSession) -> None:
         """Initialize."""
@@ -44,7 +52,10 @@ class API:  # pylint: disable=too-many-instance-attributes
 
     @property
     def refresh_token(self) -> str:
-        """Return the current refresh_token."""
+        """Return the current refresh token.
+
+        :rtype: ``str``
+        """
         if self.refresh_token_dirty:
             self.refresh_token_dirty = False
 
@@ -52,7 +63,11 @@ class API:  # pylint: disable=too-many-instance-attributes
 
     @refresh_token.setter
     def refresh_token(self, value: str) -> None:
-        """Set the refresh token if it has changed."""
+        """Set the refresh token if it has changed.
+
+        :param value: The new refresh token
+        :type value: ``str``
+        """
         if value == self._refresh_token:
             return
 
@@ -63,11 +78,20 @@ class API:  # pylint: disable=too-many-instance-attributes
     async def login_via_credentials(
         cls: Type[ApiType], email: str, password: str, websession: ClientSession
     ) -> ApiType:
-        """Create an API object from a email address and password."""
+        """Create an API object from a email address and password.
+
+        :param email: A SimpliSafe email address
+        :type email: ``str``
+        :param password: A SimpliSafe password
+        :type password: ``str``
+        :param websession: An ``aiohttp`` ``ClientSession``
+        :type websession: ``aiohttp.client.ClientSession``
+        :rtype: :meth:`simplipy.API`
+        """
         klass = cls(websession)
         klass.email = email
 
-        await klass.authenticate(
+        await klass._authenticate(  # pylint: disable=protected-access
             {"grant_type": "password", "username": email, "password": password}
         )
 
@@ -77,10 +101,44 @@ class API:  # pylint: disable=too-many-instance-attributes
     async def login_via_token(
         cls: Type[ApiType], refresh_token: str, websession: ClientSession
     ) -> ApiType:
-        """Create an API object from a refresh token."""
+        """Create an API object from a refresh token.
+
+        :param refresh_token: A SimpliSafe refresh token
+        :type refresh_token: ``str``
+        :param websession: An ``aiohttp`` ``ClientSession``
+        :type websession: ``aiohttp.client.ClientSession``
+        :rtype: :meth:`simplipy.API`
+        """
         klass = cls(websession)
         await klass.refresh_access_token(refresh_token)
         return klass
+
+    async def _authenticate(self, payload_data: dict) -> None:
+        """Request a new token."""
+        token_resp: dict = await self._request(
+            "post",
+            "api/token",
+            data=payload_data,
+            auth=BasicAuth(
+                login=DEFAULT_AUTH_USERNAME.format(self._uuid),
+                password="",
+                encoding="latin1",
+            ),
+        )
+
+        self._access_token = token_resp["access_token"]
+        self._access_token_expire = datetime.now() + timedelta(
+            seconds=int(token_resp["expires_in"]) - 60
+        )
+        self.refresh_token = token_resp["refresh_token"]
+
+        auth_check_resp: dict = await self._request("get", "api/authCheck")
+        self.user_id = auth_check_resp["userId"]
+
+        if self.websocket:
+            self.websocket.access_token = self._access_token
+        else:
+            self.websocket = Websocket(self._access_token, self.user_id)  # type: ignore
 
     async def _get_subscription_data(self) -> dict:
         """Get the latest location-level data."""
@@ -159,35 +217,14 @@ class API:  # pylint: disable=too-many-instance-attributes
 
             raise RequestError(f"Error requesting data from {endpoint}: {err}")
 
-    async def authenticate(self, payload_data: dict) -> None:
-        """Request token data and parse it."""
-        token_resp: dict = await self._request(
-            "post",
-            "api/token",
-            data=payload_data,
-            auth=BasicAuth(
-                login=DEFAULT_AUTH_USERNAME.format(self._uuid),
-                password="",
-                encoding="latin1",
-            ),
-        )
-
-        self._access_token = token_resp["access_token"]
-        self._access_token_expire = datetime.now() + timedelta(
-            seconds=int(token_resp["expires_in"]) - 60
-        )
-        self.refresh_token = token_resp["refresh_token"]
-
-        auth_check_resp: dict = await self._request("get", "api/authCheck")
-        self.user_id = auth_check_resp["userId"]
-
-        if self.websocket:
-            self.websocket.access_token = self._access_token
-        else:
-            self.websocket = Websocket(self._access_token, self.user_id)  # type: ignore
-
     async def get_systems(self) -> Dict[str, System]:
-        """Get systems associated to this account."""
+        """Get systems associated to the associated SimpliSafe account.
+
+        In the dict that is returned, the keys are the system ID and the values are
+        actual ``System`` objects.
+
+        :rtype: ``Dict[str, simplipy.system.System]``
+        """
         subscription_resp: dict = await self._get_subscription_data()
 
         systems: Dict[str, System] = {}
@@ -195,7 +232,7 @@ class API:  # pylint: disable=too-many-instance-attributes
             version = system_data["location"]["system"]["version"]
             system_class = SYSTEM_MAP[version]
             system = system_class(
-                system_data["location"], self._request, self._get_subscription_data
+                self._request, self._get_subscription_data, system_data["location"]
             )
             await system.update(include_system=False, cached=False)
             systems[system_data["sid"]] = system
@@ -203,8 +240,12 @@ class API:  # pylint: disable=too-many-instance-attributes
         return systems
 
     async def refresh_access_token(self, refresh_token: str) -> None:
-        """Regenerate an access token."""
-        await self.authenticate(
+        """Regenerate an access token.
+
+        :param refresh_token: The refresh token to use
+        :type refresh_token: str
+        """
+        await self._authenticate(
             {
                 "grant_type": "refresh_token",
                 "username": self.email,

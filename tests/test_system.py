@@ -747,7 +747,7 @@ async def test_set_states_v3(
 @pytest.mark.asyncio
 async def test_unknown_initial_state(caplog):
     """Test handling of an initially unknown state."""
-    _ = System({"system": {"alarmState": "fake"}}, async_mock, async_mock)
+    _ = System(async_mock, async_mock, {"system": {"alarmState": "fake"}})
     assert any("Unknown" in e.message for e in caplog.records)
 
 

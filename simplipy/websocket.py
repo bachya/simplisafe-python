@@ -11,7 +11,17 @@ API_URL_BASE: str = "wss://api.simplisafe.com/socket.io"
 
 
 class Websocket:
-    """Define to handler."""
+    """A websocket connection to the SimpliSafe cloud.
+
+    Note that this class shouldn't be instantiated directly; it will be instantiated as
+    appropriate via :meth:`simplipy.API.login_via_credentials` or
+    :meth:`simplipy.API.login_via_token`.
+
+    :param access_token: A SimpliSafe access token
+    :type access_token: ``str``
+    :param user_id: A SimpliSafe user ID
+    :type user_id: ``int``
+    """
 
     def __init__(self, access_token: str, user_id: int) -> None:
         """Initialize."""
@@ -43,25 +53,49 @@ class Websocket:
             self._sync_disconnect_handler()
 
     def async_on_connect(self, target: Callable[..., Awaitable]) -> None:
-        """Define a coroutine to be called when connecting."""
+        """Define a coroutine to be called when connecting.
+
+        :param target: A coroutine
+        :type target: ``Callable[..., Awaitable]``
+        """
         self.on_connect(target)
 
     def on_connect(self, target: Callable) -> None:
-        """Define a synchronous method to be called when connecting."""
+        """Define a synchronous method to be called when connecting.
+
+        :param target: A synchronous function
+        :type target: ``Callable``
+        """
         self._sio.on("connect", target)
 
     def async_on_disconnect(self, target: Callable[..., Awaitable]) -> None:
-        """Define a coroutine to be called when disconnecting."""
+        """Define a coroutine to be called when disconnecting.
+
+        :param target: A coroutine
+        :type target: ``Callable[..., Awaitable]``
+        """
         self._async_disconnect_handler = target
 
     def on_disconnect(self, target: Callable) -> None:
-        """Define a synchronous method to be called when disconnecting."""
+        """Define a synchronous method to be called when disconnecting.
+
+        :param target: A synchronous function
+        :type target: ``Callable``
+        """
         self._sync_disconnect_handler = target
 
     def async_on_event(self, target: Callable[..., Awaitable]) -> None:
-        """Define a coroutine to be called an event is received."""
+        """Define a coroutine to be called an event is received.
+
+        :param target: A coroutine
+        :type target: ``Callable[..., Awaitable]``
+        """
         self.on_event(target)
 
     def on_event(self, target: Callable) -> None:
-        """Define a synchronous method to be called when an event is received."""
+        """Define a synchronous method to be called when an event is received.
+
+        :param target: A synchronous function
+        :type target: ``Callable``
+        """
         self._sio.on("event", target, namespace=self._namespace)

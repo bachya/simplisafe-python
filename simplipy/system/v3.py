@@ -11,89 +11,137 @@ _LOGGER: logging.Logger = logging.getLogger(__name__)
 class SystemV3(System):
     """Define a V3 (new) system."""
 
-    def __init__(self, location_info, request, get_subscription_data) -> None:
+    def __init__(self, request, get_subscription_data, location_info) -> None:
         """Initialize."""
-        super().__init__(location_info, request, get_subscription_data)
+        super().__init__(request, get_subscription_data, location_info)
         self._settings_info: dict = {}
 
     @property
     def alarm_duration(self) -> int:
-        """Return the number of seconds an activated alarm will sound for."""
+        """Return the number of seconds an activated alarm will sound for.
+
+        :rtype: ``int``
+        """
         return self._settings_info["settings"]["normal"]["alarmDuration"]
 
     @property
     def alarm_volume(self) -> int:
-        """Return the loudness of the alarm volume."""
+        """Return the loudness of the alarm volume.
+
+        :rtype: ``int``
+        """
         return self._settings_info["settings"]["normal"]["alarmVolume"]
 
     @property
     def battery_backup_power_level(self) -> int:
-        """Return the power rating of the battery backup."""
+        """Return the power rating of the battery backup.
+
+        :rtype: ``int``
+        """
         return self._settings_info["basestationStatus"]["backupBattery"]
 
     @property
     def entry_delay_away(self) -> int:
-        """Return the number of seconds to delay when returning to an "away" alarm."""
+        """Return the number of seconds to delay when returning to an "away" alarm.
+
+        :rtype: ``int``
+        """
         return self._settings_info["settings"]["normal"]["entryDelayAway"]
 
     @property
     def entry_delay_home(self) -> int:
-        """Return the number of seconds to delay when returning to an "home" alarm."""
+        """Return the number of seconds to delay when returning to an "home" alarm.
+
+        :rtype: ``int``
+        """
         return self._settings_info["settings"]["normal"]["entryDelayHome"]
 
     @property
     def exit_delay_away(self) -> int:
-        """Return the number of seconds to delay when exiting an "away" alarm."""
+        """Return the number of seconds to delay when exiting an "away" alarm.
+
+        :rtype: ``int``
+        """
         return self._settings_info["settings"]["normal"]["exitDelayAway"]
 
     @property
     def exit_delay_home(self) -> int:
-        """Return the number of seconds to delay when exiting an "home" alarm."""
+        """Return the number of seconds to delay when exiting an "home" alarm.
+
+        :rtype: ``int``
+        """
         return self._settings_info["settings"]["normal"]["exitDelayHome"]
 
     @property
     def gsm_strength(self) -> int:
-        """Return the signal strength of the cell antenna."""
+        """Return the signal strength of the cell antenna.
+
+        :rtype: ``int``
+        """
         return self._settings_info["basestationStatus"]["gsmRssi"]
 
     @property
     def light(self) -> bool:
-        """Return whether the base station light is on."""
+        """Return whether the base station light is on.
+
+        :rtype: ``bool``
+        """
         return self._settings_info["settings"]["normal"]["light"]
 
     @property
     def offline(self) -> bool:
-        """Return whether the system is offline."""
+        """Return whether the system is offline.
+
+        :rtype: ``bool``
+        """
         return self._location_info["system"]["isOffline"]
 
     @property
     def power_outage(self) -> bool:
-        """Return whether the system is experiencing a power outage."""
+        """Return whether the system is experiencing a power outage.
+
+        :rtype: ``bool``
+        """
         return self._location_info["system"]["powerOutage"]
 
     @property
     def rf_jamming(self) -> bool:
-        """Return whether the base station is noticing RF jamming."""
+        """Return whether the base station is noticing RF jamming.
+
+        :rtype: ``bool``
+        """
         return self._settings_info["basestationStatus"]["rfJamming"]
 
     @property
     def voice_prompt_volume(self) -> int:
-        """Return the loudness of the voice prompt."""
+        """Return the loudness of the voice prompt.
+
+        :rtype: ``int``
+        """
         return self._settings_info["settings"]["normal"]["voicePrompts"]
 
     @property
     def wall_power_level(self) -> int:
-        """Return the power rating of the A/C outlet."""
+        """Return the power rating of the A/C outlet.
+
+        :rtype: ``int``
+        """
         return self._settings_info["basestationStatus"]["wallPower"]
 
     @property
     def wifi_ssid(self) -> str:
-        """Return the ssid of the base station."""
+        """Return the ssid of the base station.
+
+        :rtype: ``str``
+        """
         return self._settings_info["settings"]["normal"]["wifiSSID"]
 
     @property
     def wifi_strength(self) -> int:
-        """Return the signal strength of the wifi antenna."""
+        """Return the signal strength of the wifi antenna.
+
+        :rtype: ``int``
+        """
         return self._settings_info["basestationStatus"]["wifiRssi"]
 
     async def _get_entities_payload(self, cached: bool = True) -> dict:
@@ -139,7 +187,15 @@ class SystemV3(System):
         self._state = self._coerce_state_from_string(state_resp["state"])
 
     async def get_pins(self, cached: bool = True) -> Dict[str, str]:
-        """Return all of the set PINs, including master and duress."""
+        """Return all of the set PINs, including master and duress.
+
+        The ``cached`` parameter determines whether the SimpliSafe Cloud uses the last
+        known values retrieved from the base station (``True``) or retrieves new data.
+
+        :param cached: Whether to used cached data.
+        :type cached: ``bool``
+        :rtype: ``Dict[str, str]``
+        """
         await self._get_settings(cached)
 
         pins: Dict[str, str] = {

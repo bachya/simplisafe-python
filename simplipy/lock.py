@@ -8,7 +8,7 @@ _LOGGER: logging.Logger = logging.getLogger(__name__)
 
 
 class LockStates(Enum):
-    """Define states that the lock can be in."""
+    """States that a lock can be in."""
 
     unlocked = 0
     locked = 1
@@ -20,31 +20,50 @@ SET_STATE_MAP = {LockStates.locked: "lock", LockStates.unlocked: "unlock"}
 
 
 class Lock(EntityV3):
-    """Define a lock."""
+    """A lock that works with V3 systems.
+
+    Note that this class shouldn't be instantiated directly; it will be instantiated as
+    appropriate via :meth:`simplipy.API.get_systems`.
+    """
 
     @property
     def disabled(self) -> bool:
-        """Return whether the lock is disabled."""
+        """Return whether the lock is disabled.
+
+        :rtype: ``bool``
+        """
         return self.entity_data["status"]["lockDisabled"]
 
     @property
     def lock_low_battery(self) -> bool:
-        """Return whether the lock's battery is low."""
+        """Return whether the lock's battery is low.
+
+        :rtype: ``bool``
+        """
         return self.entity_data["status"]["lockLowBattery"]
 
     @property
     def pin_pad_low_battery(self) -> bool:
-        """Return whether the pin pad's battery is low."""
+        """Return whether the pin pad's battery is low.
+
+        :rtype: ``bool``
+        """
         return self.entity_data["status"]["pinPadLowBattery"]
 
     @property
     def pin_pad_offline(self) -> bool:
-        """Return whether the pin pad is offline."""
+        """Return whether the pin pad is offline.
+
+        :rtype: ``bool``
+        """
         return self.entity_data["status"]["pinPadOffline"]
 
     @property
     def state(self) -> LockStates:
-        """Return the current state of the lock."""
+        """Return the current state of the lock.
+
+        :rtype: :meth:`simplipy.lock.LockStates`
+        """
         if bool(self.entity_data["status"]["lockJamState"]):
             return LockStates.jammed
 

@@ -326,7 +326,7 @@ class System:
         # Because SimpliSafe's API works by sending the entire payload of PINs, we
         # can't reasonably check a local cache for up-to-date PIN data; so, we fetch the
         # latest each time:
-        latest_pins: Dict[str, int] = await self.get_pins(cached=False)
+        latest_pins: Dict[str, str] = await self.get_pins(cached=False)
 
         if pin_or_label in RESERVED_PIN_LABELS:
             raise PinError(f"Refusing to delete reserved PIN: {pin_or_label}")

@@ -176,8 +176,8 @@ Note that this method can be supplied with four optional parameters (all of whic
 default to ``True``):
 
 * ``include_system``: update the system state and properties
-* ``include_settings``: update system settings (like PINs)
 * ``include_entities``: update all sensors/locks/etc. associated with a system
+* ``include_pins``: update system settings (like PINs)
 * ``cached``: use the last values provides by the base station
 
 For instance, if a user only wanted to update sensors and wanted to force a new data

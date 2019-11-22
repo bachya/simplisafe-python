@@ -873,6 +873,6 @@ async def test_update_error_v3(  # pylint: disable=too-many-arguments
             await system.update()
 
             assert any(
-                "Error while getting latest settings values" in e.message
+                "Error while getting latest pin values" in e.message
                 for e in caplog.records
             )

@@ -242,7 +242,7 @@ class System:
         """Return the current sensor payload."""
         raise NotImplementedError()
 
-    async def _get_settings(self, cached: bool = True) -> None:
+    async def _get_pins(self, cached: bool = True) -> None:
         """Update system settings."""
         pass
 
@@ -390,8 +390,8 @@ class System:
         self,
         *,
         include_system: bool = True,
-        include_settings: bool = True,
         include_entities: bool = True,
+        include_pins: bool = True,
         cached: bool = True,
     ) -> None:
         """Get the latest system data.
@@ -401,18 +401,18 @@ class System:
 
         :param include_system: Whether system state/properties should be updated
         :type include_system: ``bool``
-        :param include_settings: Whether system settings (like PINs) should be updated
-        :type include_settings: ``bool``
         :param include_entities: Whether sensors/locks/etc. should be updated
         :type include_entities: ``bool``
+        :param include_pins: Whether system settings (like PINs) should be updated
+        :type include_pins: ``bool``
         :param cached: Whether to used cached data.
         :type cached: ``bool``
         """
         tasks: Dict[str, Coroutine] = {}
         if include_system:
             tasks["system"] = self._get_system_info()
-        if include_settings:
-            tasks["settings"] = self._get_settings(cached)
+        if include_pins:
+            tasks["pin"] = self._get_pins(cached)
         if include_entities:
             tasks["entity"] = self._get_entities(cached)
 

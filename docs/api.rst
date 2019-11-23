@@ -31,6 +31,13 @@ API Reference
 .. autoclass:: simplipy.entity.EntityV3
    :members:
 
+``LevelMap (V3)``
+---------------------
+
+.. autoclass:: simplipy.system.v3.LevelMap
+   :members:
+   :undoc-members:
+
 ``Lock``
 --------------------
 

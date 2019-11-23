@@ -9,6 +9,7 @@ import pytest
 from simplipy import API
 from simplipy.errors import InvalidCredentialsError, PinError
 from simplipy.system import System, SystemStates
+from simplipy.system.v3 import LevelMap as V3LevelMap
 
 from .common import async_mock
 from .const import (
@@ -465,7 +466,7 @@ async def test_properties_v3(v3_server):
             system = systems[TEST_SYSTEM_ID]
 
             assert system.alarm_duration == 240
-            assert system.alarm_volume == 3
+            assert system.alarm_volume == V3LevelMap.high
             assert system.battery_backup_power_level == 5293
             assert system.connection_type == "wifi"
             assert system.entry_delay_away == 30
@@ -477,7 +478,7 @@ async def test_properties_v3(v3_server):
             assert system.offline is False
             assert system.power_outage is False
             assert system.rf_jamming is False
-            assert system.voice_prompt_volume == 2
+            assert system.voice_prompt_volume == V3LevelMap.medium
             assert system.wall_power_level == 5933
             assert system.wifi_ssid == "MY_WIFI"
             assert system.wifi_strength == -49

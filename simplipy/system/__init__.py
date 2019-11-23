@@ -205,6 +205,15 @@ class System:
 
     async def _get_entities(self, cached: bool = True) -> None:
         """Update sensors to the latest values."""
+        if not cached:
+            # Since this method is scheduled as a task in system.update(), it's possible
+            # that the loop will attempt to execute it before other SimpliSafe cloud
+            # resources are ready; if that occurs and we're asking for the latest values
+            # from the base station, it's possible the SimpliSafe cloud will return a
+            # 409. To protect against that, if we're asking for fresh values, we sleep 1
+            # first:
+            await asyncio.sleep(1)
+
         entities: dict = await self._get_entities_payload(cached)
 
         _LOGGER.debug("Get entities response: %s", entities)

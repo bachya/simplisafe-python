@@ -169,7 +169,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
             params={"forceUpdate": str(not cached).lower()},
         )
 
-        return sensor_resp["sensors"]
+        return sensor_resp.get("sensors", [])
 
     async def _get_settings(self, cached: bool = True) -> None:
         """Get all system settings."""

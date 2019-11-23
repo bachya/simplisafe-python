@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Any, Callable, Coroutine, Dict, List, Type, Set, Union
 
 from simplipy.entity import Entity, EntityTypes
-from simplipy.errors import InvalidCredentialsError, PinError, SimplipyError
+from simplipy.errors import PinError, SimplipyError
 from simplipy.lock import Lock
 from simplipy.sensor.v2 import SensorV2
 from simplipy.sensor.v3 import SensorV3
@@ -205,15 +205,6 @@ class System:
 
     async def _get_entities(self, cached: bool = True) -> None:
         """Update sensors to the latest values."""
-        if not cached:
-            # Since this method is scheduled as a task in system.update(), it's possible
-            # that the loop will attempt to execute it before other SimpliSafe cloud
-            # resources are ready; if that occurs and we're asking for the latest values
-            # from the base station, it's possible the SimpliSafe cloud will return a
-            # 409. To protect against that, if we're asking for fresh values, we sleep 1
-            # first:
-            await asyncio.sleep(1)
-
         entities: dict = await self._get_entities_payload(cached)
 
         _LOGGER.debug("Get entities response: %s", entities)
@@ -422,8 +413,6 @@ class System:
             tasks["system"] = self._get_system_info()
         if include_settings:
             tasks["settings"] = self._get_settings(cached)
-        if include_entities:
-            tasks["entity"] = self._get_entities(cached)
 
         results: List[Any] = await asyncio.gather(
             *tasks.values(), return_exceptions=True
@@ -432,9 +421,12 @@ class System:
         operation: str
         result: dict
         for operation, result in zip(tasks, results):
-            if isinstance(result, InvalidCredentialsError):
-                raise result
             if isinstance(result, SimplipyError):
                 _LOGGER.error(
                     "Error while getting latest %s values: %s", operation, result
                 )
+
+        # We await entity updates after the task pool since including it can cause
+        # HTTP 409s if that update occurs out of sequence:
+        if include_entities:
+            await self._get_entities(cached)

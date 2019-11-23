@@ -25,7 +25,7 @@ class SystemV2(System):
             params={"settingsType": "all", "cached": str(cached).lower()},
         )
 
-        return sensor_resp["settings"]["sensors"]
+        return sensor_resp.get("settings", {}).get("sensors", [])
 
     async def _set_updated_pins(self, pins: dict) -> None:
         """Post new PINs."""

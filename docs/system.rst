@@ -177,6 +177,18 @@ V3 systems also come with several methods to set several of these properties:
     await system.set_light(True)
     await system.set_voice_prompt_volume(simplipy.system.v3.LevelMap.off)
 
+Note that ``system.set_exit_delay_away()``, ``system.set_exit_delay_home()``,
+``system.set_exit_delay_away()``, and ``system.set_exit_delay_away()``
+have limits imposed:
+
+* ``system.set_entry_delay_away()``: 30–255 seconds
+* ``system.set_entry_delay_home()``: 45–255 seconds
+* ``system.set_exit_delay_away()``: 0–255 seconds
+* ``system.set_exit_delay_home()``: 0–255 seconds
+
+Attempting to call these coroutines with a value beyond these limits will raise a
+``ValueError``.
+
 Getting the Latest System Info
 ------------------------------
 

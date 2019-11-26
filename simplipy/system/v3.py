@@ -4,6 +4,7 @@ from functools import wraps
 import logging
 from typing import Any, Callable, Coroutine, Dict
 
+from simplipy.errors import SimplipyError
 from simplipy.system import CONF_DURESS_PIN, CONF_MASTER_PIN, System, create_pin_payload
 
 _LOGGER: logging.Logger = logging.getLogger(__name__)
@@ -28,9 +29,9 @@ def duration_within_range(lower_limit: int, upper_limit: int) -> Callable:
         async def check(*args) -> None:
             """Check the provided duration."""
             if args[1] < lower_limit or args[1] > upper_limit:
-                raise ValueError(
-                    f"{coro.__name__} duration outside of limit: {args[1]} \
-                    (lower limit: {lower_limit}, upper limit: {upper_limit})"
+                raise SimplipyError(
+                    f"{coro.__name__} duration outside of limit: {args[1]} "
+                    f"(lower limit: {lower_limit}, upper limit: {upper_limit})"
                 )
             await coro(*args)
 

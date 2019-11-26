@@ -7,7 +7,7 @@ import aresponses
 import pytest
 
 from simplipy import API
-from simplipy.errors import InvalidCredentialsError, PinError
+from simplipy.errors import InvalidCredentialsError, PinError, SimplipyError
 from simplipy.system import System, SystemStates
 from simplipy.system.v3 import LevelMap as V3LevelMap
 
@@ -589,7 +589,7 @@ async def test_delay_property_outside_limits(v3_server):
             systems = await simplisafe.get_systems()
             system = systems[TEST_SYSTEM_ID]
 
-            with pytest.raises(ValueError):
+            with pytest.raises(SimplipyError):
                 await system.set_exit_delay_home(1000)
 
 

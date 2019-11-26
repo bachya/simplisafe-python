@@ -91,7 +91,8 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
     @property
     def entry_delay_away(self) -> int:
-        """Return the number of seconds to delay when returning to an "away" alarm.
+        """Return the number of seconds to delay when returning to an "away"
+        alarm.
 
         :rtype: ``int``
         """
@@ -99,7 +100,8 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
     @property
     def entry_delay_home(self) -> int:
-        """Return the number of seconds to delay when returning to an "home" alarm.
+        """Return the number of seconds to delay when returning to an "home"
+        alarm.
 
         :rtype: ``int``
         """

@@ -22,8 +22,8 @@ SET_STATE_MAP = {LockStates.locked: "lock", LockStates.unlocked: "unlock"}
 class Lock(EntityV3):
     """A lock that works with V3 systems.
 
-    Note that this class shouldn't be instantiated directly; it will be instantiated as
-    appropriate via :meth:`simplipy.API.get_systems`.
+    Note that this class shouldn't be instantiated directly; it will be
+    instantiated as appropriate via :meth:`simplipy.API.get_systems`.
     """
 
     @property

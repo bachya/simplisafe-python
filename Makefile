@@ -3,6 +3,10 @@ clean:
 	rm -rf .venv/
 coverage:
 	.venv/bin/py.test -s --verbose --cov-report term-missing --cov-report xml --cov=simplipy tests
+format:
+	.venv/bin/black simplipy
+	.venv/bin/black tests
+	.venv/bin/docformatter -ir simplipy
 init:
 	python3 -m venv .venv
 	.venv/bin/pip3 install poetry
@@ -12,7 +16,7 @@ init:
 lint:
 	.venv/bin/black --check --fast simplipy
 	.venv/bin/flake8 simplipy
-	.venv/bin/pydocstyle simplipy
+	.venv/bin/docformatter -r -c simplipy
 	.venv/bin/pylint simplipy
 publish:
 	.venv/bin/poetry build

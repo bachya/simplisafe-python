@@ -10,8 +10,8 @@ _LOGGER: logging.Logger = logging.getLogger(__name__)
 class SensorV3(EntityV3):
     """A V3 (new) sensor.
 
-    Note that this class shouldn't be instantiated directly; it will be instantiated as
-    appropriate via :meth:`simplipy.API.get_systems`.
+    Note that this class shouldn't be instantiated directly; it will be
+    instantiated as appropriate via :meth:`simplipy.API.get_systems`.
     """
 
     @property

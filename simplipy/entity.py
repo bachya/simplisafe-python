@@ -99,8 +99,8 @@ class Entity:
 class EntityV3(Entity):
     """A base entity for V3 systems.
 
-    Note that this class shouldn't be instantiated directly; it will be instantiated as
-    appropriate via :meth:`simplipy.API.get_systems`.
+    Note that this class shouldn't be instantiated directly; it will be
+    instantiated as appropriate via :meth:`simplipy.API.get_systems`.
     """
 
     @property

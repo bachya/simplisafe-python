@@ -46,7 +46,7 @@ jobs:
         run: |
           poetry run black --check --fast simplipy
           poetry run flake8 simplipy
-          poetry run pydocstyle simplipy
+          poetry run docformatter -cr simplipy
           poetry run pylint simplipy
       - name: typing
         run: |

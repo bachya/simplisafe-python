@@ -1,11 +1,42 @@
 """Define a V3 (new) SimpliSafe system."""
 from enum import Enum
+from functools import wraps
 import logging
-from typing import Any, Dict
+from typing import Any, Callable, Coroutine, Dict
 
 from simplipy.system import CONF_DURESS_PIN, CONF_MASTER_PIN, System, create_pin_payload
 
 _LOGGER: logging.Logger = logging.getLogger(__name__)
+
+LOWER_LIMIT_ENTRY_DELAY_AWAY = 30
+LOWER_LIMIT_ENTRY_DELAY_HOME = 0
+LOWER_LIMIT_EXIT_DELAY_AWAY = 45
+LOWER_LIMIT_EXIT_DELAY_HOME = 0
+UPPER_LIMIT_ENTRY_DELAY_AWAY = 255
+UPPER_LIMIT_ENTRY_DELAY_HOME = 255
+UPPER_LIMIT_EXIT_DELAY_AWAY = 255
+UPPER_LIMIT_EXIT_DELAY_HOME = 255
+
+
+def duration_within_range(lower_limit: int, upper_limit: int) -> Callable:
+    """Ensure that a provided duration value is within its limits."""
+
+    def decorator(coro) -> Coroutine:
+        """Decorate."""
+
+        @wraps(coro)
+        async def check(*args) -> None:
+            """Check the provided duration."""
+            if args[1] < lower_limit or args[1] > upper_limit:
+                raise ValueError(
+                    f"{coro.__name__} duration outside of limit: {args[1]} \
+                    (lower limit: {lower_limit}, upper limit: {upper_limit})"
+                )
+            await coro(*args)
+
+        return check
+
+    return decorator
 
 
 class LevelMap(Enum):
@@ -266,6 +297,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         """
         await self._set_system_property("doorChime", level)
 
+    @duration_within_range(LOWER_LIMIT_ENTRY_DELAY_AWAY, UPPER_LIMIT_ENTRY_DELAY_AWAY)
     async def set_entry_delay_away(self, duration: int) -> None:
         """Set the duration of the entry delay ("away" mode).
 
@@ -274,6 +306,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         """
         await self._set_system_property("entryDelayAway", duration)
 
+    @duration_within_range(LOWER_LIMIT_ENTRY_DELAY_HOME, UPPER_LIMIT_ENTRY_DELAY_HOME)
     async def set_entry_delay_home(self, duration: int) -> None:
         """Set the duration of the entry delay ("home" mode).
 
@@ -282,6 +315,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         """
         await self._set_system_property("entryDelayHome", duration)
 
+    @duration_within_range(LOWER_LIMIT_EXIT_DELAY_AWAY, UPPER_LIMIT_EXIT_DELAY_AWAY)
     async def set_exit_delay_away(self, duration: int) -> None:
         """Set the duration of the exit delay ("away" mode).
 
@@ -290,6 +324,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         """
         await self._set_system_property("exitDelayAway", duration)
 
+    @duration_within_range(LOWER_LIMIT_EXIT_DELAY_HOME, UPPER_LIMIT_EXIT_DELAY_HOME)
     async def set_exit_delay_home(self, duration: int) -> None:
         """Set the duration of the exit delay ("home" mode).
 

@@ -22,7 +22,7 @@ UPPER_LIMIT_EXIT_DELAY_HOME = 255
 def duration_within_range(lower_limit: int, upper_limit: int) -> Callable:
     """Ensure that a provided duration value is within its limits."""
 
-    def decorator(coro) -> Coroutine:
+    def decorator(coro) -> Callable[..., Coroutine]:
         """Decorate."""
 
         @wraps(coro)

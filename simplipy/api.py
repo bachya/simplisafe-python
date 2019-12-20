@@ -1,11 +1,12 @@
 """Define a SimpliSafe account."""
-import logging
 from datetime import datetime, timedelta
+import logging
 from typing import Dict, Optional, Type, TypeVar
 from uuid import UUID, uuid4
 
 from aiohttp import BasicAuth, ClientSession
 from aiohttp.client_exceptions import ClientError
+
 from simplipy.errors import InvalidCredentialsError, RequestError
 from simplipy.system import System
 from simplipy.system.v2 import SystemV2

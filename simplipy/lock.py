@@ -1,6 +1,6 @@
 """Define a SimpliSafe lock."""
-import logging
 from enum import Enum
+import logging
 
 from simplipy.entity import EntityV3
 

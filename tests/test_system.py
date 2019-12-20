@@ -5,6 +5,7 @@ import json
 import aiohttp
 import aresponses
 import pytest
+
 from simplipy import API
 from simplipy.errors import InvalidCredentialsError, PinError, SimplipyError
 from simplipy.system import System, SystemStates
@@ -22,25 +23,20 @@ from .const import (
     TEST_SYSTEM_SERIAL_NO,
     TEST_USER_ID,
 )
-from .fixtures import (
-    api_token_json,
-    auth_check_json,
-    events_json,  # noqa
-    latest_event_json,
-)
+from .fixtures import api_token_json, auth_check_json, latest_event_json
+from .fixtures import events_json
 from .fixtures.v2 import (
     v2_new_pins_json,
     v2_pins_json,
-    v2_server,  # noqa
     v2_settings_json,
     v2_state_away_json,
     v2_state_home_json,
     v2_state_off_json,
     v2_subscriptions_json,
 )
+from .fixtures.v2 import v2_server
 from .fixtures.v3 import (
     v3_sensors_json,
-    v3_server,  # noqa
     v3_settings_deleted_pin_json,
     v3_settings_full_pins_json,
     v3_settings_json,
@@ -50,6 +46,7 @@ from .fixtures.v3 import (
     v3_state_off_json,
     v3_subscriptions_json,
 )
+from .fixtures.v3 import v3_server
 
 
 @pytest.mark.asyncio
@@ -868,7 +865,7 @@ async def test_unknown_sensor_type(caplog, v2_server):
             simplisafe = await API.login_via_credentials(
                 TEST_EMAIL, TEST_PASSWORD, websession
             )
-            _ = await simplisafe.get_systems()  # noqa
+            _ = await simplisafe.get_systems()
 
             assert any("Unknown" in e.message for e in caplog.records)
 

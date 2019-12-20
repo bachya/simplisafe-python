@@ -2,10 +2,10 @@
 from typing import Awaitable, Callable, Optional
 from urllib.parse import urlencode
 
-from simplipy.errors import WebsocketError
 from socketio import AsyncClient
-from socketio.exceptions import ConnectionError as ConnError
-from socketio.exceptions import SocketIOError
+from socketio.exceptions import ConnectionError as ConnError, SocketIOError
+
+from simplipy.errors import WebsocketError
 
 API_URL_BASE: str = "wss://api.simplisafe.com/socket.io"
 

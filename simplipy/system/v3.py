@@ -1,7 +1,7 @@
 """Define a V3 (new) SimpliSafe system."""
+import logging
 from enum import Enum
 from functools import wraps
-import logging
 from typing import Any, Callable, Coroutine, Dict
 
 from simplipy.errors import SimplipyError

@@ -1,6 +1,6 @@
 """Define a V2 (original) SimpliSafe system."""
-from enum import Enum
 import logging
+from enum import Enum
 from typing import Dict
 
 from simplipy.system import (

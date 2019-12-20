@@ -7,7 +7,6 @@ from datetime import datetime, timedelta
 import aiohttp
 import aresponses
 import pytest
-
 from simplipy import API
 from simplipy.errors import InvalidCredentialsError, RequestError
 
@@ -19,17 +18,17 @@ from .const import (
     TEST_SYSTEM_ID,
     TEST_USER_ID,
 )
-from .fixtures import (  # noqa
+from .fixtures import (
     api_token_json,
-    auth_check_json,
+    auth_check_json,  # noqa
     invalid_credentials_json,
     unavailable_feature_json,
 )
 from .fixtures.v2 import v2_server, v2_settings_json, v2_subscriptions_json  # noqa
-from .fixtures.v3 import (  # noqa
-    v3_server,
+from .fixtures.v3 import (
     v3_sensors_json,
-    v3_settings_json,
+    v3_server,
+    v3_settings_json,  # noqa
     v3_subscriptions_json,
 )
 

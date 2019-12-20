@@ -1,6 +1,6 @@
 """Define a base SimpliSafe entity."""
-from enum import Enum
 import logging
+from enum import Enum
 from typing import Callable, Coroutine
 
 _LOGGER: logging.Logger = logging.getLogger(__name__)

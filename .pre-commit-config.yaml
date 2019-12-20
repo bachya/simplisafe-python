@@ -8,7 +8,7 @@ repos:
           - --quiet
           - --format=custom
           - --configfile=.bandit.yaml
-        files: ^(simplipy|scripts|tests)/.+\.py$
+        files: ^(simplipy|scripts)/.+\.py$
   - repo: https://github.com/python/black
     rev: 19.10b0
     hooks:

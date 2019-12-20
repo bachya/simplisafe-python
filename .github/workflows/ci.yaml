@@ -32,32 +32,6 @@ jobs:
           venv/bin/pip install -r requirements_test.txt
           venv/bin/py.test
 
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-python@v1
-        with:
-          python-version: "3.x"
-          architecture: x64
-      - name: setup
-        run: |
-          python -m venv venv
-          venv/bin/pip install pre-commit
-          venv/bin/pre-commit install-hooks --config .pre-commit-config.yaml
-      - name: black
-        run: |
-          venv/bin/pre-commit run black --all-files
-      - name: flake8
-        run: |
-          venv/bin/pre-commit run flake8 --all-files
-      - name: isort
-        run: |
-          venv/bin/pre-commit run isort --all-files
-      # - name: mypy
-      #   run: |
-      #     venv/bin/mypy --all-files
-
   coverage:
     runs-on: ubuntu-latest
     steps:
@@ -74,7 +48,7 @@ jobs:
         with:
           token: ${{secrets.CODECOV_TOKEN}}
 
-  security:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
@@ -82,8 +56,36 @@ jobs:
         with:
           python-version: "3.x"
           architecture: x64
-      - run: |
-          pip install poetry
-          poetry install
-      - run: |
-          poetry run bandit -r --configfile=.bandit.yaml simplipy/ scripts/
+      - name: setup
+        run: |
+          python -m venv venv
+          venv/bin/pip install pre-commit
+          venv/bin/pre-commit install-hooks --config .pre-commit-config.yaml
+      - name: bandit
+        run: |
+          venv/bin/pre-commit run bandit --all-files
+      - name: black
+        run: |
+          venv/bin/pre-commit run black --all-files
+      - name: flake8
+        run: |
+          venv/bin/pre-commit run flake8 --all-files
+      - name: isort
+        run: |
+          venv/bin/pre-commit run isort --all-files --show-diff-on-failure
+
+  typing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-python@v1
+        with:
+          python-version: "3.x"
+          architecture: x64
+      - name: setup
+        run: |
+          python -m venv venv
+          venv/bin/pip install mypy
+      - name: mypy
+        run: |
+          venv/bin/mypy --ignore-missing-imports simplipy

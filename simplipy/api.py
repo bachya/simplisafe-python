@@ -48,7 +48,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         self.email: Optional[str] = None
         self.refresh_token_dirty: bool = False
         self.user_id: Optional[int] = None
-        self.websocket: Optional[Websocket] = None
+        self.websocket: Websocket = None  # type: ignore
 
     @property
     def refresh_token(self) -> str:

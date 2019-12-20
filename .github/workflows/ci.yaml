@@ -59,7 +59,7 @@ jobs:
       - name: setup
         run: |
           python -m venv venv
-          venv/bin/pip install mypy pre-commit
+          venv/bin/pip install pre-commit
           venv/bin/pre-commit install-hooks --config .pre-commit-config.yaml
       - name: bandit
         run: |
@@ -75,4 +75,4 @@ jobs:
           venv/bin/pre-commit run isort --all-files --show-diff-on-failure
       - name: mypy
         run: |
-          venv/bin/mypy --ignore-missing-imports simplipy
+          venv/bin/pre-commit run mypy --all-files

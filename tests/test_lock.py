@@ -18,16 +18,20 @@ from .const import (
     TEST_SUBSCRIPTION_ID,
     TEST_SYSTEM_ID,
 )
-from .fixtures import api_token_json, invalid_credentials_json, unavailable_feature_json
-from .fixtures import auth_check_json
+from .fixtures import (
+    api_token_json,
+    auth_check_json,
+    invalid_credentials_json,
+    unavailable_feature_json,
+)
 from .fixtures.v3 import (
+    v3_lock_lock_response_json,
     v3_lock_unlock_response_json,
     v3_sensors_json,
     v3_server,
     v3_settings_json,
     v3_subscriptions_json,
 )
-from .fixtures.v3 import v3_lock_lock_response_json
 
 
 @pytest.mark.asyncio

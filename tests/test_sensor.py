@@ -10,8 +10,12 @@ from simplipy.errors import SimplipyError
 from .const import TEST_EMAIL, TEST_PASSWORD, TEST_SYSTEM_ID
 from .fixtures import api_token_json, auth_check_json
 from .fixtures.v2 import v2_server, v2_settings_json, v2_subscriptions_json
-from .fixtures.v3 import v3_sensors_json, v3_server, v3_subscriptions_json
-from .fixtures.v3 import v3_settings_json
+from .fixtures.v3 import (
+    v3_sensors_json,
+    v3_server,
+    v3_settings_json,
+    v3_subscriptions_json,
+)
 
 
 @pytest.mark.asyncio

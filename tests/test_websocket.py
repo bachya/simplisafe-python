@@ -13,8 +13,12 @@ from simplipy.errors import WebsocketError
 from .common import async_mock
 from .const import TEST_ACCESS_TOKEN, TEST_EMAIL, TEST_PASSWORD, TEST_USER_ID
 from .fixtures import api_token_json, auth_check_json
-from .fixtures.v3 import v3_sensors_json, v3_server, v3_subscriptions_json
-from .fixtures.v3 import v3_settings_json
+from .fixtures.v3 import (
+    v3_sensors_json,
+    v3_server,
+    v3_settings_json,
+    v3_subscriptions_json,
+)
 
 
 @pytest.mark.asyncio

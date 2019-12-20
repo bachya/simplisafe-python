@@ -59,7 +59,7 @@ jobs:
       - name: setup
         run: |
           python -m venv venv
-          venv/bin/pip install pre-commit
+          venv/bin/pip install mypy pre-commit
           venv/bin/pre-commit install-hooks --config .pre-commit-config.yaml
       - name: bandit
         run: |
@@ -73,19 +73,6 @@ jobs:
       - name: isort
         run: |
           venv/bin/pre-commit run isort --all-files --show-diff-on-failure
-
-  typing:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-python@v1
-        with:
-          python-version: "3.x"
-          architecture: x64
-      - name: setup
-        run: |
-          python -m venv venv
-          venv/bin/pip install mypy
       - name: mypy
         run: |
           venv/bin/mypy --ignore-missing-imports simplipy

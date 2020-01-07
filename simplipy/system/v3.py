@@ -1,52 +1,67 @@
 """Define a V3 (new) SimpliSafe system."""
 from enum import Enum
-from functools import wraps
 import logging
-from typing import Any, Callable, Coroutine, Dict
+from typing import Dict
 
-from simplipy.errors import SimplipyError
+import voluptuous as vol
+
 from simplipy.system import CONF_DURESS_PIN, CONF_MASTER_PIN, System, create_pin_payload
 
 _LOGGER: logging.Logger = logging.getLogger(__name__)
 
-LOWER_LIMIT_ENTRY_DELAY_AWAY = 30
-LOWER_LIMIT_ENTRY_DELAY_HOME = 0
-LOWER_LIMIT_EXIT_DELAY_AWAY = 45
-LOWER_LIMIT_EXIT_DELAY_HOME = 0
-UPPER_LIMIT_ENTRY_DELAY_AWAY = 255
-UPPER_LIMIT_ENTRY_DELAY_HOME = 255
-UPPER_LIMIT_EXIT_DELAY_AWAY = 255
-UPPER_LIMIT_EXIT_DELAY_HOME = 255
+CONF_ALARM_DURATION = "alarm_duration"
+CONF_ALARM_VOLUME = "alarm_volume"
+CONF_CHIME_VOLUME = "chime_volume"
+CONF_ENTRY_DELAY_AWAY = "entry_delay_away"
+CONF_ENTRY_DELAY_HOME = "entry_delay_home"
+CONF_EXIT_DELAY_AWAY = "exit_delay_away"
+CONF_EXIT_DELAY_HOME = "exit_delay_home"
+CONF_LIGHT = "light"
+CONF_VOICE_PROMPT_VOLUME = "voice_prompt_volume"
 
+VOLUME_OFF = 0
+VOLUME_LOW = 1
+VOLUME_MEDIUM = 2
+VOLUME_HIGH = 3
+VOLUMES = [VOLUME_OFF, VOLUME_LOW, VOLUME_MEDIUM, VOLUME_HIGH]
 
-def duration_within_range(lower_limit: int, upper_limit: int) -> Callable:
-    """Ensure that a provided duration value is within its limits."""
+SYSTEM_PROPERTIES_VALUE_MAP = {
+    "alarm_duration": "alarmDuration",
+    "alarm_volume": "alarmVolume",
+    "chime_volume": "doorChime",
+    "entry_delay_away": "entryDelayAway",
+    "entry_delay_home": "entryDelayHome",
+    "exit_delay_away": "exitDelayAway",
+    "exit_delay_home": "exitDelayHome",
+    "light": "light",
+    "voice_prompt_volume": "voicePrompts",
+}
 
-    def decorator(coro) -> Callable[..., Coroutine]:
-        """Decorate."""
-
-        @wraps(coro)
-        async def check(*args) -> None:
-            """Check the provided duration."""
-            if args[1] < lower_limit or args[1] > upper_limit:
-                raise SimplipyError(
-                    f"{coro.__name__} duration outside of limit: {args[1]} "
-                    f"(lower limit: {lower_limit}, upper limit: {upper_limit})"
-                )
-            await coro(*args)
-
-        return check
-
-    return decorator
-
-
-class LevelMap(Enum):
-    """A way to map off/low/medium/high values to V3-compatible integers."""
-
-    off = 0
-    low = 1
-    medium = 2
-    high = 3
+SYSTEM_PROPERTIES_PAYLOAD_SCHEMA = vol.Schema(
+    {
+        vol.Optional(CONF_ALARM_DURATION): vol.All(
+            vol.Coerce(int), vol.Range(min=30, max=480)
+        ),
+        vol.Optional(CONF_ALARM_VOLUME): vol.All(vol.Coerce(int), vol.In(VOLUMES)),
+        vol.Optional(CONF_CHIME_VOLUME): vol.All(vol.Coerce(int), vol.In(VOLUMES)),
+        vol.Optional(CONF_ENTRY_DELAY_AWAY): vol.All(
+            vol.Coerce(int), vol.Range(min=30, max=255)
+        ),
+        vol.Optional(CONF_ENTRY_DELAY_HOME): vol.All(
+            vol.Coerce(int), vol.Range(min=0, max=255)
+        ),
+        vol.Optional(CONF_EXIT_DELAY_AWAY): vol.All(
+            vol.Coerce(int), vol.Range(min=45, max=255)
+        ),
+        vol.Optional(CONF_EXIT_DELAY_HOME): vol.All(
+            vol.Coerce(int), vol.Range(min=0, max=255)
+        ),
+        vol.Optional(CONF_LIGHT): bool,
+        vol.Optional(CONF_VOICE_PROMPT_VOLUME): vol.All(
+            vol.Coerce(int), vol.In(VOLUMES)
+        ),
+    }
+)
 
 
 class SystemV3(System):  # pylint: disable=too-many-public-methods
@@ -63,15 +78,21 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         :rtype: ``int``
         """
-        return self._settings_info["settings"]["normal"]["alarmDuration"]
+        return self._settings_info["settings"]["normal"][
+            SYSTEM_PROPERTIES_VALUE_MAP["alarm_duration"]
+        ]
 
     @property
-    def alarm_volume(self) -> LevelMap:
+    def alarm_volume(self) -> int:
         """Return the volume level of the alarm.
 
-        :rtype: :meth:`simplipy.system.v3.LevelMap`
+        :rtype: ``int``
         """
-        return LevelMap(self._settings_info["settings"]["normal"]["alarmVolume"])
+        return int(
+            self._settings_info["settings"]["normal"][
+                SYSTEM_PROPERTIES_VALUE_MAP["alarm_volume"]
+            ]
+        )
 
     @property
     def battery_backup_power_level(self) -> int:
@@ -82,30 +103,36 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         return self._settings_info["basestationStatus"]["backupBattery"]
 
     @property
-    def chime_volume(self) -> LevelMap:
+    def chime_volume(self) -> int:
         """Return the volume level of the door chime.
 
-        :rtype: :meth:`simplipy.system.v3.LevelMap`
+        :rtype: ``int``
         """
-        return LevelMap(self._settings_info["settings"]["normal"]["doorChime"])
+        return int(
+            self._settings_info["settings"]["normal"][
+                SYSTEM_PROPERTIES_VALUE_MAP["chime_volume"]
+            ]
+        )
 
     @property
     def entry_delay_away(self) -> int:
-        """Return the number of seconds to delay when returning to an "away"
-        alarm.
+        """Return the number of seconds to delay when returning to an "away" alarm.
 
         :rtype: ``int``
         """
-        return self._settings_info["settings"]["normal"]["entryDelayAway"]
+        return self._settings_info["settings"]["normal"][
+            SYSTEM_PROPERTIES_VALUE_MAP["entry_delay_away"]
+        ]
 
     @property
     def entry_delay_home(self) -> int:
-        """Return the number of seconds to delay when returning to an "home"
-        alarm.
+        """Return the number of seconds to delay when returning to an "home" alarm.
 
         :rtype: ``int``
         """
-        return self._settings_info["settings"]["normal"]["entryDelayHome"]
+        return self._settings_info["settings"]["normal"][
+            SYSTEM_PROPERTIES_VALUE_MAP["entry_delay_home"]
+        ]
 
     @property
     def exit_delay_away(self) -> int:
@@ -113,7 +140,9 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         :rtype: ``int``
         """
-        return self._settings_info["settings"]["normal"]["exitDelayAway"]
+        return self._settings_info["settings"]["normal"][
+            SYSTEM_PROPERTIES_VALUE_MAP["exit_delay_away"]
+        ]
 
     @property
     def exit_delay_home(self) -> int:
@@ -121,7 +150,9 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         :rtype: ``int``
         """
-        return self._settings_info["settings"]["normal"]["exitDelayHome"]
+        return self._settings_info["settings"]["normal"][
+            SYSTEM_PROPERTIES_VALUE_MAP["exit_delay_home"]
+        ]
 
     @property
     def gsm_strength(self) -> int:
@@ -137,7 +168,9 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         :rtype: ``bool``
         """
-        return self._settings_info["settings"]["normal"]["light"]
+        return self._settings_info["settings"]["normal"][
+            SYSTEM_PROPERTIES_VALUE_MAP["light"]
+        ]
 
     @property
     def offline(self) -> bool:
@@ -164,12 +197,14 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         return self._settings_info["basestationStatus"]["rfJamming"]
 
     @property
-    def voice_prompt_volume(self) -> LevelMap:
+    def voice_prompt_volume(self) -> int:
         """Return the volume level of the voice prompt.
 
-        :rtype: :meth:`simplipy.system.v3.LevelMap`
+        :rtype: ``int``
         """
-        return LevelMap(self._settings_info["settings"]["normal"]["voicePrompts"])
+        return self._settings_info["settings"]["normal"][
+            SYSTEM_PROPERTIES_VALUE_MAP["voice_prompt_volume"]
+        ]
 
     @property
     def wall_power_level(self) -> int:
@@ -229,20 +264,6 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         self._state = self._coerce_state_from_string(state_resp["state"])
 
-    async def _set_system_property(self, property_name: str, value: Any) -> None:
-        """Set a system property (by SimpliSafe name) in the remote API."""
-        if isinstance(value, LevelMap):
-            payload = {"normal": {property_name: value.value}}
-        else:
-            payload = {"normal": {property_name: value}}
-
-        settings_resp = await self._request(
-            "post", f"ss3/subscriptions/{self.system_id}/settings/normal", json=payload
-        )
-
-        if settings_resp:
-            self._settings_info = settings_resp
-
     async def _set_updated_pins(self, pins: dict) -> None:
         """Post new PINs."""
         self._settings_info = await self._request(
@@ -276,78 +297,40 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         return pins
 
-    async def set_alarm_duration(self, duration: int) -> None:
-        """Set the duration of an active alarm.
+    async def set_properties(self, properties: dict) -> None:
+        """Set various system properties.
 
-        :param duration: The number of seconds to sound an alarm.
-        :type duration: ``int``
+        The following properties can be set:
+           1. alarm_duration (in seconds): 30-480
+           2. alarm_volume: 0 (off), 1 (low), 2 (medium), 3 (high)
+           3. chime_volume: 0 (off), 1 (low), 2 (medium), 3 (high)
+           4. entry_delay_away (in seconds): 30-255
+           5. entry_delay_home (in seconds): 0-255
+           6. exit_delay_away (in seconds): 45-255
+           7. exit_delay_home (in seconds): 0-255
+           8. light: True or False
+           9. voice_prompt_volume: 0 (off), 1 (low), 2 (medium), 3 (high)
+
+        :param properties: The system properties to set.
+        :type properties: ``dict``
         """
-        await self._set_system_property("alarmDuration", duration)
+        try:
+            SYSTEM_PROPERTIES_PAYLOAD_SCHEMA(properties)
+        except vol.Invalid as err:
+            raise ValueError(
+                f"Using invalid values for system properties ({properties}): {err}"
+            ) from None
 
-    async def set_alarm_volume(self, level: LevelMap) -> None:
-        """Set the volume level of the alarm siren.
+        settings_resp = await self._request(
+            "post",
+            f"ss3/subscriptions/{self.system_id}/settings/normal",
+            json={
+                "normal": {
+                    SYSTEM_PROPERTIES_VALUE_MAP[prop]: value
+                    for prop, value in properties.items()
+                }
+            },
+        )
 
-        :param level: The volume level to set.
-        :type level: :meth:`simplipy.system.v3.LevelMap`
-        """
-        await self._set_system_property("alarmVolume", level)
-
-    async def set_chime_volume(self, level: LevelMap) -> None:
-        """Set the volume level of the chime.
-
-        :param level: The volume level to set.
-        :type level: :meth:`simplipy.system.v3.LevelMap`
-        """
-        await self._set_system_property("doorChime", level)
-
-    @duration_within_range(LOWER_LIMIT_ENTRY_DELAY_AWAY, UPPER_LIMIT_ENTRY_DELAY_AWAY)
-    async def set_entry_delay_away(self, duration: int) -> None:
-        """Set the duration of the entry delay ("away" mode).
-
-        :param duration: The number of seconds to delay.
-        :type duration: ``int``
-        """
-        await self._set_system_property("entryDelayAway", duration)
-
-    @duration_within_range(LOWER_LIMIT_ENTRY_DELAY_HOME, UPPER_LIMIT_ENTRY_DELAY_HOME)
-    async def set_entry_delay_home(self, duration: int) -> None:
-        """Set the duration of the entry delay ("home" mode).
-
-        :param duration: The number of seconds to delay.
-        :type duration: ``int``
-        """
-        await self._set_system_property("entryDelayHome", duration)
-
-    @duration_within_range(LOWER_LIMIT_EXIT_DELAY_AWAY, UPPER_LIMIT_EXIT_DELAY_AWAY)
-    async def set_exit_delay_away(self, duration: int) -> None:
-        """Set the duration of the exit delay ("away" mode).
-
-        :param duration: The number of seconds to delay.
-        :type duration: ``int``
-        """
-        await self._set_system_property("exitDelayAway", duration)
-
-    @duration_within_range(LOWER_LIMIT_EXIT_DELAY_HOME, UPPER_LIMIT_EXIT_DELAY_HOME)
-    async def set_exit_delay_home(self, duration: int) -> None:
-        """Set the duration of the exit delay ("home" mode).
-
-        :param duration: The number of seconds to delay.
-        :type duration: ``int``
-        """
-        await self._set_system_property("exitDelayHome", duration)
-
-    async def set_light(self, is_on: bool) -> None:
-        """Set whether the base station light is on.
-
-        :param is_on: ``True`` if on, ``False`` if off.
-        :type duration: ``bool``
-        """
-        await self._set_system_property("light", is_on)
-
-    async def set_voice_prompt_volume(self, level: LevelMap) -> None:
-        """Set the volume level of voice prompts.
-
-        :param level: The volume level to set.
-        :type level: :meth:`simplipy.system.v3.LevelMap`
-        """
-        await self._set_system_property("voicePrompts", level)
+        if settings_resp:
+            self._settings_info = settings_resp

@@ -163,19 +163,39 @@ additional properties:
     system.wifi_strength
     # >>> -43
 
-V3 systems also come with several methods to set several of these properties:
+V3 systems also come with a ``set_properties`` method to update the following system
+properties:
+
+* ``alarm_duration`` (in seconds): 30-480
+* ``alarm_volume``: 0 (off), 1 (low), 2 (medium), 3 (high)
+* ``chime_volume``: 0 (off), 1 (low), 2 (medium), 3 (high)
+* ``entry_delay_away`` (in seconds): 30-255
+* ``entry_delay_home`` (in seconds): 0-255
+* ``exit_delay_away`` (in seconds): 45-255
+* ``exit_delay_home`` (in seconds): 0-255
+* ``light``: True or False
+* ``voice_prompt_volume``: 0 (off), 1 (low), 2 (medium), 3 (high)
+
+Note that volume properties can accept integers or constants defined in
+``simplipy.system.v3``.
 
 .. code:: python
 
-    await system.set_alarm_duration(120)
-    await system.set_alarm_volume(simplipy.system.v3.LevelMap.medium)
-    await system.set_chime_volume(simplipy.system.v3.LevelMap.low)
-    await system.set_entry_delay_away(20)
-    await system.set_entry_delay_home(10)
-    await system.set_exit_delay_away(35)
-    await system.set_exit_delay_home(40)
-    await system.set_light(True)
-    await system.set_voice_prompt_volume(simplipy.system.v3.LevelMap.off)
+    from simplipy.system.v3 import VOLUME_OFF, VOLUME_LOW, VOLUME_MEDIUM
+
+    await system.set_properties(
+        {
+            "alarm_duration": 240,
+            "alarm_volume": VOLUME_HIGH,
+            "chime_volume": VOLUME_MEDIUM,
+            "entry_delay_away": 30,
+            "entry_delay_home": 30,
+            "exit_delay_away": 60,
+            "exit_delay_home": 0,
+            "light": True,
+            "voice_prompt_volume": VOLUME_MEDIUM,
+        }
+    )
 
 Note that ``system.set_exit_delay_away()``, ``system.set_exit_delay_home()``,
 ``system.set_exit_delay_away()``, and ``system.set_exit_delay_away()``

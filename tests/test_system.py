@@ -9,7 +9,7 @@ import pytest
 from simplipy import API
 from simplipy.errors import InvalidCredentialsError, PinError, SimplipyError
 from simplipy.system import System, SystemStates
-from simplipy.system.v3 import LevelMap as V3LevelMap
+from simplipy.system.v3 import VOLUME_HIGH, VOLUME_MEDIUM
 
 from .common import async_mock
 from .const import (
@@ -459,54 +459,6 @@ async def test_properties_v3(v3_server, v3_settings_json):
             "post",
             aresponses.Response(text=json.dumps(v3_settings_json), status=200),
         )
-        v3_server.add(
-            "api.simplisafe.com",
-            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
-            "post",
-            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
-        )
-        v3_server.add(
-            "api.simplisafe.com",
-            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
-            "post",
-            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
-        )
-        v3_server.add(
-            "api.simplisafe.com",
-            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
-            "post",
-            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
-        )
-        v3_server.add(
-            "api.simplisafe.com",
-            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
-            "post",
-            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
-        )
-        v3_server.add(
-            "api.simplisafe.com",
-            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
-            "post",
-            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
-        )
-        v3_server.add(
-            "api.simplisafe.com",
-            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
-            "post",
-            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
-        )
-        v3_server.add(
-            "api.simplisafe.com",
-            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
-            "post",
-            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
-        )
-        v3_server.add(
-            "api.simplisafe.com",
-            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
-            "post",
-            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
-        )
 
         async with aiohttp.ClientSession() as websession:
             simplisafe = await API.login_via_credentials(
@@ -516,9 +468,9 @@ async def test_properties_v3(v3_server, v3_settings_json):
             system = systems[TEST_SYSTEM_ID]
 
             assert system.alarm_duration == 240
-            assert system.alarm_volume == V3LevelMap.high
+            assert system.alarm_volume == VOLUME_HIGH
             assert system.battery_backup_power_level == 5293
-            assert system.chime_volume == V3LevelMap.medium
+            assert system.chime_volume == VOLUME_MEDIUM
             assert system.connection_type == "wifi"
             assert system.entry_delay_away == 30
             assert system.entry_delay_home == 30
@@ -529,7 +481,7 @@ async def test_properties_v3(v3_server, v3_settings_json):
             assert system.offline is False
             assert system.power_outage is False
             assert system.rf_jamming is False
-            assert system.voice_prompt_volume == V3LevelMap.medium
+            assert system.voice_prompt_volume == VOLUME_MEDIUM
             assert system.wall_power_level == 5933
             assert system.wifi_ssid == "MY_WIFI"
             assert system.wifi_strength == -49
@@ -537,46 +489,50 @@ async def test_properties_v3(v3_server, v3_settings_json):
             # Test "setting" various system properties by overriding their values, then
             # calling the update functions:
             system._settings_info["settings"]["normal"]["alarmDuration"] = 0
-            await system.set_alarm_duration(240)
-            assert system.alarm_duration == 240
-
             system._settings_info["settings"]["normal"]["alarmVolume"] = 0
-            await system.set_alarm_volume(V3LevelMap.high)
-            assert system.alarm_volume == V3LevelMap.high
-
             system._settings_info["settings"]["normal"]["doorChime"] = 0
-            await system.set_chime_volume(V3LevelMap.medium)
-            assert system.chime_volume == V3LevelMap.medium
-
             system._settings_info["settings"]["normal"]["entryDelayAway"] = 0
-            await system.set_entry_delay_away(30)
-            assert system.entry_delay_away == 30
-
             system._settings_info["settings"]["normal"]["entryDelayHome"] = 0
-            await system.set_entry_delay_home(30)
-            assert system.entry_delay_home == 30
-
             system._settings_info["settings"]["normal"]["exitDelayAway"] = 0
-            await system.set_exit_delay_away(60)
-            assert system.exit_delay_away == 60
-
             system._settings_info["settings"]["normal"]["exitDelayHome"] = 1000
-            await system.set_exit_delay_home(0)
-            assert system.exit_delay_home == 0
-
             system._settings_info["settings"]["normal"]["light"] = False
-            await system.set_light(True)
-            assert system.exit_delay_home == 0
-
             system._settings_info["settings"]["normal"]["voicePrompts"] = 0
-            await system.set_voice_prompt_volume(V3LevelMap.medium)
-            assert system.voice_prompt_volume == V3LevelMap.medium
+
+            await system.set_properties(
+                {
+                    "alarm_duration": 240,
+                    "alarm_volume": VOLUME_HIGH,
+                    "chime_volume": VOLUME_MEDIUM,
+                    "entry_delay_away": 30,
+                    "entry_delay_home": 30,
+                    "exit_delay_away": 60,
+                    "exit_delay_home": 0,
+                    "light": True,
+                    "voice_prompt_volume": VOLUME_MEDIUM,
+                }
+            )
+            assert system.alarm_duration == 240
+            assert system.alarm_volume == VOLUME_HIGH
+            assert system.chime_volume == VOLUME_MEDIUM
+            assert system.entry_delay_away == 30
+            assert system.entry_delay_home == 30
+            assert system.exit_delay_away == 60
+            assert system.exit_delay_home == 0
+            assert system.light is True
+            assert system.voice_prompt_volume == VOLUME_MEDIUM
 
 
 @pytest.mark.asyncio
-async def test_delay_property_outside_limits(v3_server):
-    """Test that an error is raised when a delay param is given a value outside limit."""
+async def test_setting_invalid_property(v3_server, v3_settings_json):
+    """Test that setting an invalid property raises a ValueError."""
     async with v3_server:
+        v3_server.add(
+            "api.simplisafe.com",
+            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
+            "post",
+            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
+        )
+
         async with aiohttp.ClientSession() as websession:
             simplisafe = await API.login_via_credentials(
                 TEST_EMAIL, TEST_PASSWORD, websession
@@ -584,8 +540,8 @@ async def test_delay_property_outside_limits(v3_server):
             systems = await simplisafe.get_systems()
             system = systems[TEST_SYSTEM_ID]
 
-            with pytest.raises(SimplipyError):
-                await system.set_exit_delay_home(1000)
+            with pytest.raises(ValueError):
+                await system.set_properties({"Fake": "News"})
 
 
 @pytest.mark.asyncio

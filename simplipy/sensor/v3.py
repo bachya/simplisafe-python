@@ -20,7 +20,7 @@ class SensorV3(EntityV3):
 
         :rtype: ``bool``
         """
-        return self.entity_data["setting"]["instantTrigger"]
+        return self.entity_data["setting"].get("instantTrigger", False)
 
     @property
     def triggered(self) -> bool:

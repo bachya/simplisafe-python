@@ -1,5 +1,6 @@
 """Define tests for the System object."""
 # pylint: disable=protected-access,redefined-outer-name,unused-import
+from datetime import datetime
 import json
 
 import aiohttp
@@ -66,7 +67,7 @@ async def test_get_events(events_json, v2_server):
             systems = await simplisafe.get_systems()
             system = systems[TEST_SYSTEM_ID]
 
-            events = await system.get_events(1534725051, 2)
+            events = await system.get_events(datetime.now(), 2)
 
             assert len(events) == 2
 

@@ -286,7 +286,7 @@ class System:
         """
         params: Dict[str, Any] = {}
         if from_datetime:
-            params["fromTimestamp"] = from_datetime.timestamp()
+            params["fromTimestamp"] = round(from_datetime.timestamp())
         if num_events:
             params["numEvents"] = num_events
 

@@ -107,6 +107,6 @@ API Reference
 
 ``Websocket``
 -----------------------
-
+.. autofunction:: simplipy.websocket.get_event_type_from_payload
 .. autoclass:: simplipy.websocket.Websocket
    :members:

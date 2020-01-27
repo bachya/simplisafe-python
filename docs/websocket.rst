@@ -145,3 +145,26 @@ with this value:
       "videoStartedBy": "",
       "video": {}
     }
+
+``simplisafe-python`` provides a helper to determine the type of websocket event
+represented by the ``data`` argument:
+
+.. code:: python
+
+    from simplipy.websocket import get_event_type_from_payload
+
+    def event_handler(data):
+        print(f"Event type: {get_event_type_from_payload(data)}")
+
+    simplisafe.websocket.on_event(event_handler)
+
+This helper will return one of the following values:
+
+* ``armed_away``
+* ``armed_home``
+* ``arming``
+* ``automatic_test``
+* ``disarmed``
+* ``entry_detected``
+* ``sensor_error``
+* ``sensor_restored``

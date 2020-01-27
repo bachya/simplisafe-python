@@ -37,7 +37,22 @@ EVENT_MAPPING = {
 
 
 def get_event_type_from_payload(payload: dict) -> Optional[str]:
-    """Get the named websocket event from an event JSON payload."""
+    """Get the named websocket event from an event JSON payload.
+
+    The ``payload`` parameter of this method should be the ``data`` parameter provided
+    to any function or coroutine that is passed to
+    :meth:`simplipy.websocket.Websocket.on_event`.
+
+    Returns one of the following:
+        * ``armed_away``
+        * ``armed_home``
+        * ``arming``
+        * ``automatic_test``
+        * ``disarmed``
+        * ``entry_detected``
+        * ``sensor_error``
+        * ``sensor_restored``
+    """
     event_cid = payload["eventCid"]
 
     if event_cid not in EVENT_MAPPING:

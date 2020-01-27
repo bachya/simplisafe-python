@@ -1,8 +1,9 @@
 """Define V2 and V3 SimpliSafe systems."""
 import asyncio
+from datetime import datetime
 from enum import Enum
 import logging
-from typing import Any, Callable, Coroutine, Dict, List, Set, Type, Union
+from typing import Any, Callable, Coroutine, Dict, List, Optional, Set, Type, Union
 
 from simplipy.entity import Entity, EntityTypes
 from simplipy.errors import PinError, SimplipyError
@@ -271,21 +272,21 @@ class System:
         raise NotImplementedError()
 
     async def get_events(
-        self, from_timestamp: int = None, num_events: int = None
+        self, from_datetime: Optional[datetime] = None, num_events: Optional[int] = None
     ) -> list:
         """Get events recorded by the base station.
 
         If no parameters are provided, this will return the most recent 50 events.
 
-        :param from_timestamp: The starting timestamp (if desired)
-        :type from_timestamp: ``int``
+        :param from_datetime: The starting datetime (if desired)
+        :type from_datetime: ``datetime.datetime``
         :param num_events: The number of events to return.
         :type num_events: ``int``
         :rtype: ``list``
         """
         params: Dict[str, Any] = {}
-        if from_timestamp:
-            params["fromTimestamp"] = from_timestamp
+        if from_datetime:
+            params["fromTimestamp"] = from_datetime.timestamp()
         if num_events:
             params["numEvents"] = num_events
 

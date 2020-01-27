@@ -1,4 +1,5 @@
 """Define a connection to the SimpliSafe websocket."""
+import logging
 from typing import Awaitable, Callable, Optional
 from urllib.parse import urlencode
 
@@ -7,7 +8,48 @@ from socketio.exceptions import ConnectionError as ConnError, SocketIOError
 
 from simplipy.errors import WebsocketError
 
+_LOGGER = logging.getLogger(__name__)
+
 API_URL_BASE: str = "wss://api.simplisafe.com/socket.io"
+
+EVENT_AUTOMATIC_TEST = "automatic_test"
+EVENT_SENSOR_ENTRY_DETECTED = "entry_detected"
+EVENT_SENSOR_ERROR = "sensor_error"
+EVENT_SENSOR_RESTORED = "sensor_restored"
+EVENT_SYSTEM_ARMED_AWAY = "armed_away"
+EVENT_SYSTEM_ARMED_HOME = "armed_home"
+EVENT_SYSTEM_ARMING = "arming"
+EVENT_SYSTEM_DISARMED = "disarmed"
+
+EVENT_MAPPING = {
+    1381: EVENT_SENSOR_ERROR,
+    1400: EVENT_SYSTEM_DISARMED,
+    1407: EVENT_SYSTEM_DISARMED,
+    1429: EVENT_SENSOR_ENTRY_DETECTED,
+    1602: EVENT_AUTOMATIC_TEST,
+    3381: EVENT_SENSOR_RESTORED,
+    3401: EVENT_SYSTEM_ARMED_AWAY,
+    3407: EVENT_SYSTEM_ARMED_AWAY,
+    3441: EVENT_SYSTEM_ARMED_HOME,
+    9401: EVENT_SYSTEM_ARMING,
+    9407: EVENT_SYSTEM_ARMING,
+}
+
+
+def get_event_type_from_payload(payload: dict) -> Optional[str]:
+    """Get the named websocket event from an event JSON payload."""
+    event_cid = payload["eventCid"]
+
+    if event_cid not in EVENT_MAPPING:
+        _LOGGER.warning(
+            'Encountered unknown websocket event type: %s ("%s"). Please report it at'
+            "https://github.com/bachya/simplisafe-python/issues.",
+            event_cid,
+            payload["info"],
+        )
+        return None
+
+    return EVENT_MAPPING[event_cid]
 
 
 class Websocket:

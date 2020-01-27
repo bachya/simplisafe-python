@@ -9,9 +9,17 @@ from socketio.exceptions import SocketIOError
 
 from simplipy import API
 from simplipy.errors import WebsocketError
+from simplipy.websocket import get_event_type_from_payload
 
 from .common import async_mock
-from .const import TEST_ACCESS_TOKEN, TEST_EMAIL, TEST_PASSWORD, TEST_USER_ID
+from .const import (
+    RESPONSE_WEBSOCKET_KNOWN_EVENT,
+    RESPONSE_WEBSOCKET_UNKNOWN_EVENT,
+    TEST_ACCESS_TOKEN,
+    TEST_EMAIL,
+    TEST_PASSWORD,
+    TEST_USER_ID,
+)
 from .fixtures import api_token_json, auth_check_json
 from .fixtures.v3 import (
     v3_sensors_json,
@@ -146,6 +154,15 @@ async def test_async_events(v3_server):
                 abort=True
             )
             on_disconnect.mock.assert_called_once()
+
+
+def test_event_types(caplog):
+    """Test appropriate responses to known and unknown websocket event types."""
+    event_type = get_event_type_from_payload(RESPONSE_WEBSOCKET_KNOWN_EVENT)
+    assert event_type == "disarmed"
+
+    get_event_type_from_payload(RESPONSE_WEBSOCKET_UNKNOWN_EVENT)
+    assert any("unknown websocket event type" in e.message for e in caplog.records)
 
 
 @pytest.mark.asyncio

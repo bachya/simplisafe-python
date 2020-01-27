@@ -901,7 +901,7 @@ async def test_update_system_data_v3(
 
 @pytest.mark.asyncio
 async def test_update_error_v3(  # pylint: disable=too-many-arguments
-    caplog, v3_server, v3_sensors_json, v3_settings_json, v3_subscriptions_json
+    v3_server, v3_sensors_json, v3_settings_json, v3_subscriptions_json
 ):
     """Test handling a generic error during update."""
     async with v3_server:
@@ -931,9 +931,5 @@ async def test_update_error_v3(  # pylint: disable=too-many-arguments
             systems = await simplisafe.get_systems()
             system = systems[TEST_SYSTEM_ID]
 
-            await system.update()
-
-            assert any(
-                "Error while getting latest settings values" in e.message
-                for e in caplog.records
-            )
+            with pytest.raises(SimplipyError):
+                await system.update()

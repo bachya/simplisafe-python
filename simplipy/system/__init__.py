@@ -422,9 +422,7 @@ class System:
         result: dict
         for operation, result in zip(tasks, results):
             if isinstance(result, SimplipyError):
-                _LOGGER.error(
-                    "Error while getting latest %s values: %s", operation, result
-                )
+                raise result
 
         # We await entity updates after the task pool since including it can cause
         # HTTP 409s if that update occurs out of sequence:

@@ -158,7 +158,7 @@ represented by the ``data`` argument:
 
     simplisafe.websocket.on_event(event_handler)
 
-This helper will return one of the following values:
+This helper will currently return one of the following values:
 
 * ``armed_away``
 * ``armed_home``
@@ -168,3 +168,8 @@ This helper will return one of the following values:
 * ``entry_detected``
 * ``sensor_error``
 * ``sensor_restored``
+* ``triggered``
+
+If you should come across an event type that the helper does not know about (and see
+a logger warning about it), please open an issue at
+https://github.com/bachya/simplisafe-python/issues.

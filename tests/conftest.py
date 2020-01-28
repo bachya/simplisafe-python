@@ -1,6 +1,4 @@
 """Define fixtures, constants, etc. available for all tests."""
-import json
-
 import aresponses
 import pytest
 

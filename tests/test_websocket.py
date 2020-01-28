@@ -1,5 +1,6 @@
 """Define tests for the Websocket API."""
-# pylint: disable=protected-access,redefined-outer-name,unused-import
+# pylint: disable=protected-access,redefined-outer-name
+import json
 from unittest.mock import MagicMock
 from urllib.parse import urlencode
 
@@ -11,21 +12,13 @@ from simplipy import API
 from simplipy.errors import WebsocketError
 from simplipy.websocket import get_event_type_from_payload
 
-from .common import async_mock
-from .const import (
-    RESPONSE_WEBSOCKET_KNOWN_EVENT,
-    RESPONSE_WEBSOCKET_UNKNOWN_EVENT,
+from .common import (
     TEST_ACCESS_TOKEN,
     TEST_EMAIL,
     TEST_PASSWORD,
     TEST_USER_ID,
-)
-from .fixtures import api_token_json, auth_check_json
-from .fixtures.v3 import (
-    v3_sensors_json,
-    v3_server,
-    v3_settings_json,
-    v3_subscriptions_json,
+    async_mock,
+    load_fixture,
 )
 
 
@@ -158,10 +151,14 @@ async def test_async_events(v3_server):
 
 def test_event_types(caplog):
     """Test appropriate responses to known and unknown websocket event types."""
-    event_type = get_event_type_from_payload(RESPONSE_WEBSOCKET_KNOWN_EVENT)
+    event_type = get_event_type_from_payload(
+        json.loads(load_fixture("websocket_known_event_response.json"))
+    )
     assert event_type == "disarmed"
 
-    get_event_type_from_payload(RESPONSE_WEBSOCKET_UNKNOWN_EVENT)
+    get_event_type_from_payload(
+        json.loads(load_fixture("websocket_unknown_event_response.json"))
+    )
     assert any("unknown websocket event type" in e.message for e in caplog.records)
 
 

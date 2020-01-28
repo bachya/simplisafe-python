@@ -1,7 +1,4 @@
 """Define tests for the Lock objects."""
-# pylint: disable=redefined-outer-name,unused-import
-import json
-
 import aiohttp
 import pytest
 
@@ -9,7 +6,7 @@ from simplipy import API
 from simplipy.errors import InvalidCredentialsError
 from simplipy.lock import LockStates
 
-from .const import (
+from .common import (
     TEST_EMAIL,
     TEST_LOCK_ID,
     TEST_LOCK_ID_2,
@@ -17,27 +14,12 @@ from .const import (
     TEST_PASSWORD,
     TEST_SUBSCRIPTION_ID,
     TEST_SYSTEM_ID,
-)
-from .fixtures import (
-    api_token_json,
-    auth_check_json,
-    invalid_credentials_json,
-    unavailable_feature_json,
-)
-from .fixtures.v3 import (
-    v3_lock_lock_response_json,
-    v3_lock_unlock_response_json,
-    v3_sensors_json,
-    v3_server,
-    v3_settings_json,
-    v3_subscriptions_json,
+    load_fixture,
 )
 
 
 @pytest.mark.asyncio
-async def test_lock_unlock(
-    aresponses, v3_server, v3_lock_lock_response_json, v3_lock_unlock_response_json
-):
+async def test_lock_unlock(aresponses, v3_server):
     """Test locking the lock."""
     async with v3_server:
         v3_server.add(
@@ -45,7 +27,7 @@ async def test_lock_unlock(
             f"/v1/doorlock/{TEST_SUBSCRIPTION_ID}/{TEST_LOCK_ID}/state",
             "post",
             aresponses.Response(
-                text=json.dumps(v3_lock_unlock_response_json), status=200
+                text=load_fixture("v3_lock_unlock_response.json"), status=200
             ),
         )
         v3_server.add(
@@ -53,7 +35,7 @@ async def test_lock_unlock(
             f"/v1/doorlock/{TEST_SUBSCRIPTION_ID}/{TEST_LOCK_ID}/state",
             "post",
             aresponses.Response(
-                text=json.dumps(v3_lock_lock_response_json), status=200
+                text=load_fixture("v3_lock_lock_response.json"), status=200
             ),
         )
 
@@ -161,13 +143,7 @@ async def test_unknown_state(caplog, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_update(  # pylint: disable=too-many-arguments
-    aresponses,
-    v3_lock_lock_response_json,
-    v3_lock_unlock_response_json,
-    v3_sensors_json,
-    v3_server,
-):
+async def test_update(aresponses, v3_server):
     """Test updating the lock."""
     async with v3_server:
         v3_server.add(
@@ -175,7 +151,7 @@ async def test_update(  # pylint: disable=too-many-arguments
             f"/v1/doorlock/{TEST_SUBSCRIPTION_ID}/{TEST_LOCK_ID}/state",
             "post",
             aresponses.Response(
-                text=json.dumps(v3_lock_unlock_response_json), status=200
+                text=load_fixture("v3_lock_unlock_response.json"), status=200
             ),
         )
         v3_server.add(
@@ -183,21 +159,23 @@ async def test_update(  # pylint: disable=too-many-arguments
             f"/v1/doorlock/{TEST_SUBSCRIPTION_ID}/{TEST_LOCK_ID}/state",
             "post",
             aresponses.Response(
-                text=json.dumps(v3_lock_lock_response_json), status=200
+                text=load_fixture("v3_lock_lock_response.json"), status=200
             ),
         )
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/sensors",
             "get",
-            aresponses.Response(text=json.dumps(v3_sensors_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v3_sensors_response.json"), status=200
+            ),
         )
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/doorlock/{TEST_SUBSCRIPTION_ID}/{TEST_LOCK_ID}/state",
             "post",
             aresponses.Response(
-                text=json.dumps(v3_lock_lock_response_json), status=200
+                text=load_fixture("v3_lock_lock_response.json"), status=200
             ),
         )
 

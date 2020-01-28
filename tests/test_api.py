@@ -1,7 +1,6 @@
 """Define tests for the System object."""
 # pylint: disable=protected-access,redefined-outer-name
 from datetime import datetime, timedelta
-import json
 import logging
 
 import aiohttp
@@ -309,9 +308,7 @@ async def test_unavailable_feature_v2(caplog, v2_server):
 
 
 @pytest.mark.asyncio
-async def test_unavailable_feature_v3(
-    caplog, v3_server,
-):
+async def test_unavailable_feature_v3(caplog, v3_server):
     """Test that a message is logged with an unavailable feature."""
     caplog.set_level(logging.INFO)
 

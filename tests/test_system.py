@@ -1,7 +1,6 @@
 """Define tests for the System object."""
-# pylint: disable=protected-access,redefined-outer-name,unused-import
+# pylint: disable=protected-access,redefined-outer-name
 from datetime import datetime
-import json
 
 import aiohttp
 import aresponses
@@ -12,8 +11,7 @@ from simplipy.errors import InvalidCredentialsError, PinError, SimplipyError
 from simplipy.system import System, SystemStates
 from simplipy.system.v3 import VOLUME_HIGH, VOLUME_MEDIUM
 
-from .common import async_mock
-from .const import (
+from .common import (
     TEST_ACCESS_TOKEN,
     TEST_ADDRESS,
     TEST_EMAIL,
@@ -23,41 +21,20 @@ from .const import (
     TEST_SYSTEM_ID,
     TEST_SYSTEM_SERIAL_NO,
     TEST_USER_ID,
-)
-from .fixtures import api_token_json, auth_check_json, events_json, latest_event_json
-from .fixtures.v2 import (
-    v2_new_pins_json,
-    v2_pins_json,
-    v2_server,
-    v2_settings_json,
-    v2_state_away_json,
-    v2_state_home_json,
-    v2_state_off_json,
-    v2_subscriptions_json,
-)
-from .fixtures.v3 import (
-    v3_sensors_json,
-    v3_server,
-    v3_settings_deleted_pin_json,
-    v3_settings_full_pins_json,
-    v3_settings_json,
-    v3_settings_new_pin_json,
-    v3_state_away_json,
-    v3_state_home_json,
-    v3_state_off_json,
-    v3_subscriptions_json,
+    async_mock,
+    load_fixture,
 )
 
 
 @pytest.mark.asyncio
-async def test_get_events(events_json, v2_server):
+async def test_get_events(v2_server):
     """Test getting events from a system."""
     async with v2_server:
         v2_server.add(
             "api.simplisafe.com",
             f"/v1/subscriptions/{TEST_SYSTEM_ID}/events",
             "get",
-            aresponses.Response(text=json.dumps(events_json), status=200),
+            aresponses.Response(text=load_fixture("events_response.json"), status=200),
         )
 
         async with aiohttp.ClientSession() as websession:
@@ -73,14 +50,16 @@ async def test_get_events(events_json, v2_server):
 
 
 @pytest.mark.asyncio
-async def test_get_last_event(v3_server, latest_event_json):
+async def test_get_last_event(v3_server):
     """Test getting the latest event."""
     async with v3_server:
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/events",
             "get",
-            aresponses.Response(text=json.dumps(latest_event_json), status=200),
+            aresponses.Response(
+                text=load_fixture("latest_event_response.json"), status=200
+            ),
         )
 
         async with aiohttp.ClientSession() as websession:
@@ -95,14 +74,14 @@ async def test_get_last_event(v3_server, latest_event_json):
 
 
 @pytest.mark.asyncio
-async def test_get_pins_v2(v2_pins_json, v2_server):
+async def test_get_pins_v2(v2_server):
     """Test getting PINs associated with a V3 system."""
     async with v2_server:
         v2_server.add(
             "api.simplisafe.com",
             f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/pins",
             "get",
-            aresponses.Response(text=json.dumps(v2_pins_json), status=200),
+            aresponses.Response(text=load_fixture("v2_pins_response.json"), status=200),
         )
 
         async with aiohttp.ClientSession() as websession:
@@ -121,14 +100,16 @@ async def test_get_pins_v2(v2_pins_json, v2_server):
 
 
 @pytest.mark.asyncio
-async def test_get_pins_v3(v3_server, v3_settings_json):
+async def test_get_pins_v3(v3_server):
     """Test getting PINs associated with a V3 system."""
     async with v3_server:
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
             "get",
-            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v3_settings_response.json"), status=200
+            ),
         )
 
         async with aiohttp.ClientSession() as websession:
@@ -147,9 +128,7 @@ async def test_get_pins_v3(v3_server, v3_settings_json):
 
 
 @pytest.mark.asyncio
-async def test_get_systems_v2(  # pylint: disable=too-many-arguments
-    api_token_json, auth_check_json, v2_server, v2_settings_json, v2_subscriptions_json
-):
+async def test_get_systems_v2(v2_server):
     """Test the ability to get systems attached to a v2 account."""
     async with v2_server:
         # Since this flow will call both three routes once more each (on top of
@@ -159,25 +138,33 @@ async def test_get_systems_v2(  # pylint: disable=too-many-arguments
             "api.simplisafe.com",
             "/v1/api/token",
             "post",
-            aresponses.Response(text=json.dumps(api_token_json), status=200),
+            aresponses.Response(
+                text=load_fixture("api_token_response.json"), status=200
+            ),
         )
         v2_server.add(
             "api.simplisafe.com",
             "/v1/api/authCheck",
             "get",
-            aresponses.Response(text=json.dumps(auth_check_json), status=200),
+            aresponses.Response(
+                text=load_fixture("auth_check_response.json"), status=200
+            ),
         )
         v2_server.add(
             "api.simplisafe.com",
             f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
-            aresponses.Response(text=json.dumps(v2_subscriptions_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v2_subscriptions_response.json"), status=200
+            ),
         )
         v2_server.add(
             "api.simplisafe.com",
             f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/settings",
             "get",
-            aresponses.Response(text=json.dumps(v2_settings_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v2_settings_response.json"), status=200
+            ),
         )
 
         async with aiohttp.ClientSession() as websession:
@@ -205,14 +192,7 @@ async def test_get_systems_v2(  # pylint: disable=too-many-arguments
 
 
 @pytest.mark.asyncio
-async def test_get_systems_v3(  # pylint: disable=too-many-arguments
-    api_token_json,
-    auth_check_json,
-    v3_sensors_json,
-    v3_server,
-    v3_settings_json,
-    v3_subscriptions_json,
-):
+async def test_get_systems_v3(v3_server):
     """Test the ability to get systems attached to a v3 account."""
     async with v3_server:
         # Since this flow will call both three routes once more each (on top of
@@ -222,31 +202,41 @@ async def test_get_systems_v3(  # pylint: disable=too-many-arguments
             "api.simplisafe.com",
             "/v1/api/token",
             "post",
-            aresponses.Response(text=json.dumps(api_token_json), status=200),
+            aresponses.Response(
+                text=load_fixture("api_token_response.json"), status=200
+            ),
         )
         v3_server.add(
             "api.simplisafe.com",
             "/v1/api/authCheck",
             "get",
-            aresponses.Response(text=json.dumps(auth_check_json), status=200),
+            aresponses.Response(
+                text=load_fixture("auth_check_response.json"), status=200
+            ),
         )
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
-            aresponses.Response(text=json.dumps(v3_subscriptions_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v3_subscriptions_response.json"), status=200
+            ),
         )
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/sensors",
             "get",
-            aresponses.Response(text=json.dumps(v3_sensors_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v3_sensors_response.json"), status=200
+            ),
         )
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
             "get",
-            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v3_settings_response.json"), status=200
+            ),
         )
 
         async with aiohttp.ClientSession() as websession:
@@ -307,14 +297,16 @@ async def test_no_state_change_on_failure(aresponses, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_remove_nonexistent_pin_v3(v3_server, v3_settings_json):
+async def test_remove_nonexistent_pin_v3(v3_server):
     """Test throwing an error when removing a nonexistent PIN."""
     async with v3_server:
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
             "get",
-            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v3_settings_response.json"), status=200
+            ),
         )
 
         async with aiohttp.ClientSession() as websession:
@@ -330,27 +322,15 @@ async def test_remove_nonexistent_pin_v3(v3_server, v3_settings_json):
 
 
 @pytest.mark.asyncio
-async def test_remove_pin_v3(v3_server, v3_settings_json, v3_settings_deleted_pin_json):
+async def test_remove_pin_v3(v3_server):
     """Test removing a PIN in a V3 system."""
     async with v3_server:
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
             "get",
-            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
-        )
-        v3_server.add(
-            "api.simplisafe.com",
-            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
-            "get",
-            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
-        )
-        v3_server.add(
-            "api.simplisafe.com",
-            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/pins",
-            "post",
             aresponses.Response(
-                text=json.dumps(v3_settings_deleted_pin_json), status=200
+                text=load_fixture("v3_settings_response.json"), status=200
             ),
         )
         v3_server.add(
@@ -358,7 +338,23 @@ async def test_remove_pin_v3(v3_server, v3_settings_json, v3_settings_deleted_pi
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
             "get",
             aresponses.Response(
-                text=json.dumps(v3_settings_deleted_pin_json), status=200
+                text=load_fixture("v3_settings_response.json"), status=200
+            ),
+        )
+        v3_server.add(
+            "api.simplisafe.com",
+            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/pins",
+            "post",
+            aresponses.Response(
+                text=load_fixture("v3_settings_deleted_pin_response.json"), status=200
+            ),
+        )
+        v3_server.add(
+            "api.simplisafe.com",
+            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
+            "get",
+            aresponses.Response(
+                text=load_fixture("v3_settings_deleted_pin_response.json"), status=200
             ),
         )
 
@@ -378,14 +374,16 @@ async def test_remove_pin_v3(v3_server, v3_settings_json, v3_settings_deleted_pi
 
 
 @pytest.mark.asyncio
-async def test_remove_reserved_pin_v3(v3_server, v3_settings_json):
+async def test_remove_reserved_pin_v3(v3_server):
     """Test throwing an error when removing a reserved PIN."""
     async with v3_server:
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
             "get",
-            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v3_settings_response.json"), status=200
+            ),
         )
 
         async with aiohttp.ClientSession() as websession:
@@ -401,20 +399,24 @@ async def test_remove_reserved_pin_v3(v3_server, v3_settings_json):
 
 
 @pytest.mark.asyncio
-async def test_set_duplicate_pin(v3_server, v3_settings_json):
+async def test_set_duplicate_pin(v3_server):
     """Test throwing an error when setting a duplicate PIN."""
     async with v3_server:
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
             "get",
-            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v3_settings_response.json"), status=200
+            ),
         )
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/pins",
             "post",
-            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v3_settings_response.json"), status=200
+            ),
         )
 
         async with aiohttp.ClientSession() as websession:
@@ -451,14 +453,16 @@ async def test_properties(v2_server):
 
 
 @pytest.mark.asyncio
-async def test_properties_v3(v3_server, v3_settings_json):
+async def test_properties_v3(v3_server):
     """Test that v3 system properties are available."""
     async with v3_server:
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
             "post",
-            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v3_settings_response.json"), status=200
+            ),
         )
 
         async with aiohttp.ClientSession() as websession:
@@ -524,14 +528,16 @@ async def test_properties_v3(v3_server, v3_settings_json):
 
 
 @pytest.mark.asyncio
-async def test_setting_invalid_property(v3_server, v3_settings_json):
+async def test_setting_invalid_property(v3_server):
     """Test that setting an invalid property raises a ValueError."""
     async with v3_server:
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
             "post",
-            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v3_settings_response.json"), status=200
+            ),
         )
 
         async with aiohttp.ClientSession() as websession:
@@ -546,9 +552,7 @@ async def test_setting_invalid_property(v3_server, v3_settings_json):
 
 
 @pytest.mark.asyncio
-async def test_set_max_user_pins(
-    v3_server, v3_settings_json, v3_settings_full_pins_json
-):
+async def test_set_max_user_pins(v3_server):
     """Test throwing an error when setting too many user PINs."""
     async with v3_server:
         v3_server.add(
@@ -556,14 +560,16 @@ async def test_set_max_user_pins(
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
             "get",
             aresponses.Response(
-                text=json.dumps(v3_settings_full_pins_json), status=200
+                text=load_fixture("v3_settings_full_pins_response.json"), status=200
             ),
         )
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/pins",
             "post",
-            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v3_settings_response.json"), status=200
+            ),
         )
 
         async with aiohttp.ClientSession() as websession:
@@ -579,20 +585,20 @@ async def test_set_max_user_pins(
 
 
 @pytest.mark.asyncio
-async def test_set_pin_v2(v2_new_pins_json, v2_pins_json, v2_server):
+async def test_set_pin_v2(v2_server):
     """Test setting a PIN in a V2 system."""
     async with v2_server:
         v2_server.add(
             "api.simplisafe.com",
             f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/pins",
             "get",
-            aresponses.Response(text=json.dumps(v2_pins_json), status=200),
+            aresponses.Response(text=load_fixture("v2_pins_response.json"), status=200),
         )
         v2_server.add(
             "api.simplisafe.com",
             f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/pins",
             "get",
-            aresponses.Response(text=json.dumps(v2_pins_json), status=200),
+            aresponses.Response(text=load_fixture("v2_pins_response.json"), status=200),
         )
         v2_server.add(
             "api.simplisafe.com",
@@ -604,7 +610,9 @@ async def test_set_pin_v2(v2_new_pins_json, v2_pins_json, v2_server):
             "api.simplisafe.com",
             f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/pins",
             "get",
-            aresponses.Response(text=json.dumps(v2_new_pins_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v2_new_pins_response.json"), status=200
+            ),
         )
 
         async with aiohttp.ClientSession() as websession:
@@ -623,32 +631,40 @@ async def test_set_pin_v2(v2_new_pins_json, v2_pins_json, v2_server):
 
 
 @pytest.mark.asyncio
-async def test_set_pin_v3(v3_server, v3_settings_json, v3_settings_new_pin_json):
+async def test_set_pin_v3(v3_server):
     """Test setting a PIN in a V3 system."""
     async with v3_server:
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
             "get",
-            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v3_settings_response.json"), status=200
+            ),
         )
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
             "get",
-            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v3_settings_response.json"), status=200
+            ),
         )
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/pins",
             "post",
-            aresponses.Response(text=json.dumps(v3_settings_new_pin_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v3_settings_new_pin_response.json"), status=200
+            ),
         )
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
             "get",
-            aresponses.Response(text=json.dumps(v3_settings_new_pin_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v3_settings_new_pin_response.json"), status=200
+            ),
         )
 
         async with aiohttp.ClientSession() as websession:
@@ -699,9 +715,7 @@ async def test_set_pin_wrong_length(v3_server):
 
 
 @pytest.mark.asyncio
-async def test_set_states_v2(
-    v2_server, v2_state_away_json, v2_state_home_json, v2_state_off_json
-):
+async def test_set_states_v2(v2_server):
     """Test the ability to set the state of a v2 system."""
     async with v2_server:
         # Since this flow will make the same API call four times and
@@ -711,25 +725,33 @@ async def test_set_states_v2(
             "api.simplisafe.com",
             f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/state",
             "post",
-            aresponses.Response(text=json.dumps(v2_state_away_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v2_state_away_response.json"), status=200
+            ),
         )
         v2_server.add(
             "api.simplisafe.com",
             f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/state",
             "post",
-            aresponses.Response(text=json.dumps(v2_state_home_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v2_state_home_response.json"), status=200
+            ),
         )
         v2_server.add(
             "api.simplisafe.com",
             f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/state",
             "post",
-            aresponses.Response(text=json.dumps(v2_state_off_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v2_state_off_response.json"), status=200
+            ),
         )
         v2_server.add(
             "api.simplisafe.com",
             f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/state",
             "post",
-            aresponses.Response(text=json.dumps(v2_state_off_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v2_state_off_response.json"), status=200
+            ),
         )
 
         async with aiohttp.ClientSession() as websession:
@@ -753,9 +775,7 @@ async def test_set_states_v2(
 
 
 @pytest.mark.asyncio
-async def test_set_states_v3(
-    v3_server, v3_state_away_json, v3_state_home_json, v3_state_off_json
-):
+async def test_set_states_v3(v3_server):
     """Test the ability to set the state of the system."""
     async with v3_server:
         # Since this flow will make the same API call four times and
@@ -765,25 +785,33 @@ async def test_set_states_v3(
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/state/away",
             "post",
-            aresponses.Response(text=json.dumps(v3_state_away_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v3_state_away_response.json"), status=200
+            ),
         )
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/state/home",
             "post",
-            aresponses.Response(text=json.dumps(v3_state_home_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v3_state_home_response.json"), status=200
+            ),
         )
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/state/off",
             "post",
-            aresponses.Response(text=json.dumps(v3_state_off_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v3_state_off_response.json"), status=200
+            ),
         )
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/state/off",
             "post",
-            aresponses.Response(text=json.dumps(v3_state_off_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v3_state_off_response.json"), status=200
+            ),
         )
 
         async with aiohttp.ClientSession() as websession:
@@ -827,22 +855,24 @@ async def test_unknown_sensor_type(caplog, v2_server):
 
 
 @pytest.mark.asyncio
-async def test_update_system_data_v2(
-    v2_server, v2_settings_json, v2_subscriptions_json
-):
+async def test_update_system_data_v2(v2_server):
     """Test getting updated data for a v2 system."""
     async with v2_server:
         v2_server.add(
             "api.simplisafe.com",
             f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
-            aresponses.Response(text=json.dumps(v2_subscriptions_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v2_subscriptions_response.json"), status=200
+            ),
         )
         v2_server.add(
             "api.simplisafe.com",
             f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/settings",
             "get",
-            aresponses.Response(text=json.dumps(v2_settings_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v2_settings_response.json"), status=200
+            ),
         )
 
         async with aiohttp.ClientSession() as websession:
@@ -861,28 +891,32 @@ async def test_update_system_data_v2(
 
 
 @pytest.mark.asyncio
-async def test_update_system_data_v3(
-    v3_server, v3_sensors_json, v3_settings_json, v3_subscriptions_json
-):
+async def test_update_system_data_v3(v3_server):
     """Test getting updated data for a v3 system."""
     async with v3_server:
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
-            aresponses.Response(text=json.dumps(v3_subscriptions_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v3_subscriptions_response.json"), status=200
+            ),
         )
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/sensors",
             "get",
-            aresponses.Response(text=json.dumps(v3_sensors_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v3_sensors_response.json"), status=200
+            ),
         )
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
             "get",
-            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v3_settings_response.json"), status=200
+            ),
         )
 
         async with aiohttp.ClientSession() as websession:
@@ -901,28 +935,32 @@ async def test_update_system_data_v3(
 
 
 @pytest.mark.asyncio
-async def test_update_error_v3(  # pylint: disable=too-many-arguments
-    v3_server, v3_sensors_json, v3_settings_json, v3_subscriptions_json
-):
+async def test_update_error_v3(v3_server):
     """Test handling a generic error during update."""
     async with v3_server:
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
-            aresponses.Response(text=json.dumps(v3_subscriptions_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v3_subscriptions_response.json"), status=200
+            ),
         )
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/sensors",
             "get",
-            aresponses.Response(text=json.dumps(v3_sensors_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v3_sensors_response.json"), status=200
+            ),
         )
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
             "get",
-            aresponses.Response(text=json.dumps(v3_settings_json), status=500),
+            aresponses.Response(
+                text=load_fixture("v3_settings_response.json"), status=500
+            ),
         )
 
         async with aiohttp.ClientSession() as websession:

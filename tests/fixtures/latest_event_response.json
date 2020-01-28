@@ -1,0 +1,28 @@
+{
+    "numEvents": 50,
+    "lastEventTimestamp": 1564018073,
+    "events": [
+        {
+            "eventId": 1234567890,
+            "eventTimestamp": 1564018073,
+            "eventCid": 1400,
+            "zoneCid": "2",
+            "sensorType": 1,
+            "sensorSerial": "01010101",
+            "account": "00011122",
+            "userId": 12345,
+            "sid": 12345,
+            "info": "System Disarmed by PIN 2",
+            "pinName": "",
+            "sensorName": "Kitchen",
+            "messageSubject": "SimpliSafe System Disarmed",
+            "messageBody": "System Disarmed: Your SimpliSafe security system was ...",
+            "eventType": "activity",
+            "timezone": 2,
+            "locationOffset": -360,
+            "videoStartedBy": "",
+            "video": {}
+        }
+    ]
+}
+

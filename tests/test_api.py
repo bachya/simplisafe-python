@@ -1,5 +1,5 @@
 """Define tests for the System object."""
-# pylint: disable=protected-access,redefined-outer-name,unused-import
+# pylint: disable=protected-access,redefined-outer-name
 from datetime import datetime, timedelta
 import json
 import logging
@@ -11,26 +11,14 @@ import pytest
 from simplipy import API
 from simplipy.errors import InvalidCredentialsError, RequestError
 
-from .const import (
+from .common import (
     TEST_EMAIL,
     TEST_PASSWORD,
     TEST_REFRESH_TOKEN,
     TEST_SUBSCRIPTION_ID,
     TEST_SYSTEM_ID,
     TEST_USER_ID,
-)
-from .fixtures import (
-    api_token_json,
-    auth_check_json,
-    invalid_credentials_json,
-    unavailable_feature_json,
-)
-from .fixtures.v2 import v2_server, v2_settings_json, v2_subscriptions_json
-from .fixtures.v3 import (
-    v3_sensors_json,
-    v3_server,
-    v3_settings_json,
-    v3_subscriptions_json,
+    load_fixture,
 )
 
 
@@ -50,14 +38,16 @@ async def test_401_bad_credentials(aresponses):
 
 
 @pytest.mark.asyncio
-async def test_401_refresh_token_failure(aresponses, v2_server, v2_subscriptions_json):
+async def test_401_refresh_token_failure(aresponses, v2_server):
     """Test that a generic error is thrown when a request fails."""
     async with v2_server:
         v2_server.add(
             "api.simplisafe.com",
             f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
-            aresponses.Response(text=json.dumps(v2_subscriptions_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v2_subscriptions_response.json"), status=200,
+            ),
         )
         v2_server.add(
             "api.simplisafe.com",
@@ -84,9 +74,7 @@ async def test_401_refresh_token_failure(aresponses, v2_server, v2_subscriptions
 
 
 @pytest.mark.asyncio
-async def test_401_refresh_token_success(
-    api_token_json, auth_check_json, v2_server, v2_settings_json, v2_subscriptions_json
-):
+async def test_401_refresh_token_success(v2_server):
     """Test that a generic error is thrown when a request fails."""
     async with v2_server:
         v2_server.add(
@@ -99,25 +87,33 @@ async def test_401_refresh_token_success(
             "api.simplisafe.com",
             "/v1/api/token",
             "post",
-            aresponses.Response(text=json.dumps(api_token_json), status=200),
+            aresponses.Response(
+                text=load_fixture("api_token_response.json"), status=200
+            ),
         )
         v2_server.add(
             "api.simplisafe.com",
             "/v1/api/authCheck",
             "get",
-            aresponses.Response(text=json.dumps(auth_check_json), status=200),
+            aresponses.Response(
+                text=load_fixture("auth_check_response.json"), status=200
+            ),
         )
         v2_server.add(
             "api.simplisafe.com",
             f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
-            aresponses.Response(text=json.dumps(v2_subscriptions_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v2_subscriptions_response.json"), status=200,
+            ),
         )
         v2_server.add(
             "api.simplisafe.com",
             f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/settings",
             "get",
-            aresponses.Response(text=json.dumps(v2_settings_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v2_settings_response.json"), status=200
+            ),
         )
 
         async with aiohttp.ClientSession() as websession:
@@ -153,26 +149,32 @@ async def test_bad_request(v2_server):
 
 
 @pytest.mark.asyncio
-async def test_expired_token_refresh(api_token_json, auth_check_json, v2_server):
+async def test_expired_token_refresh(v2_server):
     """Test that a refresh token is used correctly."""
     async with v2_server:
         v2_server.add(
             "api.simplisafe.com",
             "/v1/api/token",
             "post",
-            aresponses.Response(text=json.dumps(api_token_json), status=200),
+            aresponses.Response(
+                text=load_fixture("api_token_response.json"), status=200
+            ),
         )
         v2_server.add(
             "api.simplisafe.com",
             "/v1/api/authCheck",
             "get",
-            aresponses.Response(text=json.dumps(auth_check_json), status=200),
+            aresponses.Response(
+                text=load_fixture("auth_check_response.json"), status=200
+            ),
         )
         v2_server.add(
             "api.simplisafe.com",
             "/v1/api/authCheck",
             "get",
-            aresponses.Response(text=json.dumps(auth_check_json), status=200),
+            aresponses.Response(
+                text=load_fixture("auth_check_response.json"), status=200
+            ),
         )
 
         async with aiohttp.ClientSession() as websession:
@@ -184,14 +186,16 @@ async def test_expired_token_refresh(api_token_json, auth_check_json, v2_server)
 
 
 @pytest.mark.asyncio
-async def test_invalid_credentials(invalid_credentials_json, v2_server):
+async def test_invalid_credentials(v2_server):
     """Test that invalid credentials throw the correct exception."""
     async with aresponses.ResponsesMockServer() as v2_server:
         v2_server.add(
             "api.simplisafe.com",
             "/v1/api/token",
             "post",
-            aresponses.Response(text=json.dumps(invalid_credentials_json), status=403),
+            aresponses.Response(
+                text=load_fixture("invalid_credentials_response.json"), status=403,
+            ),
         )
 
         async with aiohttp.ClientSession() as websession:
@@ -200,26 +204,32 @@ async def test_invalid_credentials(invalid_credentials_json, v2_server):
 
 
 @pytest.mark.asyncio
-async def test_refresh_token_dirtiness(api_token_json, auth_check_json, v2_server):
+async def test_refresh_token_dirtiness(v2_server):
     """Test that the refresh token's dirtiness can be checked."""
     async with v2_server:
         v2_server.add(
             "api.simplisafe.com",
             "/v1/api/token",
             "post",
-            aresponses.Response(text=json.dumps(api_token_json), status=200),
+            aresponses.Response(
+                text=load_fixture("api_token_response.json"), status=200
+            ),
         )
         v2_server.add(
             "api.simplisafe.com",
             "/v1/api/authCheck",
             "get",
-            aresponses.Response(text=json.dumps(auth_check_json), status=200),
+            aresponses.Response(
+                text=load_fixture("auth_check_response.json"), status=200
+            ),
         )
         v2_server.add(
             "api.simplisafe.com",
             "/v1/api/authCheck",
             "get",
-            aresponses.Response(text=json.dumps(auth_check_json), status=200),
+            aresponses.Response(
+                text=load_fixture("auth_check_response.json"), status=200
+            ),
         )
 
         async with aiohttp.ClientSession() as websession:
@@ -235,14 +245,7 @@ async def test_refresh_token_dirtiness(api_token_json, auth_check_json, v2_serve
 
 
 @pytest.mark.asyncio
-async def test_unavailable_feature_v2(  # pylint: disable=too-many-arguments
-    api_token_json,
-    auth_check_json,
-    caplog,
-    v2_server,
-    v2_subscriptions_json,
-    unavailable_feature_json,
-):
+async def test_unavailable_feature_v2(caplog, v2_server):
     """Test that a message is logged with an unavailable feature."""
     caplog.set_level(logging.INFO)
 
@@ -251,31 +254,41 @@ async def test_unavailable_feature_v2(  # pylint: disable=too-many-arguments
             "api.simplisafe.com",
             "/v1/api/token",
             "post",
-            aresponses.Response(text=json.dumps(api_token_json), status=200),
+            aresponses.Response(
+                text=load_fixture("api_token_response.json"), status=200
+            ),
         )
         v2_server.add(
             "api.simplisafe.com",
             "/v1/api/authCheck",
             "get",
-            aresponses.Response(text=json.dumps(auth_check_json), status=200),
+            aresponses.Response(
+                text=load_fixture("auth_check_response.json"), status=200
+            ),
         )
         v2_server.add(
             "api.simplisafe.com",
             f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
-            aresponses.Response(text=json.dumps(v2_subscriptions_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v2_subscriptions_response.json"), status=200,
+            ),
         )
         v2_server.add(
             "api.simplisafe.com",
             f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/settings",
             "get",
-            aresponses.Response(text=json.dumps(unavailable_feature_json), status=403),
+            aresponses.Response(
+                text=load_fixture("unavailable_feature_response.json"), status=403,
+            ),
         )
         v2_server.add(
             "api.simplisafe.com",
             f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/state",
             "post",
-            aresponses.Response(text=json.dumps(unavailable_feature_json), status=403),
+            aresponses.Response(
+                text=load_fixture("unavailable_feature_response.json"), status=403,
+            ),
         )
 
         async with aiohttp.ClientSession() as websession:
@@ -296,14 +309,8 @@ async def test_unavailable_feature_v2(  # pylint: disable=too-many-arguments
 
 
 @pytest.mark.asyncio
-async def test_unavailable_feature_v3(  # pylint: disable=too-many-arguments
-    api_token_json,
-    auth_check_json,
-    caplog,
-    v3_server,
-    v3_settings_json,
-    v3_subscriptions_json,
-    unavailable_feature_json,
+async def test_unavailable_feature_v3(
+    caplog, v3_server,
 ):
     """Test that a message is logged with an unavailable feature."""
     caplog.set_level(logging.INFO)
@@ -313,37 +320,49 @@ async def test_unavailable_feature_v3(  # pylint: disable=too-many-arguments
             "api.simplisafe.com",
             "/v1/api/token",
             "post",
-            aresponses.Response(text=json.dumps(api_token_json), status=200),
+            aresponses.Response(
+                text=load_fixture("api_token_response.json"), status=200
+            ),
         )
         v3_server.add(
             "api.simplisafe.com",
             "/v1/api/authCheck",
             "get",
-            aresponses.Response(text=json.dumps(auth_check_json), status=200),
+            aresponses.Response(
+                text=load_fixture("auth_check_response.json"), status=200
+            ),
         )
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
-            aresponses.Response(text=json.dumps(v3_subscriptions_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v3_subscriptions_response.json"), status=200,
+            ),
         )
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/sensors",
             "get",
-            aresponses.Response(text=json.dumps(unavailable_feature_json), status=403),
+            aresponses.Response(
+                text=load_fixture("unavailable_feature_response.json"), status=403,
+            ),
         )
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
             "get",
-            aresponses.Response(text=json.dumps(v3_settings_json), status=200),
+            aresponses.Response(
+                text=load_fixture("v3_settings_response.json"), status=200
+            ),
         )
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/state/away",
             "post",
-            aresponses.Response(text=json.dumps(unavailable_feature_json), status=403),
+            aresponses.Response(
+                text=load_fixture("unavailable_feature_response.json"), status=403,
+            ),
         )
 
         async with aiohttp.ClientSession() as websession:

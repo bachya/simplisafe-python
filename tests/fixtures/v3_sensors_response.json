@@ -1,0 +1,517 @@
+{
+    "account": 12345,
+    "success": true,
+    "sensors": [
+        {
+            "type": 5,
+            "serial": "825",
+            "name": "Fire Door",
+            "setting": {
+                "instantTrigger": false,
+                "away2": 1,
+                "away": 1,
+                "home2": 1,
+                "home": 1,
+                "off": 0
+            },
+            "status": {
+                "triggered": false
+            },
+            "flags": {
+                "swingerShutdown": false,
+                "lowBattery": false,
+                "offline": false
+            }
+        },
+        {
+            "type": 5,
+            "serial": "14",
+            "name": "Front Door",
+            "setting": {
+                "instantTrigger": false,
+                "away2": 1,
+                "away": 1,
+                "home2": 1,
+                "home": 1,
+                "off": 0
+            },
+            "status": {
+                "triggered": false
+            },
+            "flags": {
+                "swingerShutdown": false,
+                "lowBattery": false,
+                "offline": false
+            }
+        },
+        {
+            "type": 5,
+            "serial": "185",
+            "name": "Patio Door",
+            "setting": {
+                "instantTrigger": true,
+                "away2": 1,
+                "away": 1,
+                "home2": 1,
+                "home": 1,
+                "off": 0
+            },
+            "status": {
+                "triggered": false
+            },
+            "flags": {
+                "swingerShutdown": false,
+                "lowBattery": false,
+                "offline": false
+            }
+        },
+        {
+            "type": 13,
+            "serial": "236",
+            "name": "Basement",
+            "setting": {
+                "alarmVolume": 3,
+                "doorChime": 0,
+                "exitBeeps": 0,
+                "entryBeeps": 2
+            },
+            "status": {},
+            "flags": {
+                "swingerShutdown": false,
+                "lowBattery": false,
+                "offline": false
+            }
+        },
+        {
+            "type": 3,
+            "serial": "789",
+            "name": "Front Door",
+            "setting": {
+                "alarm": 1
+            },
+            "status": {},
+            "flags": {
+                "swingerShutdown": false,
+                "lowBattery": false,
+                "offline": false
+            }
+        },
+        {
+            "type": 3,
+            "serial": "822",
+            "name": "Master BR",
+            "setting": {
+                "alarm": 1
+            },
+            "status": {},
+            "flags": {
+                "swingerShutdown": false,
+                "lowBattery": false,
+                "offline": false
+            }
+        },
+        {
+            "type": 1,
+            "serial": "972",
+            "name": "Kitchen",
+            "setting": {
+                "lowPowerMode": false,
+                "alarm": 1
+            },
+            "status": {},
+            "flags": {
+                "swingerShutdown": false,
+                "lowBattery": false,
+                "offline": false
+            }
+        },
+        {
+            "type": 8,
+            "serial": "93",
+            "name": "Upstairs",
+            "setting": {},
+            "status": {
+                "test": false,
+                "tamper": false,
+                "malfunction": false,
+                "triggered": false
+            },
+            "flags": {
+                "swingerShutdown": false,
+                "lowBattery": false,
+                "offline": false
+            }
+        },
+        {
+            "type": 8,
+            "serial": "650",
+            "name": "Downstairs",
+            "setting": {},
+            "status": {
+                "test": false,
+                "tamper": false,
+                "malfunction": false,
+                "triggered": false
+            },
+            "flags": {
+                "swingerShutdown": false,
+                "lowBattery": false,
+                "offline": false
+            }
+        },
+        {
+            "type": 6,
+            "serial": "491",
+            "name": "Basement N",
+            "setting": {
+                "instantTrigger": false,
+                "away2": 1,
+                "away": 1,
+                "home2": 1,
+                "home": 1,
+                "off": 0
+            },
+            "status": {},
+            "flags": {
+                "swingerShutdown": false,
+                "lowBattery": false,
+                "offline": false
+            }
+        },
+        {
+            "type": 6,
+            "serial": "280",
+            "name": "Mud Counter",
+            "setting": {
+                "instantTrigger": false,
+                "away2": 1,
+                "away": 1,
+                "home2": 1,
+                "home": 1,
+                "off": 0
+            },
+            "status": {},
+            "flags": {
+                "swingerShutdown": false,
+                "lowBattery": false,
+                "offline": false
+            }
+        },
+        {
+            "type": 6,
+            "serial": "430",
+            "name": "Basement S",
+            "setting": {
+                "instantTrigger": false,
+                "away2": 1,
+                "away": 1,
+                "home2": 1,
+                "home": 1,
+                "off": 0
+            },
+            "status": {},
+            "flags": {
+                "swingerShutdown": false,
+                "lowBattery": false,
+                "offline": false
+            }
+        },
+        {
+            "type": 9,
+            "serial": "129",
+            "name": "Laundry",
+            "setting": {
+                "alarm": 1
+            },
+            "status": {
+                "triggered": false
+            },
+            "flags": {
+                "swingerShutdown": false,
+                "lowBattery": false,
+                "offline": false
+            }
+        },
+        {
+            "type": 9,
+            "serial": "975",
+            "name": "Basement",
+            "setting": {
+                "alarm": 1
+            },
+            "status": {
+                "triggered": false
+            },
+            "flags": {
+                "swingerShutdown": false,
+                "lowBattery": false,
+                "offline": false
+            }
+        },
+        {
+            "type": 9,
+            "serial": "382",
+            "name": "Fridge",
+            "setting": {
+                "alarm": 1
+            },
+            "status": {
+                "triggered": false
+            },
+            "flags": {
+                "swingerShutdown": false,
+                "lowBattery": false,
+                "offline": false
+            }
+        },
+        {
+            "type": 10,
+            "serial": "320",
+            "name": "Basement",
+            "setting": {
+                "highTemp": 95,
+                "lowTemp": 41,
+                "alarm": 1
+            },
+            "status": {
+                "temperature": 67,
+                "triggered": false
+            },
+            "flags": {
+                "swingerShutdown": false,
+                "lowBattery": false,
+                "offline": false
+            }
+        },
+        {
+            "type": 4,
+            "serial": "785",
+            "name": "Upstairs",
+            "setting": {
+                "instantTrigger": false,
+                "away2": 1,
+                "away": 1,
+                "home2": 0,
+                "home": 0,
+                "off": 0
+            },
+            "status": {},
+            "flags": {
+                "swingerShutdown": false,
+                "lowBattery": false,
+                "offline": false
+            }
+        },
+        {
+            "type": 4,
+            "serial": "934",
+            "name": "Downstairs",
+            "setting": {
+                "instantTrigger": false,
+                "away2": 1,
+                "away": 1,
+                "home2": 0,
+                "home": 0,
+                "off": 0
+            },
+            "status": {},
+            "flags": {
+                "swingerShutdown": false,
+                "lowBattery": false,
+                "offline": false
+            }
+        },
+        {
+            "type": 6,
+            "serial": "634",
+            "name": "Landing",
+            "setting": {
+                "instantTrigger": false,
+                "away2": 1,
+                "away": 1,
+                "home2": 1,
+                "home": 1,
+                "off": 0
+            },
+            "status": {},
+            "flags": {
+                "swingerShutdown": false,
+                "lowBattery": false,
+                "offline": false
+            }
+        },
+        {
+            "type": 6,
+            "serial": "801",
+            "name": "Living Room",
+            "setting": {
+                "instantTrigger": false,
+                "away2": 1,
+                "away": 1,
+                "home2": 1,
+                "home": 1,
+                "off": 0
+            },
+            "status": {},
+            "flags": {
+                "swingerShutdown": false,
+                "lowBattery": false,
+                "offline": false
+            }
+        },
+        {
+            "type": 6,
+            "serial": "946",
+            "name": "Eating Area",
+            "setting": {
+                "instantTrigger": false,
+                "away2": 1,
+                "away": 1,
+                "home2": 1,
+                "home": 1,
+                "off": 0
+            },
+            "status": {},
+            "flags": {
+                "swingerShutdown": false,
+                "lowBattery": false,
+                "offline": false
+            }
+        },
+        {
+            "serial": "987",
+            "type": 16,
+            "status": {
+                "pinPadState": 0,
+                "lockState": 1,
+                "pinPadOffline": false,
+                "pinPadLowBattery": false,
+                "lockDisabled": false,
+                "lockLowBattery": false,
+                "calibrationErrDelta": 0,
+                "calibrationErrZero": 0,
+                "lockJamState": 0
+            },
+            "name": "Front Door",
+            "deviceGroupID": 1,
+            "firmwareVersion": "1.0.0",
+            "bootVersion": "1.0.0",
+            "setting": {
+                "autoLock": 3,
+                "away": 1,
+                "home": 1,
+                "awayToOff": 0,
+                "homeToOff": 1
+            },
+            "flags": {
+                "swingerShutdown": false,
+                "lowBattery": false,
+                "offline": false
+            }
+        },
+        {
+            "serial": "654",
+            "type": 253,
+            "status": {},
+            "name": "Front Door",
+            "deviceGroupID": 1,
+            "setting": {},
+            "flags": {
+                "swingerShutdown": false,
+                "lowBattery": false,
+                "offline": false
+            }
+        },
+        {
+            "serial": "654",
+            "type": 16,
+            "status": {
+                "pinPadState": 0,
+                "lockState": 1,
+                "pinPadOffline": false,
+                "pinPadLowBattery": false,
+                "lockDisabled": false,
+                "lockLowBattery": false,
+                "calibrationErrDelta": 0,
+                "calibrationErrZero": 0,
+                "lockJamState": 1
+            },
+            "name": "Back Door",
+            "deviceGroupID": 1,
+            "firmwareVersion": "1.0.0",
+            "bootVersion": "1.0.0",
+            "setting": {
+                "autoLock": 3,
+                "away": 1,
+                "home": 1,
+                "awayToOff": 0,
+                "homeToOff": 1
+            },
+            "flags": {
+                "swingerShutdown": false,
+                "lowBattery": false,
+                "offline": false
+            }
+        },
+        {
+            "serial": "654",
+            "type": 253,
+            "status": {},
+            "name": "Front Door",
+            "deviceGroupID": 1,
+            "setting": {},
+            "flags": {
+                "swingerShutdown": false,
+                "lowBattery": false,
+                "offline": false
+            }
+        },
+        {
+            "serial": "321",
+            "type": 16,
+            "status": {
+                "pinPadState": 0,
+                "lockState": 42,
+                "pinPadOffline": false,
+                "pinPadLowBattery": false,
+                "lockDisabled": false,
+                "lockLowBattery": false,
+                "calibrationErrDelta": 0,
+                "calibrationErrZero": 0,
+                "lockJamState": 0
+            },
+            "name": "Side Door",
+            "deviceGroupID": 1,
+            "firmwareVersion": "1.0.0",
+            "bootVersion": "1.0.0",
+            "setting": {
+                "autoLock": 3,
+                "away": 1,
+                "home": 1,
+                "awayToOff": 0,
+                "homeToOff": 1
+            },
+            "flags": {
+                "swingerShutdown": false,
+                "lowBattery": false,
+                "offline": false
+            }
+        },
+        {
+            "serial": "654",
+            "type": 253,
+            "status": {},
+            "name": "Front Door",
+            "deviceGroupID": 1,
+            "setting": {},
+            "flags": {
+                "swingerShutdown": false,
+                "lowBattery": false,
+                "offline": false
+            }
+        }
+    ],
+    "lastUpdated": 1534626361,
+    "lastSynced": 1534626361,
+    "lastStatusUpdate": 1534626358
+}

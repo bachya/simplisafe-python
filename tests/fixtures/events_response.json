@@ -1,0 +1,48 @@
+{
+    "numEvents": 2,
+    "lastEventTimestamp": 1534035861,
+    "events": [
+        {
+            "eventId": 2921814837,
+            "eventTimestamp": 1534720376,
+            "eventCid": 3401,
+            "zoneCid": "0",
+            "sensorType": 1,
+            "sensorSerial": "123",
+            "account": 12345,
+            "userId": 12345,
+            "sid": 12345,
+            "info": "System Armed (Away) by Keypad Garage Keypad",
+            "pinName": "",
+            "sensorName": "Garage Keypad",
+            "messageSubject": "SimpliSafe System Armed (away mode)",
+            "messageBody": "System Armed (away mode)",
+            "eventType": "activity",
+            "timezone": 2,
+            "locationOffset": -360,
+            "videoStartedBy": "",
+            "video": {}
+        },
+        {
+            "eventId": 2920433155,
+            "eventTimestamp": 1534702778,
+            "eventCid": 1400,
+            "zoneCid": "1",
+            "sensorType": 1,
+            "sensorSerial": "456",
+            "account": 12345,
+            "userId": 12345,
+            "sid": 12345,
+            "info": "System Disarmed by Master PIN",
+            "pinName": "Master PIN",
+            "sensorName": "Garage Keypad",
+            "messageSubject": "SimpliSafe System Disarmed",
+            "messageBody": "System Disarmed",
+            "eventType": "activity",
+            "timezone": 2,
+            "locationOffset": -360,
+            "videoStartedBy": "",
+            "video": {}
+        }
+    ]
+}

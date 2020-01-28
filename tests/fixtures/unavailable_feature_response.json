@@ -1,0 +1,5 @@
+{
+    "errorType": "NoRemoteManagement",
+    "code": 403,
+    "message": "Subscription 12345 does not support remote management"
+}

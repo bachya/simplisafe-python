@@ -1,0 +1,21 @@
+{
+    "eventId": "xxxxxxxxxxxxx",
+    "eventTimestamp": "xxxxxxxxxxxxx",
+    "eventCid": 1400,
+    "zoneCid": "1",
+    "sensorType": 1,
+    "sensorSerial": "xxxxx",
+    "account": "xxxxx",
+    "userId": "xxxxxxx",
+    "sid": "xxxxxxx",
+    "info": "System Disarmed by Master PIN",
+    "pinName": "Master PIN",
+    "sensorName": "Garage Keypad",
+    "messageSubject": "SimpliSafe System Disarmed",
+    "messageBody": "System Disarmed: Your SimpliSafe security system was disarmed.",
+    "eventType": "activity",
+    "timezone": 2,
+    "locationOffset": -420,
+    "videoStartedBy": "",
+    "video": {}
+}

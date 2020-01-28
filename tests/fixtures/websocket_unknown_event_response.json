@@ -1,0 +1,21 @@
+{
+    "eventId": 1231231231,
+    "eventTimestamp": 1231231231,
+    "eventCid": 1231,
+    "zoneCid": "3",
+    "sensorType": 0,
+    "sensorSerial": "",
+    "account": "xxxxxxxx",
+    "userId": 123123,
+    "sid": 123123,
+    "info": "System Went Totally Nuts!",
+    "pinName": "",
+    "sensorName": "",
+    "messageSubject": "SimpliSafe System Armed (home mode)",
+    "messageBody": "System Armed (home mode)",
+    "eventType": "activity",
+    "timezone": 2,
+    "locationOffset": -420,
+    "videoStartedBy": "",
+    "video": {}
+}

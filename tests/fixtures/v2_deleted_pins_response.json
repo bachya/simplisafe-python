@@ -1,0 +1,27 @@
+{
+    "pins": {
+        "pin1": {
+            "value": "1234"
+        },
+        "pin2": {
+            "value": "3456",
+            "name": "Mother"
+        },
+        "pin3": {
+            "value": "",
+            "name": ""
+        },
+        "pin4": {
+            "value": "",
+            "name": ""
+        },
+        "pin5": {
+            "value": "",
+            "name": ""
+        },
+        "duress": {
+            "value": "9876"
+        }
+    },
+    "lastUpdated": 1563208180
+}

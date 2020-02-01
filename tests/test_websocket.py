@@ -154,7 +154,7 @@ def test_event_types(caplog):
     event_type = get_event_type_from_payload(
         json.loads(load_fixture("websocket_known_event_response.json"))
     )
-    assert event_type == "disarmed"
+    assert event_type == "disarmed_by_master_pin"
 
     get_event_type_from_payload(
         json.loads(load_fixture("websocket_unknown_event_response.json"))

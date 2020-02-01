@@ -12,29 +12,54 @@ _LOGGER = logging.getLogger(__name__)
 
 API_URL_BASE: str = "wss://api.simplisafe.com/socket.io"
 
+EVENT_ALARM_CANCELED = "alarm_canceled"
+EVENT_ALARM_TRIGGERED = "alarm_triggered"
+EVENT_ARMED_AWAY = "armed_away"
+EVENT_ARMED_AWAY_BY_KEYPAD = "armed_away_by_keypad"
+EVENT_ARMED_AWAY_BY_REMOTE = "armed_away_by_remote"
+EVENT_ARMED_HOME = "armed_home"
 EVENT_AUTOMATIC_TEST = "automatic_test"
-EVENT_SENSOR_ENTRY_DETECTED = "entry_detected"
-EVENT_SENSOR_ERROR = "sensor_error"
-EVENT_SENSOR_RESTORED = "sensor_restored"
-EVENT_SYSTEM_ARMED_AWAY = "armed_away"
-EVENT_SYSTEM_ARMED_HOME = "armed_home"
-EVENT_SYSTEM_ARMING = "arming"
-EVENT_SYSTEM_DISARMED = "disarmed"
-EVENT_SYSTEM_TRIGGERED = "triggered"
+EVENT_AWAY_EXIT_DELAY_BY_KEYPAD = "away_exit_delay_by_keypad"
+EVENT_AWAY_EXIT_DELAY_BY_REMOTE = "away_exit_delay_by_remote"
+EVENT_CAMERA_MOTION_DETECTED = "camera_motion_detected"
+EVENT_DISARMED_BY_MASTER_PIN = "disarmed_by_master_pin"
+EVENT_DISARMED_BY_REMOTE = "disarmed_by_remote"
+EVENT_DOORBELL_DETECTED = "doorbell_detected"
+EVENT_ENTRY_DETECTED = "entry_detected"
+EVENT_HOME_EXIT_DELAY = "home_exit_delay"
+EVENT_LOCK_ERROR = "lock_error"
+EVENT_LOCK_LOCKED = "lock_locked"
+EVENT_LOCK_UNLOCKED = "lock_unlocked"
+EVENT_MOTION_DETECTED = "motion_detected"
 
 EVENT_MAPPING = {
-    1134: EVENT_SYSTEM_TRIGGERED,
-    1381: EVENT_SENSOR_ERROR,
-    1400: EVENT_SYSTEM_DISARMED,
-    1407: EVENT_SYSTEM_DISARMED,
-    1429: EVENT_SENSOR_ENTRY_DETECTED,
+    1110: EVENT_ALARM_TRIGGERED,
+    1120: EVENT_ALARM_TRIGGERED,
+    1132: EVENT_ALARM_TRIGGERED,
+    1134: EVENT_ALARM_TRIGGERED,
+    1154: EVENT_ALARM_TRIGGERED,
+    1159: EVENT_ALARM_TRIGGERED,
+    1162: EVENT_ALARM_TRIGGERED,
+    1170: EVENT_CAMERA_MOTION_DETECTED,
+    1400: EVENT_DISARMED_BY_MASTER_PIN,
+    1406: EVENT_ALARM_CANCELED,
+    1407: EVENT_DISARMED_BY_REMOTE,
+    1409: EVENT_MOTION_DETECTED,
+    1429: EVENT_ENTRY_DETECTED,
+    1458: EVENT_DOORBELL_DETECTED,
     1602: EVENT_AUTOMATIC_TEST,
-    3381: EVENT_SENSOR_RESTORED,
-    3401: EVENT_SYSTEM_ARMED_AWAY,
-    3407: EVENT_SYSTEM_ARMED_AWAY,
-    3441: EVENT_SYSTEM_ARMED_HOME,
-    9401: EVENT_SYSTEM_ARMING,
-    9407: EVENT_SYSTEM_ARMING,
+    3401: EVENT_ARMED_AWAY_BY_KEYPAD,
+    3407: EVENT_ARMED_AWAY_BY_REMOTE,
+    3441: EVENT_ARMED_HOME,
+    3481: EVENT_ARMED_AWAY,
+    3487: EVENT_ARMED_AWAY,
+    3491: EVENT_ARMED_HOME,
+    9401: EVENT_AWAY_EXIT_DELAY_BY_KEYPAD,
+    9407: EVENT_AWAY_EXIT_DELAY_BY_REMOTE,
+    9441: EVENT_HOME_EXIT_DELAY,
+    9700: EVENT_LOCK_UNLOCKED,
+    9701: EVENT_LOCK_LOCKED,
+    9703: EVENT_LOCK_ERROR,
 }
 
 
@@ -46,21 +71,31 @@ def get_event_type_from_payload(payload: dict) -> Optional[str]:
     :meth:`simplipy.websocket.Websocket.on_event`.
 
     Returns one of the following:
-        * ``armed_away``
-        * ``armed_home``
-        * ``arming``
-        * ``automatic_test``
-        * ``disarmed``
-        * ``entry_detected``
-        * ``sensor_error``
-        * ``sensor_restored``
+       * ``alarm_canceled``
+       * ``alarm_triggered``
+       * ``armed_away_by_keypad``
+       * ``armed_away_by_remote``
+       * ``armed_away``
+       * ``armed_home``
+       * ``automatic_test``
+       * ``away_exit_delay_by_keypad``
+       * ``away_exit_delay_by_remote``
+       * ``camera_motion_detected``
+       * ``disarmed_by_master_pin``
+       * ``disarmed_by_remote``
+       * ``doorbell_detected``
+       * ``entry_detected``
+       * ``home_exit_delay``
+       * ``lock_error``
+       * ``lock_locked``
+       * ``lock_unlocked``
+       * ``motion_detected``
 
     :param payload: A event payload
     :type payload: ``dict``
     :rtype: ``str``
     """
     event_cid = payload["eventCid"]
-
     if event_cid not in EVENT_MAPPING:
         _LOGGER.warning(
             'Encountered unknown websocket event type: %s ("%s"). Please report it at'
@@ -69,7 +104,6 @@ def get_event_type_from_payload(payload: dict) -> Optional[str]:
             payload["info"],
         )
         return None
-
     return EVENT_MAPPING[event_cid]
 
 

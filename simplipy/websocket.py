@@ -85,6 +85,8 @@ def get_event_type_from_payload(payload: dict) -> Optional[str]:
        * ``away_exit_delay_by_keypad``
        * ``away_exit_delay_by_remote``
        * ``camera_motion_detected``
+       * ``connection_lost``
+       * ``connection_restored``
        * ``disarmed_by_master_pin``
        * ``disarmed_by_remote``
        * ``doorbell_detected``

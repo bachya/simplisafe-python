@@ -170,6 +170,8 @@ This helper will currently return one of the following values:
 * ``away_exit_delay_by_keypad``
 * ``away_exit_delay_by_remote``
 * ``camera_motion_detected``
+* ``connection_lost``
+* ``connection_restored``
 * ``disarmed_by_master_pin``
 * ``disarmed_by_remote``
 * ``doorbell_detected``

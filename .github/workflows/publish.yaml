@@ -29,13 +29,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
       - name: Set up Python 3.7
         uses: actions/setup-python@v1
         with:
           python-version: 3.7
 
-      - name: Install Poetry
-        uses: dschep/install-poetry-action@v1.3
-
       - name: Publish to PyPI
-        run: poetry publish --build -u __token__ -p ${{ secrets.PYPI_API_KEY }}
+        run: |
+          pip install poetry
+          poetry publish --build -u __token__ -p  ${{ secrets.PYPI_API_KEY }}

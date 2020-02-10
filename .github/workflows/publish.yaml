@@ -1,0 +1,41 @@
+---
+name: "Create & Publish a Release"
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  create_release:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          with:
+            tag_name: ${{ github.ref }}
+            release_name: ${{ github.ref }}
+            draft: true
+
+  publish_to_pypi:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+
+      - name: Install Poetry
+        uses: dschep/install-poetry-action@v1.3
+
+      - name: Publish to PyPI
+        run: poetry build --publish -u __token__ -p {{ secrets.PYPI_API_KEY }}

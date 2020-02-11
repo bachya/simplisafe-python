@@ -111,5 +111,4 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: shellcheck
-        uses: ludeeus/actions/shellcheck@master
+      - uses: ludeeus/actions/shellcheck@master

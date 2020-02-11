@@ -24,23 +24,28 @@ async def main() -> None:
                 SIMPLISAFE_EMAIL, SIMPLISAFE_PASSWORD, websession
             )
             systems = await simplisafe.get_systems()
-            for system in systems.values():
-                for serial, lock in system.locks.items():
-                    _LOGGER.info(
-                        "Lock %s: (name: %s, state: %s)", serial, lock.name, lock.state
-                    )
-                    if lock.state == LockStates.unlocked:
-                        _LOGGER.info("Locking...")
-                        await lock.lock()
-                        await asyncio.sleep(3)
-                        _LOGGER.info("Unlocking...")
-                        await lock.unlock()
-                    else:
-                        _LOGGER.info("Unlocking...")
-                        await lock.unlock()
-                        await asyncio.sleep(3)
-                        _LOGGER.info("Locking...")
-                        await lock.lock()
+        except SimplipyError as err:
+            _LOGGER.error("Error while getting systems: %s", err)
+            return
+
+        try:
+            first_system = next(iter(systems.values()))
+            for serial, lock in first_system.locks.items():
+                _LOGGER.info(
+                    "Lock %s: (name: %s, state: %s)", serial, lock.name, lock.state
+                )
+                if lock.state == LockStates.unlocked:
+                    _LOGGER.info("Locking...")
+                    await lock.lock()
+                    await asyncio.sleep(3)
+                    _LOGGER.info("Unlocking...")
+                    await lock.unlock()
+                else:
+                    _LOGGER.info("Unlocking...")
+                    await lock.unlock()
+                    await asyncio.sleep(3)
+                    _LOGGER.info("Locking...")
+                    await lock.lock()
         except SimplipyError as err:
             _LOGGER.error(err)
 

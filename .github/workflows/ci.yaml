@@ -111,4 +111,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - uses: ludeeus/actions/shellcheck@master
+      - run: |
+          apt-get install shellcheck
+          shellcheck script/

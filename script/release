@@ -6,7 +6,7 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-if [ -z "$(type poetry)" ]; then
+if [ -z "$(command -v poetry)" ]; then
     echo "Poetry needs to be installed to run this script: pip3 install poetry"
     exit 1
 fi

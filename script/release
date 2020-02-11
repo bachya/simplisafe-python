@@ -1,12 +1,12 @@
 #!/bin/sh
 set -e
 
-if [[ -z "$1" ]]; then
+if [ -z "$1" ]; then
     echo "Usage: script/release [patch | minor | major]"
     exit 1
 fi
 
-if [[ -z $(type -p "poetry") ]]; then
+if [ -z "$(type poetry)" ]; then
     echo "Poetry needs to be installed to run this script: pip3 install poetry"
     exit 1
 fi

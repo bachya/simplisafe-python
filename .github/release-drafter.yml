@@ -9,8 +9,8 @@ categories:
   - title: "🧰 Maintenance"
     labels:
       - "ci/cd"
-      - "cleanup"
       - "dependencies"
+      - "tooling"
 change-template: "- $TITLE (#$NUMBER)"
 name-template: "$NEXT_PATCH_VERSION"
 tag-template: "$NEXT_PATCH_VERSION"

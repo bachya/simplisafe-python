@@ -112,5 +112,5 @@ jobs:
       - uses: actions/checkout@v2
 
       - run: |
-          apt-get install shellcheck
+          sudo apt-get install shellcheck
           shellcheck script/

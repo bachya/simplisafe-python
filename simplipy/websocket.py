@@ -33,6 +33,8 @@ EVENT_LOCK_ERROR = "lock_error"
 EVENT_LOCK_LOCKED = "lock_locked"
 EVENT_LOCK_UNLOCKED = "lock_unlocked"
 EVENT_MOTION_DETECTED = "motion_detected"
+EVENT_SENSOR_NOT_RESPONDING = "sensor_not_responding"
+EVENT_SENSOR_RESTORED = "sensor_restored"
 
 EVENT_MAPPING = {
     1110: EVENT_ALARM_TRIGGERED,
@@ -44,6 +46,7 @@ EVENT_MAPPING = {
     1162: EVENT_ALARM_TRIGGERED,
     1170: EVENT_CAMERA_MOTION_DETECTED,
     1350: EVENT_CONNECTION_LOST,
+    1381: EVENT_SENSOR_NOT_RESPONDING,
     1400: EVENT_DISARMED_BY_MASTER_PIN,
     1406: EVENT_ALARM_CANCELED,
     1407: EVENT_DISARMED_BY_REMOTE,
@@ -52,6 +55,7 @@ EVENT_MAPPING = {
     1458: EVENT_DOORBELL_DETECTED,
     1602: EVENT_AUTOMATIC_TEST,
     3350: EVENT_CONNECTION_RESTORED,
+    3381: EVENT_SENSOR_RESTORED,
     3401: EVENT_ARMED_AWAY_BY_KEYPAD,
     3407: EVENT_ARMED_AWAY_BY_REMOTE,
     3441: EVENT_ARMED_HOME,
@@ -96,6 +100,8 @@ def get_event_type_from_payload(payload: dict) -> Optional[str]:
        * ``lock_locked``
        * ``lock_unlocked``
        * ``motion_detected``
+       * ``sensor_not_responding``
+       * ``sensor_restored``
 
     :param payload: A event payload
     :type payload: ``dict``

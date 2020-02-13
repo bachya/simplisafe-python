@@ -181,6 +181,8 @@ This helper will currently return one of the following values:
 * ``lock_locked``
 * ``lock_unlocked``
 * ``motion_detected``
+* ``sensor_not_responding``
+* ``sensor_restored``
 
 If you should come across an event type that the helper does not know about (and see
 a logger warning about it), please open an issue at

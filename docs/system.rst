@@ -54,7 +54,7 @@ All ``System`` objects come with a standard set of properties
     system.connection_type
     # >>> "cell"
 
-    # Return a list of sensors attached to this sytem
+    # Return a list of sensors attached to this system
     # (detailed later):
     system.sensors
     # >>> [<simplipy.sensor.SensorV2 object>, ...]

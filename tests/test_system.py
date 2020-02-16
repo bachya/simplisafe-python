@@ -927,6 +927,11 @@ async def test_update_system_data_v3(aresponses, v3_server):
 
             await system.update()
 
+            assert len(system.messages) == 1
+
+            message = system.messages[0]
+            assert message.code == "2000"
+
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.system_id == TEST_SYSTEM_ID
             assert simplisafe._access_token == TEST_ACCESS_TOKEN

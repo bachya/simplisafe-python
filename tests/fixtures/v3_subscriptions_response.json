@@ -53,7 +53,24 @@
                     "cameras": [],
                     "connType": "wifi",
                     "stateUpdated": 1573331519,
-                    "messages": [],
+                    "messages": [
+                        {
+                            "_id": "xxxxxxxxxxxxxxxxxxxxxxxx",
+                            "id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                            "textTemplate": "Power Outage - Backup battery in use.",
+                            "data": {
+                                "time": "2020-02-16T03:20:28+00:00"
+                            },
+                            "text": "Power Outage - Backup battery in use.",
+                            "code": "2000",
+                            "filters": [],
+                            "link": "",
+                            "linkLabel": "",
+                            "expiration": 0,
+                            "category": "error",
+                            "timestamp": 1581823228
+                        }
+                    ],
                     "powerOutage": false,
                     "lastPowerOutage": 1570722271,
                     "lastSuccessfulWifiTS": 1573246093,

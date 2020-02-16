@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e
 
+REPO_PATH="$( dirname "$( cd "$(dirname "$0")" ; pwd -P )" )"
+
 if [ -z "$1" ]; then
     echo "Usage: script/release [patch | minor | major]"
     exit 1
@@ -15,6 +17,8 @@ if [ -z "$(command -v poetry)" ]; then
     echo "Poetry needs to be installed to run this script: pip3 install poetry"
     exit 1
 fi
+
+old_version="$(poetry version | awk -F' ' '{ print $2 }')"
 
 case "$1" in
     patch)
@@ -32,9 +36,16 @@ case "$1" in
         ;;
 esac
 
-# Get the new version, commit, tag, and push:
+# Update the PyPI package version:
 new_version="$(poetry version | awk -F' ' '{ print $2 }')"
 git add pyproject.toml
+
+# Update the docs version:
+sphinx_conf=$(sed "s/$old_version/$new_version/g" "$REPO_PATH/docs/conf.py")
+echo "$sphinx_conf" > "$REPO_PATH/docs/conf.py"
+git add docs/conf.py
+
+# Commit, tag, and push:
 git commit -m "Bump version to $new_version"
 git tag "$new_version"
 git push && git push --tags

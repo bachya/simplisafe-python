@@ -7,6 +7,7 @@ from socketio import AsyncClient
 from socketio.exceptions import ConnectionError as ConnError, SocketIOError
 
 from simplipy.errors import WebsocketError
+from simplipy.helpers.message import Message
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -125,6 +126,20 @@ def get_event_type_from_payload(payload: dict) -> Optional[str]:
     return EVENT_MAPPING[event_cid]
 
 
+def message_from_websocket_event(event: dict):
+    """Create a Message object from a websocket event payload."""
+    return Message(
+        get_event_type_from_payload(event),
+        event["info"],
+        event["sid"],
+        event["eventTimestamp"],
+        changed_by=event["pinName"],
+        sensor_name=event["sensorName"],
+        sensor_serial=event["sensorSerial"],
+        sensor_type=event["sensorType"],
+    )
+
+
 class Websocket:
     """A websocket connection to the SimpliSafe cloud.
 
@@ -199,7 +214,7 @@ class Websocket:
         """
         self._sync_disconnect_handler = target
 
-    def async_on_event(self, target: Callable[..., Awaitable]) -> None:
+    def async_on_event(self, target: Callable[..., Awaitable]) -> None:  # noqa: D202
         """Define a coroutine to be called an event is received.
 
         The couroutine will have a ``data`` parameter that contains the raw data from
@@ -208,9 +223,15 @@ class Websocket:
         :param target: A coroutine
         :type target: ``Callable[..., Awaitable]``
         """
-        self.on_event(target)
 
-    def on_event(self, target: Callable) -> None:
+        async def _async_on_event(event_data: dict):
+            """Act on the Message object."""
+            message = message_from_websocket_event(event_data)
+            await target(message)
+
+        self._sio.on("event", _async_on_event, namespace=self._namespace)
+
+    def on_event(self, target: Callable) -> None:  # noqa: D202
         """Define a synchronous method to be called when an event is received.
 
         The method will have a ``data`` parameter that contains the raw data from the
@@ -219,4 +240,10 @@ class Websocket:
         :param target: A synchronous function
         :type target: ``Callable``
         """
-        self._sio.on("event", target, namespace=self._namespace)
+
+        def _on_event(event_data: dict):
+            """Act on the Message object."""
+            message = message_from_websocket_event(event_data)
+            target(message)
+
+        self._sio.on("event", _on_event, namespace=self._namespace)

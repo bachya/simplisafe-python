@@ -9,8 +9,8 @@ from simplipy.errors import SimplipyError, WebsocketError
 
 _LOGGER = logging.getLogger()
 
-SIMPLISAFE_EMAIL = "<EMAIL>"  # nosec
-SIMPLISAFE_PASSWORD = "<PASSWORD>"  # nosec
+SIMPLISAFE_EMAIL = "bachya1208@gmail.com"  # nosec
+SIMPLISAFE_PASSWORD = "gcapt3c4uUTBjN*LpGo*gm3A!7Y8HP"  # nosec
 
 
 def print_data(data):
@@ -51,6 +51,12 @@ async def main() -> None:
 
         except SimplipyError as err:
             _LOGGER.error(err)
+
+        for _ in range(30):
+            _LOGGER.info("Simulating some other task occurring...")
+            await asyncio.sleep(5)
+
+        await simplisafe.websocket.disconnect()
 
 
 asyncio.get_event_loop().run_until_complete(main())

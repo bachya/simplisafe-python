@@ -49,7 +49,7 @@ async def test_connect_async_success(v3_server):
                 transports=["websocket"],
             )
 
-            await simplisafe.websocket._sio._trigger_event("connect", namespace="/")
+            await simplisafe.websocket._sio._trigger_event("connect", "/")
             on_connect.mock.assert_called_once()
 
 
@@ -80,7 +80,7 @@ async def test_connect_sync_success(v3_server):
                 transports=["websocket"],
             )
 
-            await simplisafe.websocket._sio._trigger_event("connect", namespace="/")
+            await simplisafe.websocket._sio._trigger_event("connect", "/")
             on_connect.assert_called_once()
 
 
@@ -133,16 +133,38 @@ async def test_async_events(v3_server):
                 transports=["websocket"],
             )
 
-            await simplisafe.websocket._sio._trigger_event("connect", namespace="/")
+            await simplisafe.websocket._sio._trigger_event("connect", "/")
             on_connect.mock.assert_called_once()
 
             await simplisafe.websocket._sio._trigger_event(
-                "event", namespace=f"/v1/user/{TEST_USER_ID}"
+                "event",
+                f"/v1/user/{TEST_USER_ID}",
+                {
+                    "eventId": 1231231231,
+                    "eventTimestamp": 1231231231,
+                    "eventCid": 1231,
+                    "zoneCid": "3",
+                    "sensorType": 0,
+                    "sensorSerial": "",
+                    "account": "xxxxxxxx",
+                    "userId": 123123,
+                    "sid": 123123,
+                    "info": "System Armed (Home) by Remote Management",
+                    "pinName": "",
+                    "sensorName": "",
+                    "messageSubject": "SimpliSafe System Armed (home mode)",
+                    "messageBody": "System Armed (home mode)",
+                    "eventType": "activity",
+                    "timezone": 2,
+                    "locationOffset": -420,
+                    "videoStartedBy": "",
+                    "video": {},
+                },
             )
             on_event.mock.assert_called_once()
 
             await simplisafe.websocket.async_disconnect()
-            await simplisafe.websocket._sio._trigger_event("disconnect", namespace="/")
+            await simplisafe.websocket._sio._trigger_event("disconnect", "/")
             simplisafe.websocket._sio.eio.disconnect.mock.assert_called_once_with(
                 abort=True
             )
@@ -195,16 +217,38 @@ async def test_sync_events(v3_server):
                 transports=["websocket"],
             )
 
-            await simplisafe.websocket._sio._trigger_event("connect", namespace="/")
+            await simplisafe.websocket._sio._trigger_event("connect", "/")
             on_connect.assert_called_once()
 
             await simplisafe.websocket._sio._trigger_event(
-                "event", namespace=f"/v1/user/{TEST_USER_ID}"
+                "event",
+                f"/v1/user/{TEST_USER_ID}",
+                {
+                    "eventId": 1231231231,
+                    "eventTimestamp": 1231231231,
+                    "eventCid": 1231,
+                    "zoneCid": "3",
+                    "sensorType": 0,
+                    "sensorSerial": "",
+                    "account": "xxxxxxxx",
+                    "userId": 123123,
+                    "sid": 123123,
+                    "info": "System Armed (Home) by Remote Management",
+                    "pinName": "",
+                    "sensorName": "",
+                    "messageSubject": "SimpliSafe System Armed (home mode)",
+                    "messageBody": "System Armed (home mode)",
+                    "eventType": "activity",
+                    "timezone": 2,
+                    "locationOffset": -420,
+                    "videoStartedBy": "",
+                    "video": {},
+                },
             )
             on_event.assert_called_once()
 
             await simplisafe.websocket.async_disconnect()
-            await simplisafe.websocket._sio._trigger_event("disconnect", namespace="/")
+            await simplisafe.websocket._sio._trigger_event("disconnect", "/")
             simplisafe.websocket._sio.eio.disconnect.mock.assert_called_once_with(
                 abort=True
             )

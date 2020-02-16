@@ -54,6 +54,10 @@ All ``System`` objects come with a standard set of properties
     system.connection_type
     # >>> "cell"
 
+    # Return a list of active messages/notifications:
+    system.messages
+    # >>> [<simplipy.system.SystemMessage object>, ...]
+
     # Return a list of sensors attached to this system
     # (detailed later):
     system.sensors
@@ -84,6 +88,15 @@ All ``System`` objects come with a standard set of properties
     # Return the SimpliSafe™ version:
     system.version
     # >>> 2
+
+``SystemMessage`` objects have the following fields available:
+
+* ``message_id``: the ID of the message
+* ``category``: the category of the message
+* ``code``: the internal SimpliSafe message code
+* ``text``: the text of the message
+* ``link``: a link to more information about the message
+* ``timestamp``: when the message was sent
 
 V3 Properties
 -------------

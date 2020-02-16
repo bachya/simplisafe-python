@@ -27,6 +27,7 @@ and more.
    sensor
    lock
    websocket
+   message
    advanced
    api
 

@@ -50,6 +50,13 @@ API Reference
 .. autoclass:: simplipy.errors.InvalidCredentialsError
    :members:
 
+``Message``
+------------------
+
+.. autoclass:: simplipy.helpers.message.Message
+   :members:
+   :undoc-members:
+
 ``PinError``
 ------------------
 

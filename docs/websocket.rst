@@ -49,8 +49,8 @@ or a coroutine).
 ``connect``
 ***********
 
-Asynchronous
-============
+Asynchronous Connect Callback
+=============================
 
 .. code:: python
 
@@ -59,8 +59,8 @@ Asynchronous
 
     simplisafe.websocket.async_on_connect(async_connect_handler)
 
-Synchronous
-===========
+Synchronous Connect Callback
+============================
 
 .. code:: python
 
@@ -72,8 +72,8 @@ Synchronous
 ``disconnect``
 **************
 
-Asynchronous
-============
+Asynchronous Disconnect Callback
+================================
 
 .. code:: python
 
@@ -82,8 +82,8 @@ Asynchronous
 
     simplisafe.websocket.async_on_disconnect(async_disconnect_handler)
 
-Synchronous
-===========
+Synchronous Disconnect Callback
+===============================
 
 .. code:: python
 
@@ -93,72 +93,41 @@ Synchronous
     simplisafe.websocket.on_disconnect(disconnect_handler)
 
 ``event``
-**************
+*********
 
-Asynchronous
-============
+Asynchronous Event Callback
+===========================
 
 .. code:: python
 
-    async def async_event_handler(data):
-        print(f"I also got some data: {data}")
+    async def async_event_handler(message):
+        print(f"SimpliSafe websocket message: {message}")
 
     simplisafe.websocket.async_on_event(async_event_handler)
 
-Synchronous
-===========
+Synchronous Event Callback
+==========================
 
 .. code:: python
 
-    def event_handler(data):
-        print(f"I got some data: {data}")
+    def event_handler(message):
+        print(f"SimpliSafe websocket message: {message}")
 
     simplisafe.websocket.on_event(event_handler)
 
 Response Format
 ===============
 
-The ``data`` argument has the same schema as data returned from ``system.get_events()``.
-For example, when the system is armed in home mode, users may expect a ``data`` argument
-with this value:
+The ``message`` argument will be a :ref:`message object <message:Messages>`:
 
-.. code:: json
-
-    {
-      "eventId": 1231231231,
-      "eventTimestamp": 1231231231,
-      "eventCid": 1231,
-      "zoneCid": "3",
-      "sensorType": 0,
-      "sensorSerial": "",
-      "account": "xxxxxxxx",
-      "userId": 123123,
-      "sid": 123123,
-      "info": "System Armed (Home) by Remote Management",
-      "pinName": "",
-      "sensorName": "",
-      "messageSubject": "SimpliSafe System Armed (home mode)",
-      "messageBody": "System Armed (home mode)",
-      "eventType": "activity",
-      "timezone": 2,
-      "locationOffset": -420,
-      "videoStartedBy": "",
-      "video": {}
-    }
-
-``simplisafe-python`` provides a helper to determine the type of websocket event
-represented by the ``data`` argument:
 
 .. code:: python
 
-    from simplipy.websocket import get_event_type_from_payload
+    print(message)
+    # >>> Message(event='alarm_canceled', message="The system was disarmed" ...)
 
-    def event_handler(data):
-        print(f"Event type: {get_event_type_from_payload(data)}")
 
-    simplisafe.websocket.on_event(event_handler)
-
-This helper will currently return one of the following values:
+...and the ``event`` property of that object will be one of the following:
 
 * ``alarm_canceled``
 * ``alarm_triggered``

@@ -181,6 +181,8 @@ This helper will currently return one of the following values:
 * ``lock_locked``
 * ``lock_unlocked``
 * ``motion_detected``
+* ``power_outage``
+* ``power_restored``
 * ``sensor_not_responding``
 * ``sensor_restored``
 

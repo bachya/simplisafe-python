@@ -104,6 +104,8 @@ def get_event_type_from_payload(payload: dict) -> Optional[str]:
        * ``lock_locked``
        * ``lock_unlocked``
        * ``motion_detected``
+       * ``power_outage``
+       * ``power_restored``
        * ``sensor_not_responding``
        * ``sensor_restored``
 

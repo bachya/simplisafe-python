@@ -88,31 +88,6 @@ def get_entity_class(
     return ENTITY_MAP[version].get(entity_type, ENTITY_MAP[version][CONF_DEFAULT])
 
 
-# @dataclass(frozen=True)
-# class SystemMessage:
-#     """Define a representation of a system message/notification."""
-
-#     message_data: InitVar[dict]
-
-#     message_id: str = field(init=False)
-#     category: str = field(init=False)
-#     code: int = field(init=False)
-#     text: str = field(init=False)
-#     link: Optional[str] = field(init=False)
-#     timestamp: datetime = field(init=False)
-
-#     def __post_init__(self, message_data):
-#         """Initialize."""
-#         object.__setattr__(self, "message_id", message_data["id"])
-#         object.__setattr__(self, "category", message_data["category"])
-#         object.__setattr__(self, "code", message_data["code"])
-#         object.__setattr__(self, "text", message_data["text"])
-#         object.__setattr__(self, "link", message_data["link"])
-#         object.__setattr__(
-#             self, "timestamp", datetime.fromtimestamp(message_data["timestamp"])
-#         )
-
-
 class SystemStates(Enum):
     """States that the system can be in."""
 
@@ -151,13 +126,13 @@ class System:
         """Initialize."""
         self._get_subscription_data: Callable[..., Coroutine] = get_subscription_data
         self._location_info: dict = location_info
+        self._messages: List[Message] = self._generate_messages_from_location_info()
         self._request: Callable[..., Coroutine] = request
-        self.locks: Dict[str, Lock] = {}
-        self.sensors: Dict[str, Union[SensorV2, SensorV3]] = {}
-
         self._state: SystemStates = self._coerce_state_from_string(
             location_info["system"]["alarmState"]
         )
+        self.locks: Dict[str, Lock] = {}
+        self.sensors: Dict[str, Union[SensorV2, SensorV3]] = {}
 
     @property
     def address(self) -> str:
@@ -189,23 +164,7 @@ class System:
 
         :rtype: ``List[:meth:`simplipy.helpers.message.Message`]``
         """
-        messages: List[Message] = []
-        for raw_message in self._location_info["system"]["messages"]:
-            category = raw_message["category"].title()
-            text = f'SimpliSafe {category} Code {raw_message["code"]}: {raw_message["text"]}'
-            if raw_message.get("link"):
-                text += f' More information: {raw_message["link"]}'
-
-            messages.append(
-                Message(
-                    EVENT_SYSTEM_NOTIFICATION,
-                    text,
-                    self.system_id,
-                    raw_message["timestamp"],
-                    message_id=raw_message["id"],
-                )
-            )
-        return messages
+        return self._messages
 
     @property
     def serial(self) -> str:
@@ -255,6 +214,27 @@ class System:
         except KeyError:
             _LOGGER.error("Unknown system state: %s", value)
             return SystemStates.unknown
+
+    def _generate_messages_from_location_info(self) -> List[Message]:
+        """Generate message objects from the message data stored in location_info."""
+        messages: List[Message] = []
+        print(self._location_info["system"])
+        for raw_message in self._location_info["system"]["messages"]:
+            category = raw_message["category"].title()
+            text = f'SimpliSafe {category} Code {raw_message["code"]}: {raw_message["text"]}'
+            if raw_message.get("link"):
+                text += f' More information: {raw_message["link"]}'
+
+            messages.append(
+                Message(
+                    EVENT_SYSTEM_NOTIFICATION,
+                    text,
+                    self.system_id,
+                    raw_message["timestamp"],
+                    message_id=raw_message["id"],
+                )
+            )
+        return messages
 
     async def _get_entities(self, cached: bool = True) -> None:
         """Update sensors to the latest values."""
@@ -311,6 +291,7 @@ class System:
         )
 
         self._location_info = location_info
+        self._messages = self._generate_messages_from_location_info()
         self._state = self._coerce_state_from_string(
             location_info["system"]["alarmState"]
         )

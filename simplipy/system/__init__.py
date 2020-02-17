@@ -218,7 +218,6 @@ class System:
     def _generate_messages_from_location_info(self) -> List[Message]:
         """Generate message objects from the message data stored in location_info."""
         messages: List[Message] = []
-        print(self._location_info["system"])
         for raw_message in self._location_info["system"]["messages"]:
             category = raw_message["category"].title()
             text = f'SimpliSafe {category} Code {raw_message["code"]}: {raw_message["text"]}'

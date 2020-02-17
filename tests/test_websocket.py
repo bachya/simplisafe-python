@@ -158,7 +158,7 @@ def test_create_websocket_event():
     """Test the successful creation of a message."""
     basic_event = WebsocketEvent(1110, "Alarm triggered!", 1234, 1581892842)
     assert basic_event.event_type == "alarm_triggered"
-    assert basic_event.message == "Alarm triggered!"
+    assert basic_event.info == "Alarm triggered!"
     assert basic_event.system_id == 1234
     assert basic_event.timestamp == datetime(2020, 2, 16, 22, 40, 42, tzinfo=pytz.UTC)
     assert not basic_event.changed_by
@@ -177,7 +177,7 @@ def test_create_websocket_event():
         sensor_type=5,
     )
     assert complete_event.event_type == "alarm_triggered"
-    assert complete_event.message == "Alarm triggered!"
+    assert complete_event.info == "Alarm triggered!"
     assert complete_event.system_id == 1234
     assert complete_event.timestamp == datetime(
         2020, 2, 16, 22, 40, 42, tzinfo=pytz.UTC

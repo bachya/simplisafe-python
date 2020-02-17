@@ -84,7 +84,7 @@ class WebsocketEvent:
     """Define a representation of a message."""
 
     event_cid: InitVar[int]
-    message: str
+    info: str
     system_id: int
     timestamp: datetime
 
@@ -104,7 +104,7 @@ class WebsocketEvent:
                 'Encountered unknown websocket event type: %s ("%s"). Please report it '
                 "at https://github.com/bachya/simplisafe-python/issues.",
                 event_cid,
-                self.message,
+                self.info,
             )
             object.__setattr__(self, "event_type", None)
 
@@ -118,7 +118,7 @@ class WebsocketEvent:
                     'Encountered unknown entity type: %s ("%s"). Please report it at'
                     "https://github.com/home-assistant/home-assistant/issues.",
                     self.sensor_type,
-                    self.message,
+                    self.info,
                 )
                 object.__setattr__(self, "sensor_type", None)
 

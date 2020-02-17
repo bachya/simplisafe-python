@@ -858,7 +858,7 @@ async def test_system_messages(aresponses, v3_server):
             message1 = system.messages[0]
             assert message1.message_id == "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
             assert message1.message == (
-                "SimpliSafe Error #2000: Power Outage - Backup battery in use. "
+                "SimpliSafe Error Code 2000: Power Outage - Backup battery in use. "
                 "More information: http://link.to.info"
             )
             assert message1.system_id == system.system_id

@@ -192,9 +192,7 @@ class System:
         messages: List[Message] = []
         for raw_message in self._location_info["system"]["messages"]:
             category = raw_message["category"].title()
-            text = (
-                f'SimpliSafe {category} #{raw_message["code"]}: {raw_message["text"]}'
-            )
+            text = f'SimpliSafe {category} Code {raw_message["code"]}: {raw_message["text"]}'
             if raw_message.get("link"):
                 text += f' More information: {raw_message["link"]}'
 

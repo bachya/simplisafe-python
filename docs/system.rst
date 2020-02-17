@@ -139,7 +139,7 @@ additional properties:
     # >>> True
 
      # Return any active system messages/notifications
-    system.messages
+    system.notifications
     # >>> [Message(...)]
 
     # Return whether the system is offline:

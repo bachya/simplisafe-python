@@ -4,7 +4,6 @@ from datetime import datetime
 import logging
 from typing import Awaitable, Callable, Optional
 from urllib.parse import urlencode
-from uuid import uuid4
 
 from socketio import AsyncClient
 from socketio.exceptions import ConnectionError as ConnError, SocketIOError
@@ -92,7 +91,6 @@ class WebsocketEvent:
     event_type: Optional[str] = field(init=False)
 
     changed_by: Optional[str] = None
-    message_id: str = field(default_factory=lambda: uuid4().hex)
     sensor_name: Optional[str] = None
     sensor_serial: Optional[str] = None
     sensor_type: Optional[EntityTypes] = None

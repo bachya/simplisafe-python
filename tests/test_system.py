@@ -868,10 +868,28 @@ async def test_system_messages(aresponses, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_unknown_initial_state(caplog):
+async def test_unknown_initial_state(aresponses, caplog, v3_server):
     """Test handling of an initially unknown state."""
-    _ = System(async_mock, async_mock, {"system": {"alarmState": "fake"}})
-    assert any("Unknown" in e.message for e in caplog.records)
+    async with v3_server:
+        v3_server.add(
+            "api.simplisafe.com",
+            f"/v1/users/{TEST_USER_ID}/subscriptions",
+            "get",
+            aresponses.Response(
+                text=load_fixture("v3_subscriptions_unknown_state_response.json"),
+                status=200,
+            ),
+        )
+
+        async with aiohttp.ClientSession() as websession:
+            simplisafe = await API.login_via_credentials(
+                TEST_EMAIL, TEST_PASSWORD, websession
+            )
+            systems = await simplisafe.get_systems()
+            first_system = next(iter(systems.values()))
+            await first_system.update(include_settings=False, include_entities=False)
+            assert any("Unknown system state" in e.message for e in caplog.records)
+            assert any("NOT_REAL_STATE" in e.message for e in caplog.records)
 
 
 @pytest.mark.asyncio

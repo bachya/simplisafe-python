@@ -54,9 +54,9 @@ All ``System`` objects come with a standard set of properties
     system.connection_type
     # >>> "cell"
 
-    # Return a list of active messages/notifications:
-    system.messages
-    # >>> [<simplipy.system.SystemMessage object>, ...]
+    # Return a list of active notifications:
+    system.notifications
+    # >>> [<simplipy.system.SystemNotification object>, ...]
 
     # Return a list of sensors attached to this system
     # (detailed later):
@@ -88,15 +88,6 @@ All ``System`` objects come with a standard set of properties
     # Return the SimpliSafe™ version:
     system.version
     # >>> 2
-
-``SystemMessage`` objects have the following fields available:
-
-* ``message_id``: the ID of the message
-* ``category``: the category of the message
-* ``code``: the internal SimpliSafe message code
-* ``text``: the text of the message
-* ``link``: a link to more information about the message
-* ``timestamp``: when the message was sent
 
 V3 Properties
 -------------
@@ -226,8 +217,8 @@ have limits imposed:
 Attempting to call these coroutines with a value beyond these limits will raise a
 ``SimplipyError``.
 
-Getting the Latest System Info
-------------------------------
+Updating the System
+-------------------
 
 Refreshing the ``System`` object is done via the ``update()`` coroutine:
 
@@ -271,8 +262,8 @@ of three coroutines:
     await system.set_off()
 
 
-Viewing Events
---------------
+Events
+------
 
 The ``System`` object allows users to view events that have occurred with their
 system:
@@ -287,8 +278,17 @@ system:
     await system.get_latest_event()
     # >>> {"eventId": 987, ...}
 
-Working with PINs
------------------
+System Notifications
+--------------------
+
+The ``notifications`` property of the ``System`` object contains any active system
+notifications (in the form of :meth:`simplipy.system.SystemNotification` objects).
+
+As notifications are cleared (via the SimpliSafe™ web app, etc.), they will disappear
+from the ``notifications`` property when the ``update()`` coroutine is called.
+
+PINs
+----
 
 ``simplipy`` allows users to easily retrieve, set, reset, and remove PINs
 associated with a SimpliSafe™ account:

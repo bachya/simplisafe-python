@@ -50,13 +50,6 @@ API Reference
 .. autoclass:: simplipy.errors.InvalidCredentialsError
    :members:
 
-``Message``
-------------------
-
-.. autoclass:: simplipy.helpers.message.Message
-   :members:
-   :undoc-members:
-
 ``PinError``
 ------------------
 
@@ -87,6 +80,13 @@ API Reference
 .. autoclass:: simplipy.system.System
    :members:
 
+``SystemNotification``
+-----------------------
+
+.. autoclass:: simplipy.system.SystemNotification
+   :members:
+   :undoc-members:
+
 ``SystemStates``
 -----------------------
 
@@ -114,6 +114,13 @@ API Reference
 
 ``Websocket``
 -----------------------
-.. autofunction:: simplipy.websocket.get_event_type_from_payload
+
 .. autoclass:: simplipy.websocket.Websocket
    :members:
+
+``WebsocketEvent``
+-----------------------
+
+.. autoclass:: simplipy.websocket.WebsocketEvent
+   :members:
+   :undoc-members:

@@ -17,15 +17,15 @@ events from a user's SimpliSafe™ system. This websocket can be accessed via th
     simplisafe.websocket
     # >>> <simplipy.websocket.Websocket object>
 
-Connecting to the Websocket
----------------------------
+Connecting
+----------
 
 .. code:: python
 
     await simplisafe.websocket.async_connect()
 
-Disconnecting from the Websocket
---------------------------------
+Disconnecting
+-------------
 
 .. code:: python
 
@@ -100,8 +100,8 @@ Asynchronous Event Callback
 
 .. code:: python
 
-    async def async_event_handler(message):
-        print(f"SimpliSafe websocket message: {message}")
+    async def async_event_handler(event):
+        print(f"SimpliSafe websocket event: {event}")
 
     simplisafe.websocket.async_on_event(async_event_handler)
 
@@ -110,24 +110,16 @@ Synchronous Event Callback
 
 .. code:: python
 
-    def event_handler(message):
-        print(f"SimpliSafe websocket message: {message}")
+    def event_handler(event):
+        print(f"SimpliSafe websocket event: {event}")
 
     simplisafe.websocket.on_event(event_handler)
 
 Response Format
 ===============
 
-The ``message`` argument will be a :ref:`message object <message:Messages>`:
-
-
-.. code:: python
-
-    print(message)
-    # >>> Message(event='alarm_canceled', message="The system was disarmed" ...)
-
-
-...and the ``event`` property of that object will be one of the following:
+The ``event`` argument is a :meth:`simplipy.websocket.WebsocketEvent` object whose
+``event_type`` property is be one of the following values:
 
 * ``alarm_canceled``
 * ``alarm_triggered``
@@ -155,6 +147,6 @@ The ``message`` argument will be a :ref:`message object <message:Messages>`:
 * ``sensor_not_responding``
 * ``sensor_restored``
 
-If you should come across an event type that the helper does not know about (and see
+If you should come across an event type that the library does not know about (and see
 a logger warning about it), please open an issue at
 https://github.com/bachya/simplisafe-python/issues.

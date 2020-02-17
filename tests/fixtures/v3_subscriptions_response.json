@@ -64,7 +64,7 @@
                             "text": "Power Outage - Backup battery in use.",
                             "code": "2000",
                             "filters": [],
-                            "link": "",
+                            "link": "http://link.to.info",
                             "linkLabel": "",
                             "expiration": 0,
                             "category": "error",

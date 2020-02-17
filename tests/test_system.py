@@ -1,9 +1,10 @@
 """Define tests for the System object."""
-# pylint: disable=protected-access
+# pylint: disable=protected-access,too-many-lines
 from datetime import datetime
 
 import aiohttp
 import pytest
+import pytz
 
 from simplipy import API
 from simplipy.errors import InvalidCredentialsError, PinError, SimplipyError
@@ -834,6 +835,39 @@ async def test_set_states_v3(aresponses, v3_server):
 
 
 @pytest.mark.asyncio
+async def test_system_messages(aresponses, v3_server):
+    """Test getting updated data for a v3 system."""
+    async with v3_server:
+        v3_server.add(
+            "api.simplisafe.com",
+            f"/v1/users/{TEST_USER_ID}/subscriptions",
+            "get",
+            aresponses.Response(
+                text=load_fixture("v3_subscriptions_response.json"), status=200
+            ),
+        )
+
+        async with aiohttp.ClientSession() as websession:
+            simplisafe = await API.login_via_credentials(
+                TEST_EMAIL, TEST_PASSWORD, websession
+            )
+            systems = await simplisafe.get_systems()
+            system = systems[TEST_SYSTEM_ID]
+
+            assert len(system.messages) == 1
+            message1 = system.messages[0]
+            assert message1.message_id == "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            assert message1.message == (
+                "SimpliSafe Error #2000: Power Outage - Backup battery in use. "
+                "More information: http://link.to.info"
+            )
+            assert message1.system_id == system.system_id
+            assert message1.timestamp == datetime(
+                2020, 2, 16, 3, 20, 28, tzinfo=pytz.UTC
+            )
+
+
+@pytest.mark.asyncio
 async def test_unknown_initial_state(caplog):
     """Test handling of an initially unknown state."""
     _ = System(async_mock, async_mock, {"system": {"alarmState": "fake"}})
@@ -926,11 +960,6 @@ async def test_update_system_data_v3(aresponses, v3_server):
             system = systems[TEST_SYSTEM_ID]
 
             await system.update()
-
-            assert len(system.messages) == 1
-
-            message = system.messages[0]
-            assert message.code == "2000"
 
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.system_id == TEST_SYSTEM_ID

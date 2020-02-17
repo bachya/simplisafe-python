@@ -1,8 +1,9 @@
 """Define helpers for messages (websocket events, notifications, etc)."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 import logging
 from typing import Optional
+from uuid import uuid4
 
 from simplipy.entity import EntityTypes
 from simplipy.util.dt import utc_from_timestamp
@@ -20,6 +21,7 @@ class Message:
     timestamp: datetime
 
     changed_by: Optional[str] = None
+    message_id: str = field(default_factory=lambda: uuid4().hex)
     sensor_name: Optional[str] = None
     sensor_serial: Optional[str] = None
     sensor_type: Optional[EntityTypes] = None

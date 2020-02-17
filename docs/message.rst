@@ -2,10 +2,10 @@ Messages
 ========
 
 At various times (most notably when dealing with
-:ref:`websocket events <websocket:Responding to Events>`), ``simplipy`` will make use of
-:meth:`simplipy.helpers.message.Message` objects. These objects provide an easy-to-use
-interface for this data, rather than dealing with raw, sometimes difficult-to-decipher
-data directly from SimpliSafe™.
+:ref:`websocket events <websocket:Responding to Events>` and system notifications),
+``simplipy`` will make use of :meth:`simplipy.helpers.message.Message` objects. These
+objects provide an easy-to-use interface for this data, rather than dealing with raw,
+sometimes difficult-to-decipher data directly from SimpliSafe™.
 
 Each object has the following properties:
 

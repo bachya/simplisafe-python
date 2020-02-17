@@ -1,6 +1,5 @@
 """Define V2 and V3 SimpliSafe systems."""
 import asyncio
-from dataclasses import InitVar, dataclass, field
 from datetime import datetime
 from enum import Enum
 import logging
@@ -8,6 +7,7 @@ from typing import Any, Callable, Coroutine, Dict, List, Optional, Set, Type, Un
 
 from simplipy.entity import Entity, EntityTypes
 from simplipy.errors import PinError, SimplipyError
+from simplipy.helpers.message import Message
 from simplipy.lock import Lock
 from simplipy.sensor.v2 import SensorV2
 from simplipy.sensor.v3 import SensorV3
@@ -17,6 +17,8 @@ _LOGGER: logging.Logger = logging.getLogger(__name__)
 
 VERSION_V2 = 2
 VERSION_V3 = 3
+
+EVENT_SYSTEM_NOTIFICATION = "system_notification"
 
 CONF_DEFAULT: str = "default"
 CONF_DURESS_PIN: str = "duress"
@@ -86,29 +88,29 @@ def get_entity_class(
     return ENTITY_MAP[version].get(entity_type, ENTITY_MAP[version][CONF_DEFAULT])
 
 
-@dataclass(frozen=True)
-class SystemMessage:
-    """Define a representation of a system message/notification."""
+# @dataclass(frozen=True)
+# class SystemMessage:
+#     """Define a representation of a system message/notification."""
 
-    message_data: InitVar[dict]
+#     message_data: InitVar[dict]
 
-    message_id: str = field(init=False)
-    category: str = field(init=False)
-    code: int = field(init=False)
-    text: str = field(init=False)
-    link: Optional[str] = field(init=False)
-    timestamp: datetime = field(init=False)
+#     message_id: str = field(init=False)
+#     category: str = field(init=False)
+#     code: int = field(init=False)
+#     text: str = field(init=False)
+#     link: Optional[str] = field(init=False)
+#     timestamp: datetime = field(init=False)
 
-    def __post_init__(self, message_data):
-        """Initialize."""
-        object.__setattr__(self, "message_id", message_data["id"])
-        object.__setattr__(self, "category", message_data["category"])
-        object.__setattr__(self, "code", message_data["code"])
-        object.__setattr__(self, "text", message_data["text"])
-        object.__setattr__(self, "link", message_data["link"])
-        object.__setattr__(
-            self, "timestamp", datetime.fromtimestamp(message_data["timestamp"])
-        )
+#     def __post_init__(self, message_data):
+#         """Initialize."""
+#         object.__setattr__(self, "message_id", message_data["id"])
+#         object.__setattr__(self, "category", message_data["category"])
+#         object.__setattr__(self, "code", message_data["code"])
+#         object.__setattr__(self, "text", message_data["text"])
+#         object.__setattr__(self, "link", message_data["link"])
+#         object.__setattr__(
+#             self, "timestamp", datetime.fromtimestamp(message_data["timestamp"])
+#         )
 
 
 class SystemStates(Enum):
@@ -149,7 +151,6 @@ class System:
         """Initialize."""
         self._get_subscription_data: Callable[..., Coroutine] = get_subscription_data
         self._location_info: dict = location_info
-        self._messages: List[SystemMessage] = []
         self._request: Callable[..., Coroutine] = request
         self.locks: Dict[str, Lock] = {}
         self.sensors: Dict[str, Union[SensorV2, SensorV3]] = {}
@@ -183,12 +184,30 @@ class System:
         return self._location_info["system"]["connType"]
 
     @property
-    def messages(self) -> List[SystemMessage]:
+    def messages(self) -> List[Message]:
         """Return the system's current messages/notifications.
 
-        :rtype: ``List[:meth:`simplipy.system.SystemMessage`]``
+        :rtype: ``List[:meth:`simplipy.helpers.message.Message`]``
         """
-        return self._messages
+        messages: List[Message] = []
+        for raw_message in self._location_info["system"]["messages"]:
+            category = raw_message["category"].title()
+            text = (
+                f'SimpliSafe {category} #{raw_message["code"]}: {raw_message["text"]}'
+            )
+            if raw_message.get("link"):
+                text += f' More information: {raw_message["link"]}'
+
+            messages.append(
+                Message(
+                    EVENT_SYSTEM_NOTIFICATION,
+                    text,
+                    self.system_id,
+                    raw_message["timestamp"],
+                    message_id=raw_message["id"],
+                )
+            )
+        return messages
 
     @property
     def serial(self) -> str:
@@ -294,10 +313,6 @@ class System:
         )
 
         self._location_info = location_info
-        self._messages = [
-            SystemMessage(raw_message)
-            for raw_message in location_info["system"]["messages"]
-        ]
         self._state = self._coerce_state_from_string(
             location_info["system"]["alarmState"]
         )

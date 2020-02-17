@@ -147,6 +147,10 @@ additional properties:
     system.light
     # >>> True
 
+     # Return any active system messages/notifications
+    system.messages
+    # >>> [Message(...)]
+
     # Return whether the system is offline:
     system.offline
     # >>> False

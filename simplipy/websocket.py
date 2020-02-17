@@ -1,13 +1,17 @@
 """Define a connection to the SimpliSafe websocket."""
+from dataclasses import InitVar, dataclass, field
+from datetime import datetime
 import logging
 from typing import Awaitable, Callable, Optional
 from urllib.parse import urlencode
+from uuid import uuid4
 
 from socketio import AsyncClient
 from socketio.exceptions import ConnectionError as ConnError, SocketIOError
 
+from simplipy.entity import EntityTypes
 from simplipy.errors import WebsocketError
-from simplipy.helpers.message import Message
+from simplipy.util.dt import utc_from_timestamp
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -76,60 +80,55 @@ EVENT_MAPPING = {
 }
 
 
-def get_event_type_from_payload(payload: dict) -> Optional[str]:
-    """Get the named websocket event from an event JSON payload.
+@dataclass(frozen=True)  # pylint: disable=too-many-instance-attributes
+class WebsocketEvent:
+    """Define a representation of a message."""
 
-    The ``payload`` parameter of this method should be the ``data`` parameter provided
-    to any function or coroutine that is passed to
-    :meth:`simplipy.websocket.Websocket.on_event`.
+    event_cid: InitVar[int]
+    message: str
+    system_id: int
+    timestamp: datetime
 
-    Returns one of the following:
-       * ``alarm_canceled``
-       * ``alarm_triggered``
-       * ``armed_away_by_keypad``
-       * ``armed_away_by_remote``
-       * ``armed_away``
-       * ``armed_home``
-       * ``automatic_test``
-       * ``away_exit_delay_by_keypad``
-       * ``away_exit_delay_by_remote``
-       * ``camera_motion_detected``
-       * ``connection_lost``
-       * ``connection_restored``
-       * ``disarmed_by_master_pin``
-       * ``disarmed_by_remote``
-       * ``doorbell_detected``
-       * ``entry_detected``
-       * ``home_exit_delay``
-       * ``lock_error``
-       * ``lock_locked``
-       * ``lock_unlocked``
-       * ``motion_detected``
-       * ``power_outage``
-       * ``power_restored``
-       * ``sensor_not_responding``
-       * ``sensor_restored``
+    event_type: Optional[str] = field(init=False)
 
-    :param payload: A event payload
-    :type payload: ``dict``
-    :rtype: ``str``
-    """
-    event_cid = payload["eventCid"]
-    if event_cid not in EVENT_MAPPING:
-        _LOGGER.warning(
-            'Encountered unknown websocket event type: %s ("%s"). Please report it at'
-            "https://github.com/bachya/simplisafe-python/issues.",
-            event_cid,
-            payload["info"],
-        )
-        return None
-    return EVENT_MAPPING[event_cid]
+    changed_by: Optional[str] = None
+    message_id: str = field(default_factory=lambda: uuid4().hex)
+    sensor_name: Optional[str] = None
+    sensor_serial: Optional[str] = None
+    sensor_type: Optional[EntityTypes] = None
+
+    def __post_init__(self, event_cid):
+        """Run post-init initialization."""
+        if event_cid in EVENT_MAPPING:
+            object.__setattr__(self, "event_type", EVENT_MAPPING[event_cid])
+        else:
+            _LOGGER.warning(
+                'Encountered unknown websocket event type: %s ("%s"). Please report it '
+                "at https://github.com/bachya/simplisafe-python/issues.",
+                event_cid,
+                self.message,
+            )
+            object.__setattr__(self, "event_type", None)
+
+        object.__setattr__(self, "timestamp", utc_from_timestamp(self.timestamp))
+
+        if self.sensor_type is not None:
+            try:
+                object.__setattr__(self, "sensor_type", EntityTypes(self.sensor_type))
+            except ValueError:
+                _LOGGER.warning(
+                    'Encountered unknown entity type: %s ("%s"). Please report it at'
+                    "https://github.com/home-assistant/home-assistant/issues.",
+                    self.sensor_type,
+                    self.message,
+                )
+                object.__setattr__(self, "sensor_type", None)
 
 
-def message_from_websocket_event(event: dict):
+def websocket_event_from_raw_data(event: dict):
     """Create a Message object from a websocket event payload."""
-    return Message(
-        get_event_type_from_payload(event),
+    return WebsocketEvent(
+        event["eventCid"],
         event["info"],
         event["sid"],
         event["eventTimestamp"],
@@ -226,7 +225,7 @@ class Websocket:
 
         async def _async_on_event(event_data: dict):
             """Act on the Message object."""
-            message = message_from_websocket_event(event_data)
+            message = websocket_event_from_raw_data(event_data)
             await target(message)
 
         self._sio.on("event", _async_on_event, namespace=self._namespace)
@@ -243,7 +242,7 @@ class Websocket:
 
         def _on_event(event_data: dict):
             """Act on the Message object."""
-            message = message_from_websocket_event(event_data)
+            message = websocket_event_from_raw_data(event_data)
             target(message)
 
         self._sio.on("event", _on_event, namespace=self._namespace)

@@ -1,5 +1,6 @@
 """Define V2 and V3 SimpliSafe systems."""
 import asyncio
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 import logging
@@ -7,10 +8,10 @@ from typing import Any, Callable, Coroutine, Dict, List, Optional, Set, Type, Un
 
 from simplipy.entity import Entity, EntityTypes
 from simplipy.errors import PinError, SimplipyError
-from simplipy.helpers.message import Message
 from simplipy.lock import Lock
 from simplipy.sensor.v2 import SensorV2
 from simplipy.sensor.v3 import SensorV3
+from simplipy.util.dt import utc_from_timestamp
 from simplipy.util.string import convert_to_underscore
 
 _LOGGER: logging.Logger = logging.getLogger(__name__)
@@ -88,6 +89,24 @@ def get_entity_class(
     return ENTITY_MAP[version].get(entity_type, ENTITY_MAP[version][CONF_DEFAULT])
 
 
+@dataclass(frozen=True)  # pylint: disable=too-many-instance-attributes
+class SystemNotification:
+    """Define a representation of a system notification."""
+
+    notification_id: str
+    text: str
+    category: str
+    code: str
+    timestamp: datetime
+
+    link: Optional[str] = None
+    link_label: Optional[str] = None
+
+    def __post_init__(self):
+        """Run post-init initialization."""
+        object.__setattr__(self, "timestamp", utc_from_timestamp(self.timestamp))
+
+
 class SystemStates(Enum):
     """States that the system can be in."""
 
@@ -126,7 +145,9 @@ class System:
         """Initialize."""
         self._get_subscription_data: Callable[..., Coroutine] = get_subscription_data
         self._location_info: dict = location_info
-        self._messages: List[Message] = self._generate_messages_from_location_info()
+        self._notifications: List[
+            SystemNotification
+        ] = self._generate_system_notification_objects()
         self._request: Callable[..., Coroutine] = request
         self._state: SystemStates = self._coerce_state_from_string(
             location_info["system"]["alarmState"]
@@ -159,12 +180,12 @@ class System:
         return self._location_info["system"]["connType"]
 
     @property
-    def messages(self) -> List[Message]:
+    def notifications(self) -> List[SystemNotification]:
         """Return the system's current messages/notifications.
 
-        :rtype: ``List[:meth:`simplipy.helpers.message.Message`]``
+        :rtype: ``List[:meth:`simplipy.system.SystemNotification`]``
         """
-        return self._messages
+        return self._notifications
 
     @property
     def serial(self) -> str:
@@ -215,25 +236,20 @@ class System:
             _LOGGER.error("Unknown system state: %s", value)
             return SystemStates.unknown
 
-    def _generate_messages_from_location_info(self) -> List[Message]:
+    def _generate_system_notification_objects(self) -> List[SystemNotification]:
         """Generate message objects from the message data stored in location_info."""
-        messages: List[Message] = []
-        for raw_message in self._location_info["system"]["messages"]:
-            category = raw_message["category"].title()
-            text = f'SimpliSafe {category} Code {raw_message["code"]}: {raw_message["text"]}'
-            if raw_message.get("link"):
-                text += f' More information: {raw_message["link"]}'
-
-            messages.append(
-                Message(
-                    EVENT_SYSTEM_NOTIFICATION,
-                    text,
-                    self.system_id,
-                    raw_message["timestamp"],
-                    message_id=raw_message["id"],
-                )
+        return [
+            SystemNotification(
+                raw_message["id"],
+                raw_message["text"],
+                raw_message["category"],
+                raw_message["code"],
+                raw_message["timestamp"],
+                link=raw_message["link"],
+                link_label=raw_message["linkLabel"],
             )
-        return messages
+            for raw_message in self._location_info["system"]["messages"]
+        ]
 
     async def _get_entities(self, cached: bool = True) -> None:
         """Update sensors to the latest values."""
@@ -290,7 +306,7 @@ class System:
         )
 
         self._location_info = location_info
-        self._messages = self._generate_messages_from_location_info()
+        self._notifications = self._generate_system_notification_objects()
         self._state = self._coerce_state_from_string(
             location_info["system"]["alarmState"]
         )

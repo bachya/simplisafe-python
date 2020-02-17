@@ -835,8 +835,8 @@ async def test_set_states_v3(aresponses, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_system_messages(aresponses, v3_server):
-    """Test getting updated data for a v3 system."""
+async def test_system_notifications(aresponses, v3_server):
+    """Test getting system notifications."""
     async with v3_server:
         v3_server.add(
             "api.simplisafe.com",
@@ -854,17 +854,17 @@ async def test_system_messages(aresponses, v3_server):
             systems = await simplisafe.get_systems()
             system = systems[TEST_SYSTEM_ID]
 
-            assert len(system.messages) == 1
-            message1 = system.messages[0]
-            assert message1.message_id == "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-            assert message1.message == (
-                "SimpliSafe Error Code 2000: Power Outage - Backup battery in use. "
-                "More information: http://link.to.info"
-            )
-            assert message1.system_id == system.system_id
-            assert message1.timestamp == datetime(
+            assert len(system.notifications) == 1
+            notification1 = system.notifications[0]
+            assert notification1.notification_id == "xxxxxxxxxxxxxxxxxxxxxxxx"
+            assert notification1.text == "Power Outage - Backup battery in use."
+            assert notification1.category == "error"
+            assert notification1.code == "2000"
+            assert notification1.timestamp == datetime(
                 2020, 2, 16, 3, 20, 28, tzinfo=pytz.UTC
             )
+            assert notification1.link == "http://link.to.info"
+            assert notification1.link_label == "More Info"
 
 
 @pytest.mark.asyncio

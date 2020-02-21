@@ -270,8 +270,11 @@ system:
 
 .. code:: python
 
+   from datetime import datetime, timedelta
+
+   yesterday = datetime.now() - timedelta(days=1)
     await system.get_events(
-        from_timestamp=1534035861, num_events=2
+        from_timestamp=yesterday, num_events=2
     )
     # >>> [{"eventId": 123, ...}, {"eventId": 456, ...}]
 

@@ -8,7 +8,7 @@ locking/unlocking them.
 Core Properties
 ---------------
 
-All ``Sensor`` objects come with a standard set of properties
+All ``Lock`` objects come with a standard set of properties
 
 .. code:: python
 

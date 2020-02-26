@@ -46,9 +46,16 @@ class API:  # pylint: disable=too-many-instance-attributes
         self._uuid: UUID = uuid4()
         self._websession: ClientSession = websession
         self.email: Optional[str] = None
-        self.refresh_token_dirty: bool = False
         self.user_id: Optional[int] = None
         self.websocket: Websocket = Websocket()
+
+    @property
+    def access_token(self) -> str:
+        """Return the current access token.
+
+        :rtype: ``str``
+        """
+        return self._access_token
 
     @property
     def refresh_token(self) -> str:
@@ -56,23 +63,7 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         :rtype: ``str``
         """
-        if self.refresh_token_dirty:
-            self.refresh_token_dirty = False
-
         return self._refresh_token
-
-    @refresh_token.setter
-    def refresh_token(self, value: str) -> None:
-        """Set the refresh token if it has changed.
-
-        :param value: The new refresh token
-        :type value: ``str``
-        """
-        if value == self._refresh_token:
-            return
-
-        self._refresh_token = value
-        self.refresh_token_dirty = True
 
     @classmethod
     async def login_via_credentials(
@@ -130,7 +121,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         self._access_token_expire = datetime.now() + timedelta(
             seconds=int(token_resp["expires_in"]) - 60
         )
-        self.refresh_token = token_resp["refresh_token"]
+        self._refresh_token = token_resp["refresh_token"]
 
         auth_check_resp: dict = await self._request("get", "api/authCheck")
         self.user_id = auth_check_resp["userId"]

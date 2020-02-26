@@ -122,10 +122,7 @@ async def test_401_refresh_token_success(aresponses, v2_server):
             systems = await simplisafe.get_systems()
             system = systems[TEST_SYSTEM_ID]
             await system.update()
-
-            assert simplisafe.refresh_token_dirty
             assert simplisafe.refresh_token == TEST_REFRESH_TOKEN
-            assert not simplisafe.refresh_token_dirty
 
 
 @pytest.mark.asyncio
@@ -237,10 +234,7 @@ async def test_refresh_token_dirtiness(aresponses, v2_server):
             )
             simplisafe._access_token_expire = datetime.now() - timedelta(hours=1)
             await simplisafe._request("get", "api/authCheck")
-
-            assert simplisafe.refresh_token_dirty
             assert simplisafe.refresh_token == TEST_REFRESH_TOKEN
-            assert not simplisafe.refresh_token_dirty
 
 
 @pytest.mark.asyncio

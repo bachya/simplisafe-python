@@ -8,7 +8,7 @@ import pytz
 
 from simplipy import API
 from simplipy.errors import InvalidCredentialsError, PinError, SimplipyError
-from simplipy.system import System, SystemStates
+from simplipy.system import SystemStates
 from simplipy.system.v3 import VOLUME_HIGH, VOLUME_MEDIUM
 
 from .common import (
@@ -21,7 +21,6 @@ from .common import (
     TEST_SYSTEM_ID,
     TEST_SYSTEM_SERIAL_NO,
     TEST_USER_ID,
-    async_mock,
     load_fixture,
 )
 
@@ -177,7 +176,7 @@ async def test_get_systems_v2(aresponses, v2_server):
             system = systems[TEST_SYSTEM_ID]
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.system_id == TEST_SYSTEM_ID
-            assert simplisafe._access_token == TEST_ACCESS_TOKEN
+            assert simplisafe.access_token == TEST_ACCESS_TOKEN
             assert len(system.sensors) == 35
 
             simplisafe = await API.login_via_token(TEST_REFRESH_TOKEN, websession)
@@ -187,7 +186,7 @@ async def test_get_systems_v2(aresponses, v2_server):
             system = systems[TEST_SYSTEM_ID]
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.system_id == TEST_SYSTEM_ID
-            assert simplisafe._access_token == TEST_ACCESS_TOKEN
+            assert simplisafe.access_token == TEST_ACCESS_TOKEN
             assert len(system.sensors) == 35
 
 
@@ -250,7 +249,7 @@ async def test_get_systems_v3(aresponses, v3_server):
 
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.system_id == TEST_SYSTEM_ID
-            assert simplisafe._access_token == TEST_ACCESS_TOKEN
+            assert simplisafe.access_token == TEST_ACCESS_TOKEN
             assert len(system.sensors) == 22
 
             simplisafe = await API.login_via_token(TEST_REFRESH_TOKEN, websession)
@@ -261,7 +260,7 @@ async def test_get_systems_v3(aresponses, v3_server):
 
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.system_id == TEST_SYSTEM_ID
-            assert simplisafe._access_token == TEST_ACCESS_TOKEN
+            assert simplisafe.access_token == TEST_ACCESS_TOKEN
             assert len(system.sensors) == 22
 
 
@@ -937,7 +936,7 @@ async def test_update_system_data_v2(aresponses, v2_server):
 
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.system_id == TEST_SYSTEM_ID
-            assert simplisafe._access_token == TEST_ACCESS_TOKEN
+            assert simplisafe.access_token == TEST_ACCESS_TOKEN
             assert len(system.sensors) == 35
 
 
@@ -981,7 +980,7 @@ async def test_update_system_data_v3(aresponses, v3_server):
 
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.system_id == TEST_SYSTEM_ID
-            assert simplisafe._access_token == TEST_ACCESS_TOKEN
+            assert simplisafe.access_token == TEST_ACCESS_TOKEN
             assert len(system.sensors) == 22
 
 

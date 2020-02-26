@@ -19,6 +19,7 @@ from .common import (
     TEST_ACCESS_TOKEN,
     TEST_EMAIL,
     TEST_PASSWORD,
+    TEST_REFRESH_TOKEN,
     TEST_USER_ID,
     async_mock,
     load_fixture,
@@ -188,6 +189,59 @@ def test_create_websocket_event():
     assert complete_event.sensor_type == EntityTypes.entry
 
     assert basic_event != complete_event
+
+
+@pytest.mark.asyncio
+async def test_reconnect_on_new_access_token(aresponses, v3_server):
+    """Test reconnecting to the websocket when the access token refreshes."""
+    async with v3_server:
+        v3_server.add(
+            "api.simplisafe.com",
+            "/v1/api/token",
+            "post",
+            aresponses.Response(
+                text=load_fixture("api_token_response.json"), status=200
+            ),
+        )
+        v3_server.add(
+            "api.simplisafe.com",
+            "/v1/api/authCheck",
+            "get",
+            aresponses.Response(
+                text=load_fixture("auth_check_response.json"), status=200
+            ),
+        )
+
+        async with aiohttp.ClientSession() as websession:
+            simplisafe = await API.login_via_credentials(
+                TEST_EMAIL, TEST_PASSWORD, websession
+            )
+            simplisafe.websocket._sio.eio._trigger_event = async_mock()
+            simplisafe.websocket._sio.eio.connect = async_mock()
+            simplisafe.websocket._sio.eio.disconnect = async_mock()
+
+            on_connect = MagicMock()
+            simplisafe.websocket.on_connect(on_connect)
+
+            connect_params = {
+                "ns": f"/v1/user/{TEST_USER_ID}",
+                "accessToken": TEST_ACCESS_TOKEN,
+            }
+
+            await simplisafe.websocket.async_connect()
+            simplisafe.websocket._sio.eio.connect.mock.assert_called_once_with(
+                f"wss://api.simplisafe.com/socket.io?{urlencode(connect_params)}",
+                engineio_path="socket.io",
+                headers={},
+                transports=["websocket"],
+            )
+
+            await simplisafe.websocket._sio._trigger_event("connect", "/")
+            on_connect.assert_called_once()
+
+            await simplisafe.refresh_access_token(TEST_REFRESH_TOKEN)
+            simplisafe.websocket._sio.eio.disconnect.mock.assert_called_once()
+            assert simplisafe.websocket._sio.eio.connect.mock.call_count == 2
 
 
 @pytest.mark.asyncio

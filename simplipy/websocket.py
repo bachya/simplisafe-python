@@ -150,18 +150,33 @@ class Websocket:
     :type user_id: ``int``
     """
 
-    def __init__(self, access_token: str, user_id: int) -> None:
+    def __init__(self) -> None:
         """Initialize."""
         self._async_disconnect_handler: Optional[Callable[..., Awaitable]] = None
-        self._namespace = f"/v1/user/{user_id}"
         self._sio: AsyncClient = AsyncClient()
         self._sync_disconnect_handler: Optional[Callable] = None
-        self._user_id = user_id
-        self.access_token: str = access_token
+
+        # Set by async_init():
+        self._access_token: Optional[str] = None
+        self._namespace: Optional[str] = None
+
+    async def async_init(
+        self, access_token: str, user_id: Optional[int] = None
+    ) -> None:
+        """Set the user ID and generate the namespace."""
+        if not self._namespace:
+            self._namespace = f"/v1/user/{user_id}"
+
+        self._access_token = access_token
+
+        # If the websocket is connected, reconnect it:
+        if self._sio.connected:
+            await self.async_disconnect()
+            await self.async_connect()
 
     async def async_connect(self) -> None:
         """Connect to the socket."""
-        params = {"ns": self._namespace, "accessToken": self.access_token}
+        params = {"ns": self._namespace, "accessToken": self._access_token}
         try:
             await self._sio.connect(
                 f"{API_URL_BASE}?{urlencode(params)}",

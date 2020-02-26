@@ -48,7 +48,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         self.email: Optional[str] = None
         self.refresh_token_dirty: bool = False
         self.user_id: Optional[int] = None
-        self.websocket: Websocket = None  # type: ignore
+        self.websocket: Websocket = Websocket()
 
     @property
     def refresh_token(self) -> str:
@@ -135,10 +135,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         auth_check_resp: dict = await self._request("get", "api/authCheck")
         self.user_id = auth_check_resp["userId"]
 
-        if self.websocket:
-            self.websocket.access_token = self._access_token
-        else:
-            self.websocket = Websocket(self._access_token, self.user_id)  # type: ignore
+        await self.websocket.async_init(self._access_token, self.user_id)
 
     async def _get_subscription_data(self) -> dict:
         """Get the latest location-level data."""

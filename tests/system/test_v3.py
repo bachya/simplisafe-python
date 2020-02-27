@@ -34,9 +34,10 @@ def settings_missing_basestation_response(v3_settings_response):
 
 
 @pytest.fixture()
-def subscriptions_missing_notifications_response(v3_subscriptions_response):
+def subscriptions_missing_notifications_response(subscriptions_fixture_filename):
     """Define a fixture for a subscription that is missing notifications."""
-    data = json.loads(v3_subscriptions_response)
+    raw = load_fixture(subscriptions_fixture_filename)
+    data = json.loads(raw)
     data["subscriptions"][0]["location"]["system"].pop("messages")
     return json.dumps(data)
 
@@ -172,30 +173,22 @@ async def test_get_systems(
 
 
 @pytest.mark.asyncio
-async def test_no_notifications_in_basic_plan(
-    aresponses, caplog, subscriptions_missing_notifications_response, v3_server
-):
+@pytest.mark.parametrize(
+    "v3_subscriptions_response",
+    ["subscriptions_missing_notifications_response"],
+    indirect=True,
+)
+async def test_no_notifications_in_basic_plan(caplog, v3_server):
     """Test that missing notification data is handled correctly."""
     caplog.set_level(logging.INFO)
 
     async with v3_server:
-        v3_server.add(
-            "api.simplisafe.com",
-            f"/v1/users/{TEST_USER_ID}/subscriptions",
-            "get",
-            aresponses.Response(
-                text=subscriptions_missing_notifications_response, status=200
-            ),
-        )
-
         async with aiohttp.ClientSession() as websession:
             simplisafe = await API.login_via_credentials(
                 TEST_EMAIL, TEST_PASSWORD, websession
             )
             systems = await simplisafe.get_systems()
             system = systems[TEST_SYSTEM_ID]
-
-            await system.update(include_settings=False, include_entities=False)
 
             assert system.notifications == []
             assert any(
@@ -776,4 +769,3 @@ async def test_update_error(
 
             with pytest.raises(SimplipyError):
                 await system.update()
-            assert False

@@ -69,6 +69,8 @@ def v3_settings_response():
 @pytest.fixture()
 def v3_subscriptions_response(request, subscriptions_fixture_filename):
     """Define a fixture that returns a V3 subscriptions response."""
+    if getattr(request, "param", None):
+        return request.getfixturevalue(request.param)
     return load_fixture(subscriptions_fixture_filename)
 
 

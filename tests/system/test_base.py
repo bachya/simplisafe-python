@@ -41,7 +41,7 @@ async def test_get_events(aresponses, v2_server):
 
 
 @pytest.mark.asyncio
-async def test_no_notifications_in_basic_plan(aresponses, v2_server):
+async def test_no_notifications_in_basic_plan(v2_server):
     """Test getting events from a system."""
     async with v2_server:
         async with aiohttp.ClientSession() as websession:

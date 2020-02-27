@@ -73,6 +73,14 @@ def v3_subscriptions_response(subscriptions_fixture_filename):
 
 
 @pytest.fixture()
+def v3_subscriptions_unknown_state_response(subscriptions_fixture_filename):
+    """Define a fixture that returns a V3 subscriptions response."""
+    data = json.loads(load_fixture(subscriptions_fixture_filename))
+    data["subscriptions"][0]["location"]["system"]["alarmState"] = "NOT_REAL_STATE"
+    return json.dumps(data)
+
+
+@pytest.fixture()
 def v3_server(v3_settings_fixture_name, v3_subscriptions_response):
     """Return a ready-to-query mocked v2 server."""
     server = aresponses.ResponsesMockServer()

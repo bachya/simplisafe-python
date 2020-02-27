@@ -641,7 +641,9 @@ async def test_system_notifications(aresponses, v3_server, v3_subscriptions_resp
 
 
 @pytest.mark.asyncio
-async def test_unknown_initial_state(aresponses, caplog, v3_server):
+async def test_unknown_initial_state(
+    aresponses, caplog, v3_server, v3_subscriptions_unknown_state_response
+):
     """Test handling of an initially unknown state."""
     async with v3_server:
         v3_server.add(
@@ -649,8 +651,7 @@ async def test_unknown_initial_state(aresponses, caplog, v3_server):
             f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
             aresponses.Response(
-                text=load_fixture("v3_subscriptions_unknown_state_response.json"),
-                status=200,
+                text=v3_subscriptions_unknown_state_response, status=200
             ),
         )
 
@@ -659,8 +660,9 @@ async def test_unknown_initial_state(aresponses, caplog, v3_server):
                 TEST_EMAIL, TEST_PASSWORD, websession
             )
             systems = await simplisafe.get_systems()
-            first_system = next(iter(systems.values()))
-            await first_system.update(include_settings=False, include_entities=False)
+            system = systems[TEST_SYSTEM_ID]
+            await system.update(include_settings=False, include_entities=False)
+            print(system.state)
             assert any("Unknown system state" in e.message for e in caplog.records)
             assert any("NOT_REAL_STATE" in e.message for e in caplog.records)
 

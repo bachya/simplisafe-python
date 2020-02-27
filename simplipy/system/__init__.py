@@ -238,18 +238,22 @@ class System:
 
     def _generate_system_notification_objects(self) -> List[SystemNotification]:
         """Generate message objects from the message data stored in location_info."""
-        return [
-            SystemNotification(
-                raw_message["id"],
-                raw_message["text"],
-                raw_message["category"],
-                raw_message["code"],
-                raw_message["timestamp"],
-                link=raw_message["link"],
-                link_label=raw_message["linkLabel"],
-            )
-            for raw_message in self._location_info["system"]["messages"]
-        ]
+        try:
+            return [
+                SystemNotification(
+                    raw_message["id"],
+                    raw_message["text"],
+                    raw_message["category"],
+                    raw_message["code"],
+                    raw_message["timestamp"],
+                    link=raw_message["link"],
+                    link_label=raw_message["linkLabel"],
+                )
+                for raw_message in self._location_info["system"]["messages"]
+            ]
+        except KeyError:
+            _LOGGER.info("Notifications unavailable in plan")
+            return []
 
     async def _get_entities(self, cached: bool = True) -> None:
         """Update sensors to the latest values."""

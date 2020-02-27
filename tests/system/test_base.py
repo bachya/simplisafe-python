@@ -41,18 +41,6 @@ async def test_get_events(aresponses, v2_server):
 
 
 @pytest.mark.asyncio
-async def test_no_notifications_in_basic_plan(v2_server):
-    """Test getting events from a system."""
-    async with v2_server:
-        async with aiohttp.ClientSession() as websession:
-            simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, websession
-            )
-            systems = await simplisafe.get_systems()
-            system = systems[TEST_SYSTEM_ID]
-
-
-@pytest.mark.asyncio
 async def test_properties(v2_server):
     """Test that base system properties are created properly."""
     async with v2_server:

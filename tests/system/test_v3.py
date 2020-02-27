@@ -26,16 +26,24 @@ from tests.common import (
 
 @pytest.fixture()
 def settings_missing_basestation_response(v3_settings_response):
-    """Define a fixture that returns a V3 subscriptions response."""
+    """Define a fixture for settings that are missing base station status."""
     data = json.loads(v3_settings_response)
     data["settings"].pop("basestationStatus")
     return json.dumps(data)
 
 
 @pytest.fixture()
-def subscriptions_unknown_state_response(subscriptions_fixture_filename):
-    """Define a fixture that returns a V3 subscriptions response."""
-    data = json.loads(load_fixture(subscriptions_fixture_filename))
+def subscriptions_missing_notifications_response(v3_subscriptions_response):
+    """Define a fixture for a subscription that is missing notifications."""
+    data = json.loads(v3_subscriptions_response)
+    data["subscriptions"][0]["location"]["system"].pop("messages")
+    return json.dumps(data)
+
+
+@pytest.fixture()
+def subscriptions_unknown_state_response(v3_subscriptions_response):
+    """Define a fixture for a subscription with an unknown alarm state."""
+    data = json.loads(v3_subscriptions_response)
     data["subscriptions"][0]["location"]["system"]["alarmState"] = "NOT_REAL_STATE"
     return json.dumps(data)
 
@@ -160,6 +168,36 @@ async def test_get_systems(
             assert system.system_id == TEST_SYSTEM_ID
             assert simplisafe.access_token == TEST_ACCESS_TOKEN
             assert len(system.sensors) == 22
+
+
+@pytest.mark.asyncio
+async def test_no_notifications_in_basic_plan(
+    aresponses, caplog, subscriptions_missing_notifications_response, v3_server
+):
+    """Test that missing notification data is handled correctly."""
+    async with v3_server:
+        v3_server.add(
+            "api.simplisafe.com",
+            f"/v1/users/{TEST_USER_ID}/subscriptions",
+            "get",
+            aresponses.Response(
+                text=subscriptions_missing_notifications_response, status=200
+            ),
+        )
+
+        async with aiohttp.ClientSession() as websession:
+            simplisafe = await API.login_via_credentials(
+                TEST_EMAIL, TEST_PASSWORD, websession
+            )
+            systems = await simplisafe.get_systems()
+            system = systems[TEST_SYSTEM_ID]
+
+            await system.update(include_settings=False, include_entities=False)
+
+            assert system.notifications == []
+            assert any(
+                "Notifications unavailable in plan" in e.message for e in caplog.records
+            )
 
 
 @pytest.mark.asyncio
@@ -653,7 +691,6 @@ async def test_unknown_initial_state(
             systems = await simplisafe.get_systems()
             system = systems[TEST_SYSTEM_ID]
             await system.update(include_settings=False, include_entities=False)
-            print(system.state)
             assert any("Unknown system state" in e.message for e in caplog.records)
             assert any("NOT_REAL_STATE" in e.message for e in caplog.records)
 
@@ -736,3 +773,4 @@ async def test_update_error(
 
             with pytest.raises(SimplipyError):
                 await system.update()
+            assert False

@@ -1,7 +1,7 @@
 """Define a V3 (new) SimpliSafe system."""
 from enum import Enum
 import logging
-from typing import Dict
+from typing import Callable, Dict
 
 import voluptuous as vol
 
@@ -64,13 +64,30 @@ SYSTEM_PROPERTIES_PAYLOAD_SCHEMA = vol.Schema(
 )
 
 
-class SystemV3(System):  # pylint: disable=too-many-public-methods
+def guard_missing_base_station_status(prop) -> Callable:
+    """Define a guard against missing base station status."""
+
+    def decorator(system: "SystemV3") -> None:
+        """Decorate."""
+        if system.settings_info.get("basestationStatus") is None:
+            _LOGGER.error(
+                "SimpliSafe cloud didn't return expected data for property %s: %s",
+                prop.__name__,
+                system.settings_info,
+            )
+            return None
+        return prop(system)
+
+    return decorator
+
+
+class SystemV3(System):
     """Define a V3 (new) system."""
 
     def __init__(self, request, get_subscription_data, location_info) -> None:
         """Initialize."""
         super().__init__(request, get_subscription_data, location_info)
-        self._settings_info: dict = {}
+        self.settings_info: dict = {}
 
     @property
     def alarm_duration(self) -> int:
@@ -78,7 +95,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         :rtype: ``int``
         """
-        return self._settings_info["settings"]["normal"][
+        return self.settings_info["settings"]["normal"][
             SYSTEM_PROPERTIES_VALUE_MAP["alarm_duration"]
         ]
 
@@ -89,18 +106,19 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         :rtype: ``int``
         """
         return int(
-            self._settings_info["settings"]["normal"][
+            self.settings_info["settings"]["normal"][
                 SYSTEM_PROPERTIES_VALUE_MAP["alarm_volume"]
             ]
         )
 
-    @property
+    @property  # type: ignore
+    @guard_missing_base_station_status
     def battery_backup_power_level(self) -> int:
         """Return the power rating of the battery backup.
 
         :rtype: ``int``
         """
-        return self._settings_info["basestationStatus"]["backupBattery"]
+        return self.settings_info["basestationStatus"]["backupBattery"]
 
     @property
     def chime_volume(self) -> int:
@@ -109,7 +127,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         :rtype: ``int``
         """
         return int(
-            self._settings_info["settings"]["normal"][
+            self.settings_info["settings"]["normal"][
                 SYSTEM_PROPERTIES_VALUE_MAP["chime_volume"]
             ]
         )
@@ -120,7 +138,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         :rtype: ``int``
         """
-        return self._settings_info["settings"]["normal"][
+        return self.settings_info["settings"]["normal"][
             SYSTEM_PROPERTIES_VALUE_MAP["entry_delay_away"]
         ]
 
@@ -130,7 +148,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         :rtype: ``int``
         """
-        return self._settings_info["settings"]["normal"][
+        return self.settings_info["settings"]["normal"][
             SYSTEM_PROPERTIES_VALUE_MAP["entry_delay_home"]
         ]
 
@@ -140,7 +158,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         :rtype: ``int``
         """
-        return self._settings_info["settings"]["normal"][
+        return self.settings_info["settings"]["normal"][
             SYSTEM_PROPERTIES_VALUE_MAP["exit_delay_away"]
         ]
 
@@ -150,17 +168,18 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         :rtype: ``int``
         """
-        return self._settings_info["settings"]["normal"][
+        return self.settings_info["settings"]["normal"][
             SYSTEM_PROPERTIES_VALUE_MAP["exit_delay_home"]
         ]
 
-    @property
+    @property  # type: ignore
+    @guard_missing_base_station_status
     def gsm_strength(self) -> int:
         """Return the signal strength of the cell antenna.
 
         :rtype: ``int``
         """
-        return self._settings_info["basestationStatus"]["gsmRssi"]
+        return self.settings_info["basestationStatus"]["gsmRssi"]
 
     @property
     def light(self) -> bool:
@@ -168,7 +187,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         :rtype: ``bool``
         """
-        return self._settings_info["settings"]["normal"][
+        return self.settings_info["settings"]["normal"][
             SYSTEM_PROPERTIES_VALUE_MAP["light"]
         ]
 
@@ -188,13 +207,14 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         """
         return self._location_info["system"]["powerOutage"]
 
-    @property
+    @property  # type: ignore
+    @guard_missing_base_station_status
     def rf_jamming(self) -> bool:
         """Return whether the base station is noticing RF jamming.
 
         :rtype: ``bool``
         """
-        return self._settings_info["basestationStatus"]["rfJamming"]
+        return self.settings_info["basestationStatus"]["rfJamming"]
 
     @property
     def voice_prompt_volume(self) -> int:
@@ -202,17 +222,18 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         :rtype: ``int``
         """
-        return self._settings_info["settings"]["normal"][
+        return self.settings_info["settings"]["normal"][
             SYSTEM_PROPERTIES_VALUE_MAP["voice_prompt_volume"]
         ]
 
-    @property
+    @property  # type: ignore
+    @guard_missing_base_station_status
     def wall_power_level(self) -> int:
         """Return the power rating of the A/C outlet.
 
         :rtype: ``int``
         """
-        return self._settings_info["basestationStatus"]["wallPower"]
+        return self.settings_info["basestationStatus"]["wallPower"]
 
     @property
     def wifi_ssid(self) -> str:
@@ -220,15 +241,16 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         :rtype: ``str``
         """
-        return self._settings_info["settings"]["normal"]["wifiSSID"]
+        return self.settings_info["settings"]["normal"]["wifiSSID"]
 
-    @property
+    @property  # type: ignore
+    @guard_missing_base_station_status
     def wifi_strength(self) -> int:
         """Return the signal strength of the wifi antenna.
 
         :rtype: ``int``
         """
-        return self._settings_info["basestationStatus"]["wifiRssi"]
+        return self.settings_info["basestationStatus"]["wifiRssi"]
 
     async def _get_entities_payload(self, cached: bool = True) -> dict:
         """Update sensors to the latest values."""
@@ -249,7 +271,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         )
 
         if settings_resp:
-            self._settings_info = settings_resp
+            self.settings_info = settings_resp
 
     async def _set_state(self, value: Enum) -> None:
         """Set the state of the system."""
@@ -266,7 +288,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
     async def _set_updated_pins(self, pins: dict) -> None:
         """Post new PINs."""
-        self._settings_info = await self._request(
+        self.settings_info = await self._request(
             "post",
             f"ss3/subscriptions/{self.system_id}/settings/pins",
             json=create_pin_payload(pins),
@@ -285,13 +307,13 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         await self._get_settings(cached)
 
         pins: Dict[str, str] = {
-            CONF_MASTER_PIN: self._settings_info["settings"]["pins"]["master"]["pin"],
-            CONF_DURESS_PIN: self._settings_info["settings"]["pins"]["duress"]["pin"],
+            CONF_MASTER_PIN: self.settings_info["settings"]["pins"]["master"]["pin"],
+            CONF_DURESS_PIN: self.settings_info["settings"]["pins"]["duress"]["pin"],
         }
 
         user_pin: dict
         for user_pin in [
-            p for p in self._settings_info["settings"]["pins"]["users"] if p["pin"]
+            p for p in self.settings_info["settings"]["pins"]["users"] if p["pin"]
         ]:
             pins[user_pin["name"]] = user_pin["pin"]
 
@@ -333,4 +355,4 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         )
 
         if settings_resp:
-            self._settings_info = settings_resp
+            self.settings_info = settings_resp

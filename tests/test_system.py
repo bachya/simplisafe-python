@@ -492,15 +492,15 @@ async def test_properties_v3(aresponses, v3_server):
 
             # Test "setting" various system properties by overriding their values, then
             # calling the update functions:
-            system._settings_info["settings"]["normal"]["alarmDuration"] = 0
-            system._settings_info["settings"]["normal"]["alarmVolume"] = 0
-            system._settings_info["settings"]["normal"]["doorChime"] = 0
-            system._settings_info["settings"]["normal"]["entryDelayAway"] = 0
-            system._settings_info["settings"]["normal"]["entryDelayHome"] = 0
-            system._settings_info["settings"]["normal"]["exitDelayAway"] = 0
-            system._settings_info["settings"]["normal"]["exitDelayHome"] = 1000
-            system._settings_info["settings"]["normal"]["light"] = False
-            system._settings_info["settings"]["normal"]["voicePrompts"] = 0
+            system.settings_info["settings"]["normal"]["alarmDuration"] = 0
+            system.settings_info["settings"]["normal"]["alarmVolume"] = 0
+            system.settings_info["settings"]["normal"]["doorChime"] = 0
+            system.settings_info["settings"]["normal"]["entryDelayAway"] = 0
+            system.settings_info["settings"]["normal"]["entryDelayHome"] = 0
+            system.settings_info["settings"]["normal"]["exitDelayAway"] = 0
+            system.settings_info["settings"]["normal"]["exitDelayHome"] = 1000
+            system.settings_info["settings"]["normal"]["light"] = False
+            system.settings_info["settings"]["normal"]["voicePrompts"] = 0
 
             await system.set_properties(
                 {

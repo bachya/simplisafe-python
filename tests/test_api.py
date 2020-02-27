@@ -303,7 +303,7 @@ async def test_unavailable_feature_v2(
 
 @pytest.mark.asyncio
 async def test_unavailable_feature_v3(
-    aresponses, caplog, v3_server, v3_subscriptions_response
+    aresponses, caplog, v3_server, v3_settings_response, v3_subscriptions_response
 ):
     """Test that a message is logged with an unavailable feature."""
     caplog.set_level(logging.INFO)
@@ -343,9 +343,7 @@ async def test_unavailable_feature_v3(
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
             "get",
-            aresponses.Response(
-                text=load_fixture("v3_settings_response.json"), status=200
-            ),
+            aresponses.Response(text=v3_settings_response, status=200),
         )
         v3_server.add(
             "api.simplisafe.com",

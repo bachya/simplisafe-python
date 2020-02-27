@@ -61,9 +61,9 @@ def v2_server(v2_subscriptions_response):
 
 
 @pytest.fixture()
-def v3_settings_fixture_name():
+def v3_settings_response():
     """Define a fixture that returns a V3 subscriptions response."""
-    return "v3_settings_response.json"
+    return load_fixture("v3_settings_response.json")
 
 
 @pytest.fixture()
@@ -73,15 +73,7 @@ def v3_subscriptions_response(subscriptions_fixture_filename):
 
 
 @pytest.fixture()
-def v3_subscriptions_unknown_state_response(subscriptions_fixture_filename):
-    """Define a fixture that returns a V3 subscriptions response."""
-    data = json.loads(load_fixture(subscriptions_fixture_filename))
-    data["subscriptions"][0]["location"]["system"]["alarmState"] = "NOT_REAL_STATE"
-    return json.dumps(data)
-
-
-@pytest.fixture()
-def v3_server(v3_settings_fixture_name, v3_subscriptions_response):
+def v3_server(v3_settings_response, v3_subscriptions_response):
     """Return a ready-to-query mocked v2 server."""
     server = aresponses.ResponsesMockServer()
     server.add(
@@ -112,7 +104,7 @@ def v3_server(v3_settings_fixture_name, v3_subscriptions_response):
         "api.simplisafe.com",
         f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
         "get",
-        aresponses.Response(text=load_fixture(v3_settings_fixture_name), status=200),
+        aresponses.Response(text=v3_settings_response, status=200),
     )
 
     return server

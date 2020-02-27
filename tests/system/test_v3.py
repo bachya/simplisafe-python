@@ -1,6 +1,7 @@
 """Define tests for v3 System objects."""
 from datetime import datetime
 import json
+import logging
 
 import aiohttp
 import pytest
@@ -175,6 +176,8 @@ async def test_no_notifications_in_basic_plan(
     aresponses, caplog, subscriptions_missing_notifications_response, v3_server
 ):
     """Test that missing notification data is handled correctly."""
+    caplog.set_level(logging.INFO)
+
     async with v3_server:
         v3_server.add(
             "api.simplisafe.com",

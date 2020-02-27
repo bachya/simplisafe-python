@@ -1,4 +1,4 @@
-"""Define tests for the Sensor objects."""
+"""Define tests for v3 Sensor objects."""
 import aiohttp
 import pytest
 
@@ -6,7 +6,7 @@ from simplipy import API
 from simplipy.entity import EntityTypes
 from simplipy.errors import SimplipyError
 
-from .common import TEST_EMAIL, TEST_PASSWORD, TEST_SYSTEM_ID
+from tests.common import TEST_EMAIL, TEST_PASSWORD, TEST_SYSTEM_ID
 
 
 @pytest.mark.asyncio

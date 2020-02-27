@@ -1,5 +1,4 @@
-"""Define tests for the System object."""
-# pylint: disable=protected-access,too-many-lines
+"""Define tests for v3 System objects."""
 from datetime import datetime
 
 import aiohttp
@@ -11,9 +10,8 @@ from simplipy.errors import InvalidCredentialsError, PinError, SimplipyError
 from simplipy.system import SystemStates
 from simplipy.system.v3 import VOLUME_HIGH, VOLUME_MEDIUM
 
-from .common import (
+from tests.common import (
     TEST_ACCESS_TOKEN,
-    TEST_ADDRESS,
     TEST_EMAIL,
     TEST_PASSWORD,
     TEST_REFRESH_TOKEN,
@@ -23,29 +21,6 @@ from .common import (
     TEST_USER_ID,
     load_fixture,
 )
-
-
-@pytest.mark.asyncio
-async def test_get_events(aresponses, v2_server):
-    """Test getting events from a system."""
-    async with v2_server:
-        v2_server.add(
-            "api.simplisafe.com",
-            f"/v1/subscriptions/{TEST_SYSTEM_ID}/events",
-            "get",
-            aresponses.Response(text=load_fixture("events_response.json"), status=200),
-        )
-
-        async with aiohttp.ClientSession() as websession:
-            simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, websession
-            )
-            systems = await simplisafe.get_systems()
-            system = systems[TEST_SYSTEM_ID]
-
-            events = await system.get_events(datetime.now(), 2)
-
-            assert len(events) == 2
 
 
 @pytest.mark.asyncio
@@ -73,33 +48,7 @@ async def test_get_last_event(aresponses, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_get_pins_v2(aresponses, v2_server):
-    """Test getting PINs associated with a V3 system."""
-    async with v2_server:
-        v2_server.add(
-            "api.simplisafe.com",
-            f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/pins",
-            "get",
-            aresponses.Response(text=load_fixture("v2_pins_response.json"), status=200),
-        )
-
-        async with aiohttp.ClientSession() as websession:
-            simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, websession
-            )
-            systems = await simplisafe.get_systems()
-            system = systems[TEST_SYSTEM_ID]
-
-            pins = await system.get_pins()
-            assert len(pins) == 4
-            assert pins["master"] == "1234"
-            assert pins["duress"] == "9876"
-            assert pins["Mother"] == "3456"
-            assert pins["Father"] == "4567"
-
-
-@pytest.mark.asyncio
-async def test_get_pins_v3(aresponses, v3_server):
+async def test_get_pins(aresponses, v3_server):
     """Test getting PINs associated with a V3 system."""
     async with v3_server:
         v3_server.add(
@@ -127,71 +76,7 @@ async def test_get_pins_v3(aresponses, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_get_systems_v2(aresponses, v2_server):
-    """Test the ability to get systems attached to a v2 account."""
-    async with v2_server:
-        # Since this flow will call both three routes once more each (on top of
-        # what instantiation does) and aresponses deletes matches each time,
-        # we need to add additional routes:
-        v2_server.add(
-            "api.simplisafe.com",
-            "/v1/api/token",
-            "post",
-            aresponses.Response(
-                text=load_fixture("api_token_response.json"), status=200
-            ),
-        )
-        v2_server.add(
-            "api.simplisafe.com",
-            "/v1/api/authCheck",
-            "get",
-            aresponses.Response(
-                text=load_fixture("auth_check_response.json"), status=200
-            ),
-        )
-        v2_server.add(
-            "api.simplisafe.com",
-            f"/v1/users/{TEST_USER_ID}/subscriptions",
-            "get",
-            aresponses.Response(
-                text=load_fixture("v2_subscriptions_response.json"), status=200
-            ),
-        )
-        v2_server.add(
-            "api.simplisafe.com",
-            f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/settings",
-            "get",
-            aresponses.Response(
-                text=load_fixture("v2_settings_response.json"), status=200
-            ),
-        )
-
-        async with aiohttp.ClientSession() as websession:
-            simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, websession
-            )
-            systems = await simplisafe.get_systems()
-            assert len(systems) == 1
-
-            system = systems[TEST_SYSTEM_ID]
-            assert system.serial == TEST_SYSTEM_SERIAL_NO
-            assert system.system_id == TEST_SYSTEM_ID
-            assert simplisafe.access_token == TEST_ACCESS_TOKEN
-            assert len(system.sensors) == 35
-
-            simplisafe = await API.login_via_token(TEST_REFRESH_TOKEN, websession)
-            systems = await simplisafe.get_systems()
-            assert len(systems) == 1
-
-            system = systems[TEST_SYSTEM_ID]
-            assert system.serial == TEST_SYSTEM_SERIAL_NO
-            assert system.system_id == TEST_SYSTEM_ID
-            assert simplisafe.access_token == TEST_ACCESS_TOKEN
-            assert len(system.sensors) == 35
-
-
-@pytest.mark.asyncio
-async def test_get_systems_v3(aresponses, v3_server):
+async def test_get_systems(aresponses, v3_server):
     """Test the ability to get systems attached to a v3 account."""
     async with v3_server:
         # Since this flow will call both three routes once more each (on top of
@@ -296,163 +181,27 @@ async def test_no_state_change_on_failure(aresponses, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_remove_nonexistent_pin_v3(aresponses, v3_server):
-    """Test throwing an error when removing a nonexistent PIN."""
+@pytest.mark.parametrize(
+    "v3_settings_fixture_name", ["v3_settings_missing_basestation_response.json"],
+)
+async def test_missing_base_station_data(caplog, v3_server):
+    """Test that missing base station data is handled correctly."""
     async with v3_server:
-        v3_server.add(
-            "api.simplisafe.com",
-            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
-            "get",
-            aresponses.Response(
-                text=load_fixture("v3_settings_response.json"), status=200
-            ),
-        )
-
         async with aiohttp.ClientSession() as websession:
             simplisafe = await API.login_via_credentials(
                 TEST_EMAIL, TEST_PASSWORD, websession
             )
             systems = await simplisafe.get_systems()
             system = systems[TEST_SYSTEM_ID]
-
-            with pytest.raises(PinError) as err:
-                await system.remove_pin("0000")
-                assert "Refusing to delete nonexistent PIN" in str(err)
-
-
-@pytest.mark.asyncio
-async def test_remove_pin_v3(aresponses, v3_server):
-    """Test removing a PIN in a V3 system."""
-    async with v3_server:
-        v3_server.add(
-            "api.simplisafe.com",
-            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
-            "get",
-            aresponses.Response(
-                text=load_fixture("v3_settings_response.json"), status=200
-            ),
-        )
-        v3_server.add(
-            "api.simplisafe.com",
-            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
-            "get",
-            aresponses.Response(
-                text=load_fixture("v3_settings_response.json"), status=200
-            ),
-        )
-        v3_server.add(
-            "api.simplisafe.com",
-            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/pins",
-            "post",
-            aresponses.Response(
-                text=load_fixture("v3_settings_deleted_pin_response.json"), status=200
-            ),
-        )
-        v3_server.add(
-            "api.simplisafe.com",
-            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
-            "get",
-            aresponses.Response(
-                text=load_fixture("v3_settings_deleted_pin_response.json"), status=200
-            ),
-        )
-
-        async with aiohttp.ClientSession() as websession:
-            simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, websession
+            assert system.gsm_strength is None
+            assert any(
+                "SimpliSafe cloud didn't return expected data for property" in e.message
+                for e in caplog.records
             )
-            systems = await simplisafe.get_systems()
-            system = systems[TEST_SYSTEM_ID]
-
-            latest_pins = await system.get_pins()
-            assert len(latest_pins) == 4
-
-            await system.remove_pin("Test 2")
-            latest_pins = await system.get_pins()
-            assert len(latest_pins) == 3
 
 
 @pytest.mark.asyncio
-async def test_remove_reserved_pin_v3(aresponses, v3_server):
-    """Test throwing an error when removing a reserved PIN."""
-    async with v3_server:
-        v3_server.add(
-            "api.simplisafe.com",
-            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
-            "get",
-            aresponses.Response(
-                text=load_fixture("v3_settings_response.json"), status=200
-            ),
-        )
-
-        async with aiohttp.ClientSession() as websession:
-            simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, websession
-            )
-            systems = await simplisafe.get_systems()
-            system = systems[TEST_SYSTEM_ID]
-
-            with pytest.raises(PinError) as err:
-                await system.remove_pin("master")
-                assert "Refusing to delete reserved PIN" in str(err)
-
-
-@pytest.mark.asyncio
-async def test_set_duplicate_pin(aresponses, v3_server):
-    """Test throwing an error when setting a duplicate PIN."""
-    async with v3_server:
-        v3_server.add(
-            "api.simplisafe.com",
-            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
-            "get",
-            aresponses.Response(
-                text=load_fixture("v3_settings_response.json"), status=200
-            ),
-        )
-        v3_server.add(
-            "api.simplisafe.com",
-            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/pins",
-            "post",
-            aresponses.Response(
-                text=load_fixture("v3_settings_response.json"), status=200
-            ),
-        )
-
-        async with aiohttp.ClientSession() as websession:
-            with pytest.raises(PinError) as err:
-                simplisafe = await API.login_via_credentials(
-                    TEST_EMAIL, TEST_PASSWORD, websession
-                )
-                systems = await simplisafe.get_systems()
-                system = systems[TEST_SYSTEM_ID]
-
-                await system.set_pin("whatever", "1234")
-                assert "Refusing to create duplicate PIN" in str(err)
-
-
-@pytest.mark.asyncio
-async def test_properties(v2_server):
-    """Test that base system properties are created properly."""
-    async with v2_server:
-        async with aiohttp.ClientSession() as websession:
-            simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, websession
-            )
-            systems = await simplisafe.get_systems()
-            system = systems[TEST_SYSTEM_ID]
-
-            assert not system.alarm_going_off
-            assert system.address == TEST_ADDRESS
-            assert system.connection_type == "cell"
-            assert system.serial == TEST_SYSTEM_SERIAL_NO
-            assert system.state == SystemStates.off
-            assert system.system_id == TEST_SYSTEM_ID
-            assert system.temperature == 67
-            assert system.version == 2
-
-
-@pytest.mark.asyncio
-async def test_properties_v3(aresponses, v3_server):
+async def test_properties(aresponses, v3_server):
     """Test that v3 system properties are available."""
     async with v3_server:
         v3_server.add(
@@ -527,7 +276,142 @@ async def test_properties_v3(aresponses, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_setting_invalid_property(aresponses, v3_server):
+async def test_remove_nonexistent_pin(aresponses, v3_server):
+    """Test throwing an error when removing a nonexistent PIN."""
+    async with v3_server:
+        v3_server.add(
+            "api.simplisafe.com",
+            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
+            "get",
+            aresponses.Response(
+                text=load_fixture("v3_settings_response.json"), status=200
+            ),
+        )
+
+        async with aiohttp.ClientSession() as websession:
+            simplisafe = await API.login_via_credentials(
+                TEST_EMAIL, TEST_PASSWORD, websession
+            )
+            systems = await simplisafe.get_systems()
+            system = systems[TEST_SYSTEM_ID]
+
+            with pytest.raises(PinError) as err:
+                await system.remove_pin("0000")
+                assert "Refusing to delete nonexistent PIN" in str(err)
+
+
+@pytest.mark.asyncio
+async def test_remove_pin(aresponses, v3_server):
+    """Test removing a PIN in a V3 system."""
+    async with v3_server:
+        v3_server.add(
+            "api.simplisafe.com",
+            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
+            "get",
+            aresponses.Response(
+                text=load_fixture("v3_settings_response.json"), status=200
+            ),
+        )
+        v3_server.add(
+            "api.simplisafe.com",
+            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
+            "get",
+            aresponses.Response(
+                text=load_fixture("v3_settings_response.json"), status=200
+            ),
+        )
+        v3_server.add(
+            "api.simplisafe.com",
+            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/pins",
+            "post",
+            aresponses.Response(
+                text=load_fixture("v3_settings_deleted_pin_response.json"), status=200
+            ),
+        )
+        v3_server.add(
+            "api.simplisafe.com",
+            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
+            "get",
+            aresponses.Response(
+                text=load_fixture("v3_settings_deleted_pin_response.json"), status=200
+            ),
+        )
+
+        async with aiohttp.ClientSession() as websession:
+            simplisafe = await API.login_via_credentials(
+                TEST_EMAIL, TEST_PASSWORD, websession
+            )
+            systems = await simplisafe.get_systems()
+            system = systems[TEST_SYSTEM_ID]
+
+            latest_pins = await system.get_pins()
+            assert len(latest_pins) == 4
+
+            await system.remove_pin("Test 2")
+            latest_pins = await system.get_pins()
+            assert len(latest_pins) == 3
+
+
+@pytest.mark.asyncio
+async def test_remove_reserved_pin(aresponses, v3_server):
+    """Test throwing an error when removing a reserved PIN."""
+    async with v3_server:
+        v3_server.add(
+            "api.simplisafe.com",
+            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
+            "get",
+            aresponses.Response(
+                text=load_fixture("v3_settings_response.json"), status=200
+            ),
+        )
+
+        async with aiohttp.ClientSession() as websession:
+            simplisafe = await API.login_via_credentials(
+                TEST_EMAIL, TEST_PASSWORD, websession
+            )
+            systems = await simplisafe.get_systems()
+            system = systems[TEST_SYSTEM_ID]
+
+            with pytest.raises(PinError) as err:
+                await system.remove_pin("master")
+                assert "Refusing to delete reserved PIN" in str(err)
+
+
+@pytest.mark.asyncio
+async def test_set_duplicate_pin(aresponses, v3_server):
+    """Test throwing an error when setting a duplicate PIN."""
+    async with v3_server:
+        v3_server.add(
+            "api.simplisafe.com",
+            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
+            "get",
+            aresponses.Response(
+                text=load_fixture("v3_settings_response.json"), status=200
+            ),
+        )
+        v3_server.add(
+            "api.simplisafe.com",
+            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/pins",
+            "post",
+            aresponses.Response(
+                text=load_fixture("v3_settings_response.json"), status=200
+            ),
+        )
+
+        async with aiohttp.ClientSession() as websession:
+            with pytest.raises(PinError) as err:
+                simplisafe = await API.login_via_credentials(
+                    TEST_EMAIL, TEST_PASSWORD, websession
+                )
+                systems = await simplisafe.get_systems()
+                system = systems[TEST_SYSTEM_ID]
+
+                await system.set_pin("whatever", "1234")
+                assert "Refusing to create duplicate PIN" in str(err)
+
+
+@pytest.mark.asyncio
+async def test_set_invalid_property(aresponses, v3_server):
     """Test that setting an invalid property raises a ValueError."""
     async with v3_server:
         v3_server.add(
@@ -584,53 +468,7 @@ async def test_set_max_user_pins(aresponses, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_set_pin_v2(aresponses, v2_server):
-    """Test setting a PIN in a V2 system."""
-    async with v2_server:
-        v2_server.add(
-            "api.simplisafe.com",
-            f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/pins",
-            "get",
-            aresponses.Response(text=load_fixture("v2_pins_response.json"), status=200),
-        )
-        v2_server.add(
-            "api.simplisafe.com",
-            f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/pins",
-            "get",
-            aresponses.Response(text=load_fixture("v2_pins_response.json"), status=200),
-        )
-        v2_server.add(
-            "api.simplisafe.com",
-            f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/pins",
-            "post",
-            aresponses.Response(text=None, status=200),
-        )
-        v2_server.add(
-            "api.simplisafe.com",
-            f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/pins",
-            "get",
-            aresponses.Response(
-                text=load_fixture("v2_new_pins_response.json"), status=200
-            ),
-        )
-
-        async with aiohttp.ClientSession() as websession:
-            simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, websession
-            )
-            systems = await simplisafe.get_systems()
-            system = systems[TEST_SYSTEM_ID]
-
-            latest_pins = await system.get_pins()
-            assert len(latest_pins) == 4
-
-            await system.set_pin("whatever", "1275")
-            new_pins = await system.get_pins()
-            assert len(new_pins) == 5
-
-
-@pytest.mark.asyncio
-async def test_set_pin_v3(aresponses, v3_server):
+async def test_set_pin(aresponses, v3_server):
     """Test setting a PIN in a V3 system."""
     async with v3_server:
         v3_server.add(
@@ -714,67 +552,7 @@ async def test_set_pin_wrong_length(v3_server):
 
 
 @pytest.mark.asyncio
-async def test_set_states_v2(aresponses, v2_server):
-    """Test the ability to set the state of a v2 system."""
-    async with v2_server:
-        # Since this flow will make the same API call four times and
-        # aresponses deletes matches each time, we need to add four additional
-        # routes:
-        v2_server.add(
-            "api.simplisafe.com",
-            f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/state",
-            "post",
-            aresponses.Response(
-                text=load_fixture("v2_state_away_response.json"), status=200
-            ),
-        )
-        v2_server.add(
-            "api.simplisafe.com",
-            f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/state",
-            "post",
-            aresponses.Response(
-                text=load_fixture("v2_state_home_response.json"), status=200
-            ),
-        )
-        v2_server.add(
-            "api.simplisafe.com",
-            f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/state",
-            "post",
-            aresponses.Response(
-                text=load_fixture("v2_state_off_response.json"), status=200
-            ),
-        )
-        v2_server.add(
-            "api.simplisafe.com",
-            f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/state",
-            "post",
-            aresponses.Response(
-                text=load_fixture("v2_state_off_response.json"), status=200
-            ),
-        )
-
-        async with aiohttp.ClientSession() as websession:
-            simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, websession
-            )
-            systems = await simplisafe.get_systems()
-            system = systems[TEST_SYSTEM_ID]
-
-            await system.set_away()
-            assert system.state == SystemStates.away
-
-            await system.set_home()
-            assert system.state == SystemStates.home
-
-            await system.set_off()
-            assert system.state == SystemStates.off
-
-            await system.set_off()
-            assert system.state == SystemStates.off
-
-
-@pytest.mark.asyncio
-async def test_set_states_v3(aresponses, v3_server):
+async def test_set_states(aresponses, v3_server):
     """Test the ability to set the state of the system."""
     async with v3_server:
         # Since this flow will make the same API call four times and
@@ -892,56 +670,7 @@ async def test_unknown_initial_state(aresponses, caplog, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_unknown_sensor_type(caplog, v2_server):
-    """Test whether a message is logged upon finding an unknown sensor type."""
-    async with v2_server:
-        async with aiohttp.ClientSession() as websession:
-            simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, websession
-            )
-            _ = await simplisafe.get_systems()
-
-            assert any("Unknown" in e.message for e in caplog.records)
-
-
-@pytest.mark.asyncio
-async def test_update_system_data_v2(aresponses, v2_server):
-    """Test getting updated data for a v2 system."""
-    async with v2_server:
-        v2_server.add(
-            "api.simplisafe.com",
-            f"/v1/users/{TEST_USER_ID}/subscriptions",
-            "get",
-            aresponses.Response(
-                text=load_fixture("v2_subscriptions_response.json"), status=200
-            ),
-        )
-        v2_server.add(
-            "api.simplisafe.com",
-            f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/settings",
-            "get",
-            aresponses.Response(
-                text=load_fixture("v2_settings_response.json"), status=200
-            ),
-        )
-
-        async with aiohttp.ClientSession() as websession:
-            simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, websession
-            )
-            systems = await simplisafe.get_systems()
-            system = systems[TEST_SYSTEM_ID]
-
-            await system.update()
-
-            assert system.serial == TEST_SYSTEM_SERIAL_NO
-            assert system.system_id == TEST_SYSTEM_ID
-            assert simplisafe.access_token == TEST_ACCESS_TOKEN
-            assert len(system.sensors) == 35
-
-
-@pytest.mark.asyncio
-async def test_update_system_data_v3(aresponses, v3_server):
+async def test_update_system_data(aresponses, v3_server):
     """Test getting updated data for a v3 system."""
     async with v3_server:
         v3_server.add(
@@ -985,7 +714,7 @@ async def test_update_system_data_v3(aresponses, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_update_error_v3(aresponses, v3_server):
+async def test_update_error(aresponses, v3_server):
     """Test handling a generic error during update."""
     async with v3_server:
         v3_server.add(

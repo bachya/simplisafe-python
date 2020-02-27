@@ -76,7 +76,7 @@ async def test_get_pins(aresponses, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_get_systems(aresponses, v3_server):
+async def test_get_systems(aresponses, v3_server, v3_subscriptions_response):
     """Test the ability to get systems attached to a v3 account."""
     async with v3_server:
         # Since this flow will call both three routes once more each (on top of
@@ -102,9 +102,7 @@ async def test_get_systems(aresponses, v3_server):
             "api.simplisafe.com",
             f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
-            aresponses.Response(
-                text=load_fixture("v3_subscriptions_response.json"), status=200
-            ),
+            aresponses.Response(text=v3_subscriptions_response, status=200),
         )
         v3_server.add(
             "api.simplisafe.com",
@@ -612,16 +610,14 @@ async def test_set_states(aresponses, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_system_notifications(aresponses, v3_server):
+async def test_system_notifications(aresponses, v3_server, v3_subscriptions_response):
     """Test getting system notifications."""
     async with v3_server:
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
-            aresponses.Response(
-                text=load_fixture("v3_subscriptions_response.json"), status=200
-            ),
+            aresponses.Response(text=v3_subscriptions_response, status=200),
         )
 
         async with aiohttp.ClientSession() as websession:
@@ -670,16 +666,14 @@ async def test_unknown_initial_state(aresponses, caplog, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_update_system_data(aresponses, v3_server):
+async def test_update_system_data(aresponses, v3_server, v3_subscriptions_response):
     """Test getting updated data for a v3 system."""
     async with v3_server:
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
-            aresponses.Response(
-                text=load_fixture("v3_subscriptions_response.json"), status=200
-            ),
+            aresponses.Response(text=v3_subscriptions_response, status=200),
         )
         v3_server.add(
             "api.simplisafe.com",
@@ -714,16 +708,14 @@ async def test_update_system_data(aresponses, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_update_error(aresponses, v3_server):
+async def test_update_error(aresponses, v3_server, v3_subscriptions_response):
     """Test handling a generic error during update."""
     async with v3_server:
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
-            aresponses.Response(
-                text=load_fixture("v3_subscriptions_response.json"), status=200
-            ),
+            aresponses.Response(text=v3_subscriptions_response, status=200),
         )
         v3_server.add(
             "api.simplisafe.com",

@@ -39,7 +39,7 @@
                 ],
                 "copsOptIn": false,
                 "smashSafeOptIn": false,
-                "certificateUri": "https://simplisafe.com/account2/12345/alarm-certificate/",
+                "certificateUri": "https://simplisafe.com/account2/12345/alarm-certificate",
                 "locationOffset": -360,
                 "nestStructureId": "",
                 "system": {
@@ -48,7 +48,7 @@
                     "alarmStateTimestamp": 0,
                     "isAlarming": false,
                     "version": 3,
-                    "temperature": 61,
+                    "temperature": 67,
                     "exitDelayRemaining": 60,
                     "cameras": [],
                     "connType": "wifi",

@@ -65,7 +65,7 @@ async def test_properties(v2_server):
 
             assert not system.alarm_going_off
             assert system.address == TEST_ADDRESS
-            assert system.connection_type == "cell"
+            assert system.connection_type == "wifi"
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.state == SystemStates.off
             assert system.system_id == TEST_SYSTEM_ID

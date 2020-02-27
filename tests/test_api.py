@@ -37,16 +37,16 @@ async def test_401_bad_credentials(aresponses):
 
 
 @pytest.mark.asyncio
-async def test_401_refresh_token_failure(aresponses, v2_server):
+async def test_401_refresh_token_failure(
+    aresponses, v2_server, v2_subscriptions_response
+):
     """Test that a generic error is thrown when a request fails."""
     async with v2_server:
         v2_server.add(
             "api.simplisafe.com",
             f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
-            aresponses.Response(
-                text=load_fixture("v2_subscriptions_response.json"), status=200,
-            ),
+            aresponses.Response(text=v2_subscriptions_response, status=200,),
         )
         v2_server.add(
             "api.simplisafe.com",
@@ -73,7 +73,9 @@ async def test_401_refresh_token_failure(aresponses, v2_server):
 
 
 @pytest.mark.asyncio
-async def test_401_refresh_token_success(aresponses, v2_server):
+async def test_401_refresh_token_success(
+    aresponses, v2_server, v2_subscriptions_response
+):
     """Test that a generic error is thrown when a request fails."""
     async with v2_server:
         v2_server.add(
@@ -102,9 +104,7 @@ async def test_401_refresh_token_success(aresponses, v2_server):
             "api.simplisafe.com",
             f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
-            aresponses.Response(
-                text=load_fixture("v2_subscriptions_response.json"), status=200,
-            ),
+            aresponses.Response(text=v2_subscriptions_response, status=200,),
         )
         v2_server.add(
             "api.simplisafe.com",
@@ -238,7 +238,9 @@ async def test_refresh_token_dirtiness(aresponses, v2_server):
 
 
 @pytest.mark.asyncio
-async def test_unavailable_feature_v2(aresponses, caplog, v2_server):
+async def test_unavailable_feature_v2(
+    aresponses, caplog, v2_server, v2_subscriptions_response
+):
     """Test that a message is logged with an unavailable feature."""
     caplog.set_level(logging.INFO)
 
@@ -263,9 +265,7 @@ async def test_unavailable_feature_v2(aresponses, caplog, v2_server):
             "api.simplisafe.com",
             f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
-            aresponses.Response(
-                text=load_fixture("v2_subscriptions_response.json"), status=200,
-            ),
+            aresponses.Response(text=v2_subscriptions_response, status=200,),
         )
         v2_server.add(
             "api.simplisafe.com",
@@ -302,7 +302,9 @@ async def test_unavailable_feature_v2(aresponses, caplog, v2_server):
 
 
 @pytest.mark.asyncio
-async def test_unavailable_feature_v3(aresponses, caplog, v3_server):
+async def test_unavailable_feature_v3(
+    aresponses, caplog, v3_server, v3_subscriptions_response
+):
     """Test that a message is logged with an unavailable feature."""
     caplog.set_level(logging.INFO)
 
@@ -327,9 +329,7 @@ async def test_unavailable_feature_v3(aresponses, caplog, v3_server):
             "api.simplisafe.com",
             f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
-            aresponses.Response(
-                text=load_fixture("v3_subscriptions_response.json"), status=200,
-            ),
+            aresponses.Response(text=v3_subscriptions_response, status=200),
         )
         v3_server.add(
             "api.simplisafe.com",

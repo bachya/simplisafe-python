@@ -45,7 +45,7 @@ async def test_get_pins(aresponses, v2_server):
 
 
 @pytest.mark.asyncio
-async def test_get_systems2(aresponses, v2_server):
+async def test_get_systems2(aresponses, v2_server, v2_subscriptions_response):
     """Test the ability to get systems attached to a v2 account."""
     async with v2_server:
         # Since this flow will call both three routes once more each (on top of
@@ -71,9 +71,7 @@ async def test_get_systems2(aresponses, v2_server):
             "api.simplisafe.com",
             f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
-            aresponses.Response(
-                text=load_fixture("v2_subscriptions_response.json"), status=200
-            ),
+            aresponses.Response(text=v2_subscriptions_response, status=200),
         )
         v2_server.add(
             "api.simplisafe.com",
@@ -215,16 +213,14 @@ async def test_set_states(aresponses, v2_server):
 
 
 @pytest.mark.asyncio
-async def test_update_system_data(aresponses, v2_server):
+async def test_update_system_data(aresponses, v2_server, v2_subscriptions_response):
     """Test getting updated data for a v2 system."""
     async with v2_server:
         v2_server.add(
             "api.simplisafe.com",
             f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
-            aresponses.Response(
-                text=load_fixture("v2_subscriptions_response.json"), status=200
-            ),
+            aresponses.Response(text=v2_subscriptions_response, status=200),
         )
         v2_server.add(
             "api.simplisafe.com",

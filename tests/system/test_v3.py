@@ -43,9 +43,10 @@ def subscriptions_missing_notifications_response(subscriptions_fixture_filename)
 
 
 @pytest.fixture()
-def subscriptions_unknown_state_response(v3_subscriptions_response):
+def subscriptions_unknown_state_response(subscriptions_fixture_filename):
     """Define a fixture for a subscription with an unknown alarm state."""
-    data = json.loads(v3_subscriptions_response)
+    raw = load_fixture(subscriptions_fixture_filename)
+    data = json.loads(raw)
     data["subscriptions"][0]["location"]["system"]["alarmState"] = "NOT_REAL_STATE"
     return json.dumps(data)
 
@@ -668,25 +669,19 @@ async def test_system_notifications(aresponses, v3_server, v3_subscriptions_resp
 
 
 @pytest.mark.asyncio
-async def test_unknown_initial_state(
-    aresponses, caplog, v3_server, subscriptions_unknown_state_response
-):
+@pytest.mark.parametrize(
+    "v3_subscriptions_response",
+    ["subscriptions_unknown_state_response"],
+    indirect=True,
+)
+async def test_unknown_initial_state(caplog, v3_server):
     """Test handling of an initially unknown state."""
     async with v3_server:
-        v3_server.add(
-            "api.simplisafe.com",
-            f"/v1/users/{TEST_USER_ID}/subscriptions",
-            "get",
-            aresponses.Response(text=subscriptions_unknown_state_response, status=200),
-        )
-
         async with aiohttp.ClientSession() as websession:
             simplisafe = await API.login_via_credentials(
                 TEST_EMAIL, TEST_PASSWORD, websession
             )
-            systems = await simplisafe.get_systems()
-            system = systems[TEST_SYSTEM_ID]
-            await system.update(include_settings=False, include_entities=False)
+            _ = await simplisafe.get_systems()
             assert any("Unknown system state" in e.message for e in caplog.records)
             assert any("NOT_REAL_STATE" in e.message for e in caplog.records)
 

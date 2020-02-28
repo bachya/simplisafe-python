@@ -45,7 +45,7 @@ async def test_get_pins(aresponses, v2_server):
 
 
 @pytest.mark.asyncio
-async def test_get_systems2(aresponses, v2_server, v2_subscriptions_response):
+async def test_get_systems(aresponses, v2_server, v2_subscriptions_response):
     """Test the ability to get systems attached to a v2 account."""
     async with v2_server:
         # Since this flow will call both three routes once more each (on top of

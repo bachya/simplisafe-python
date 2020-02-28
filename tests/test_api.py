@@ -23,7 +23,7 @@ from .common import (
 
 @pytest.mark.asyncio
 async def test_401_bad_credentials(aresponses):
-    """Test that a 401 is thrown when credentials fail."""
+    """Test that an InvalidCredentialsError is raised with a 401 upon login."""
     aresponses.add(
         "api.simplisafe.com",
         "/v1/api/token",
@@ -40,13 +40,13 @@ async def test_401_bad_credentials(aresponses):
 async def test_401_refresh_token_failure(
     aresponses, v2_server, v2_subscriptions_response
 ):
-    """Test that a generic error is thrown when a request fails."""
+    """Test that an InvalidCredentialsError is raised with refresh token failure."""
     async with v2_server:
         v2_server.add(
             "api.simplisafe.com",
             f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
-            aresponses.Response(text=v2_subscriptions_response, status=200,),
+            aresponses.Response(text=v2_subscriptions_response, status=200),
         )
         v2_server.add(
             "api.simplisafe.com",
@@ -76,7 +76,7 @@ async def test_401_refresh_token_failure(
 async def test_401_refresh_token_success(
     aresponses, v2_server, v2_subscriptions_response
 ):
-    """Test that a generic error is thrown when a request fails."""
+    """Test that a successful refresh token carries out the original request."""
     async with v2_server:
         v2_server.add(
             "api.simplisafe.com",
@@ -127,7 +127,7 @@ async def test_401_refresh_token_success(
 
 @pytest.mark.asyncio
 async def test_bad_request(aresponses, v2_server):
-    """Test that a generic error is thrown when a request fails."""
+    """Test that a RequestError is raised on a non-existent endpoint."""
     async with v2_server:
         v2_server.add(
             "api.simplisafe.com",
@@ -200,48 +200,10 @@ async def test_invalid_credentials(aresponses, v2_server):
 
 
 @pytest.mark.asyncio
-async def test_refresh_token_dirtiness(aresponses, v2_server):
-    """Test that the refresh token's dirtiness can be checked."""
-    async with v2_server:
-        v2_server.add(
-            "api.simplisafe.com",
-            "/v1/api/token",
-            "post",
-            aresponses.Response(
-                text=load_fixture("api_token_response.json"), status=200
-            ),
-        )
-        v2_server.add(
-            "api.simplisafe.com",
-            "/v1/api/authCheck",
-            "get",
-            aresponses.Response(
-                text=load_fixture("auth_check_response.json"), status=200
-            ),
-        )
-        v2_server.add(
-            "api.simplisafe.com",
-            "/v1/api/authCheck",
-            "get",
-            aresponses.Response(
-                text=load_fixture("auth_check_response.json"), status=200
-            ),
-        )
-
-        async with aiohttp.ClientSession() as websession:
-            simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, websession
-            )
-            simplisafe._access_token_expire = datetime.now() - timedelta(hours=1)
-            await simplisafe._request("get", "api/authCheck")
-            assert simplisafe.refresh_token == TEST_REFRESH_TOKEN
-
-
-@pytest.mark.asyncio
 async def test_unavailable_feature_v2(
     aresponses, caplog, v2_server, v2_subscriptions_response
 ):
-    """Test that a message is logged with an unavailable feature."""
+    """Test that unavailable features on a V2 system log errors."""
     caplog.set_level(logging.INFO)
 
     async with v2_server:
@@ -305,7 +267,7 @@ async def test_unavailable_feature_v2(
 async def test_unavailable_feature_v3(
     aresponses, caplog, v3_server, v3_settings_response, v3_subscriptions_response
 ):
-    """Test that a message is logged with an unavailable feature."""
+    """Test that unavailable features on a V3 system log errors."""
     caplog.set_level(logging.INFO)
 
     async with v3_server:

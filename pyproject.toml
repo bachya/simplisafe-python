@@ -49,7 +49,7 @@ websockets = "^8.1"
 
 [tool.poetry.dev-dependencies]
 Sphinx = "^2.2.1"
-aresponses = "^1.1.1"
+aresponses = "^2.0.0"
 pre-commit = "^2.0.1"
 pytest = "^5.3.5"
 pytest-aiohttp = "^0.3.0"

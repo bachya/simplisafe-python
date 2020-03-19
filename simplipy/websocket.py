@@ -161,7 +161,7 @@ class WebsocketWatchdog:  # pylint: disable=too-few-public-methods
             self._timer_task.cancel()
             self._timer_task = None
 
-    async def on_expire(self):  # pragma: no cover
+    async def on_expire(self):
         """Log and act when the watchdog expires."""
         _LOGGER.info("Watchdog expired – calling %s", self._action.__name__)
         await self._action()

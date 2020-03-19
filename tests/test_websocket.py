@@ -2,10 +2,10 @@
 # pylint: disable=protected-access
 from datetime import datetime
 import json
-from unittest.mock import MagicMock
 from urllib.parse import urlencode
 
 import aiohttp
+from asynctest import CoroutineMock, MagicMock
 import pytest
 import pytz
 from socketio.exceptions import SocketIOError
@@ -13,7 +13,7 @@ from socketio.exceptions import SocketIOError
 from simplipy import API
 from simplipy.entity import EntityTypes
 from simplipy.errors import WebsocketError
-from simplipy.websocket import WebsocketEvent
+from simplipy.websocket import WebsocketEvent, WebsocketWatchdog
 
 from .common import (
     TEST_ACCESS_TOKEN,
@@ -293,6 +293,18 @@ async def test_sync_events(v3_server):
                 abort=True
             )
             on_disconnect.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_watchdog_firing():
+    """Test that the watchdog expiring fires the provided coroutine."""
+    mock_coro = CoroutineMock()
+    mock_coro.__name__ = "mock_coro"
+
+    watchdog = WebsocketWatchdog(mock_coro)
+
+    await watchdog.on_expire()
+    mock_coro.assert_called_once()
 
 
 def test_unknown_event_type_in_websocket_event(caplog):

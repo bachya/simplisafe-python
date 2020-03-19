@@ -3,7 +3,7 @@ aresponses==1.1.2
 pytest-aiohttp==0.3.0
 pytest-cov==2.8.1
 pytest==5.3.5
-python-engineio==3.11.1
-python-socketio==4.4.0
+python-engineio==3.11.2
+python-socketio==4.5.0
 pytz==2019.3
 voluptuous==0.11.7

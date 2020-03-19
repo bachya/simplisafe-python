@@ -1,4 +1,5 @@
 """Define a connection to the SimpliSafe websocket."""
+import asyncio
 from dataclasses import InitVar, dataclass, field
 from datetime import datetime
 import logging
@@ -15,6 +16,8 @@ from simplipy.util.dt import utc_from_timestamp
 _LOGGER = logging.getLogger(__name__)
 
 API_URL_BASE: str = "wss://api.simplisafe.com/socket.io"
+
+DEFAULT_WATCHDOG_TIMEOUT = 300
 
 EVENT_ALARM_CANCELED = "alarm_canceled"
 EVENT_ALARM_TRIGGERED = "alarm_triggered"
@@ -137,6 +140,45 @@ def websocket_event_from_raw_data(event: dict):
     )
 
 
+class WebsocketWatchdog:  # pylint: disable=too-few-public-methods
+    """A watchdog that will ensure the websocket connection is functioning."""
+
+    def __init__(
+        self,
+        action: Callable[..., Awaitable],
+        *,
+        timeout_seconds: int = DEFAULT_WATCHDOG_TIMEOUT,
+    ):
+        """Initialize."""
+        self._action: Callable[..., Awaitable] = action
+        self._loop = asyncio.get_event_loop()
+        self._timer_task: Optional[asyncio.TimerHandle] = None
+        self._timeout: int = timeout_seconds
+
+    def cancel(self):
+        """Cancel the watchdog."""
+        if self._timer_task:
+            self._timer_task.cancel()
+            self._timer_task = None
+
+    async def on_expire(self):  # pragma: no cover
+        """Log and act when the watchdog expires."""
+        _LOGGER.info("Watchdog expired – calling %s", self._action.__name__)
+        await self._action()
+
+    async def trigger(self):
+        """Trigger the watchdog."""
+        _LOGGER.info("Watchdog triggered – sleeping for %s seconds", self._timeout)
+
+        if self._timer_task:
+            self._timer_task.cancel()
+            self._timer_task = None
+
+        self._timer_task = self._loop.call_later(
+            self._timeout, lambda: asyncio.create_task(self.on_expire())
+        )
+
+
 class Websocket:
     """A websocket connection to the SimpliSafe cloud.
 
@@ -154,7 +196,9 @@ class Websocket:
         """Initialize."""
         self._async_disconnect_handler: Optional[Callable[..., Awaitable]] = None
         self._sio: AsyncClient = AsyncClient()
-        self._sync_disconnect_handler: Optional[Callable] = None
+        self._watchdog: WebsocketWatchdog = WebsocketWatchdog(
+            self.async_reconnect, timeout_seconds=15
+        )
 
         # Set by async_init():
         self._access_token: Optional[str] = None
@@ -171,8 +215,7 @@ class Websocket:
 
         # If the websocket is connected, reconnect it:
         if self._sio.connected:
-            await self.async_disconnect()
-            await self.async_connect()
+            await self.async_reconnect()
 
     async def async_connect(self) -> None:
         """Connect to the socket."""
@@ -191,8 +234,7 @@ class Websocket:
         await self._sio.disconnect()
         if self._async_disconnect_handler:
             await self._async_disconnect_handler()
-        elif self._sync_disconnect_handler:
-            self._sync_disconnect_handler()
+            self._async_disconnect_handler = None
 
     def async_on_connect(self, target: Callable[..., Awaitable]) -> None:
         """Define a coroutine to be called when connecting.
@@ -200,7 +242,13 @@ class Websocket:
         :param target: A coroutine
         :type target: ``Callable[..., Awaitable]``
         """
-        self.on_connect(target)
+
+        async def _async_on_connect():
+            """Act when connection occurs."""
+            await self._watchdog.trigger()
+            await target()
+
+        self._sio.on("connect", _async_on_connect)
 
     def on_connect(self, target: Callable) -> None:
         """Define a synchronous method to be called when connecting.
@@ -208,7 +256,13 @@ class Websocket:
         :param target: A synchronous function
         :type target: ``Callable``
         """
-        self._sio.on("connect", target)
+
+        async def _on_connect():
+            """Act when connection occurs."""
+            await self._watchdog.trigger()
+            target()
+
+        self._sio.on("connect", _on_connect)
 
     def async_on_disconnect(self, target: Callable[..., Awaitable]) -> None:
         """Define a coroutine to be called when disconnecting.
@@ -216,7 +270,13 @@ class Websocket:
         :param target: A coroutine
         :type target: ``Callable[..., Awaitable]``
         """
-        self._async_disconnect_handler = target
+
+        async def _async_on_disconnect():
+            """Act when disconnection occurs."""
+            self._watchdog.cancel()
+            await target()
+
+        self._async_disconnect_handler = _async_on_disconnect
 
     def on_disconnect(self, target: Callable) -> None:
         """Define a synchronous method to be called when disconnecting.
@@ -224,7 +284,13 @@ class Websocket:
         :param target: A synchronous function
         :type target: ``Callable``
         """
-        self._sync_disconnect_handler = target
+
+        async def _async_on_disconnect():
+            """Act when disconnection occurs."""
+            self._watchdog.cancel()
+            target()
+
+        self._async_disconnect_handler = _async_on_disconnect
 
     def async_on_event(self, target: Callable[..., Awaitable]) -> None:  # noqa: D202
         """Define a coroutine to be called an event is received.
@@ -238,6 +304,7 @@ class Websocket:
 
         async def _async_on_event(event_data: dict):
             """Act on the Message object."""
+            await self._watchdog.trigger()
             message = websocket_event_from_raw_data(event_data)
             await target(message)
 
@@ -253,9 +320,16 @@ class Websocket:
         :type target: ``Callable``
         """
 
-        def _on_event(event_data: dict):
+        async def _async_on_event(event_data: dict):
             """Act on the Message object."""
+            await self._watchdog.trigger()
             message = websocket_event_from_raw_data(event_data)
             target(message)
 
-        self._sio.on("event", _on_event, namespace=self._namespace)
+        self._sio.on("event", _async_on_event, namespace=self._namespace)
+
+    async def async_reconnect(self) -> None:
+        """Reconnect the websocket connection."""
+        await self._sio.disconnect()
+        await asyncio.sleep(1)
+        await self.async_connect()

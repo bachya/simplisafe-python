@@ -9,8 +9,8 @@ from simplipy.errors import SimplipyError, WebsocketError
 
 _LOGGER = logging.getLogger()
 
-SIMPLISAFE_EMAIL = "<EMAIL>"  # nosec
-SIMPLISAFE_PASSWORD = "<PASSWORD>"  # nosec
+SIMPLISAFE_EMAIL = "bachya1208@gmail.com"  # nosec
+SIMPLISAFE_PASSWORD = "zH7uC_uDMPtn*C*rd4e4_yvcJ"  # nosec
 
 
 def print_data(data):
@@ -31,7 +31,10 @@ def print_hello():
 async def main() -> None:
     """Create the aiohttp session and run the example."""
     async with ClientSession() as websession:
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format="%(asctime)s %(name)-12s %(levelname)-8s %(message)s",
+        )
 
         try:
             simplisafe = await API.login_via_credentials(

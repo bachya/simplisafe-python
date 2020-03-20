@@ -17,7 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 
 API_URL_BASE: str = "wss://api.simplisafe.com/socket.io"
 
-DEFAULT_WATCHDOG_TIMEOUT = 300
+DEFAULT_WATCHDOG_TIMEOUT = 900
 
 EVENT_ALARM_CANCELED = "alarm_canceled"
 EVENT_ALARM_TRIGGERED = "alarm_triggered"
@@ -172,7 +172,6 @@ class WebsocketWatchdog:  # pylint: disable=too-few-public-methods
 
         if self._timer_task:
             self._timer_task.cancel()
-            self._timer_task = None
 
         self._timer_task = self._loop.call_later(
             self._timeout, lambda: asyncio.create_task(self.on_expire())
@@ -196,9 +195,7 @@ class Websocket:
         """Initialize."""
         self._async_disconnect_handler: Optional[Callable[..., Awaitable]] = None
         self._sio: AsyncClient = AsyncClient()
-        self._watchdog: WebsocketWatchdog = WebsocketWatchdog(
-            self.async_reconnect, timeout_seconds=15
-        )
+        self._watchdog: WebsocketWatchdog = WebsocketWatchdog(self.async_reconnect)
 
         # Set by async_init():
         self._access_token: Optional[str] = None

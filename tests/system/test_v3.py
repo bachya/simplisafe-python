@@ -174,6 +174,56 @@ async def test_get_systems(
 
 
 @pytest.mark.asyncio
+async def test_empty_events(aresponses, v3_server):
+    """Test that an empty events structure is handled correctly."""
+    async with v3_server:
+        v3_server.add(
+            "api.simplisafe.com",
+            f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/events",
+            "get",
+            aresponses.Response(
+                text=load_fixture("events_empty_response.json"), status=200
+            ),
+        )
+
+        async with aiohttp.ClientSession() as websession:
+            simplisafe = await API.login_via_credentials(
+                TEST_EMAIL, TEST_PASSWORD, websession
+            )
+            systems = await simplisafe.get_systems()
+            system = systems[TEST_SYSTEM_ID]
+
+            # Test the events key existing, but being empty:
+            with pytest.raises(SimplipyError):
+                _ = await system.get_latest_event()
+
+
+@pytest.mark.asyncio
+async def test_missing_events(aresponses, v3_server):
+    """Test that an altogether-missing events structure is handled correctly."""
+    async with v3_server:
+        v3_server.add(
+            "api.simplisafe.com",
+            f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/events",
+            "get",
+            aresponses.Response(
+                text=load_fixture("events_missing_response.json"), status=200
+            ),
+        )
+
+        async with aiohttp.ClientSession() as websession:
+            simplisafe = await API.login_via_credentials(
+                TEST_EMAIL, TEST_PASSWORD, websession
+            )
+            systems = await simplisafe.get_systems()
+            system = systems[TEST_SYSTEM_ID]
+
+            # Test the events key existing, but being empty:
+            with pytest.raises(SimplipyError):
+                _ = await system.get_latest_event()
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "v3_subscriptions_response",
     ["subscriptions_missing_notifications_response"],

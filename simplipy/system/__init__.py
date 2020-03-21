@@ -348,7 +348,7 @@ class System:
 
         _LOGGER.debug("Events response: %s", events_resp)
 
-        return events_resp["events"]
+        return events_resp.get("events", [])
 
     async def get_latest_event(self) -> dict:
         """Get the most recent system event.
@@ -356,7 +356,11 @@ class System:
         :rtype: ``dict``
         """
         events: list = await self.get_events(num_events=1)
-        return events[0]
+
+        try:
+            return events[0]
+        except IndexError:
+            raise SimplipyError("SimpliSafe cloud didn't return any events")
 
     async def get_pins(self, cached: bool = True) -> Dict[str, str]:
         """Return all of the set PINs, including master and duress.

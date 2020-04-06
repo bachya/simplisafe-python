@@ -195,6 +195,7 @@ class Websocket:
         """Initialize."""
         self._async_disconnect_handler: Optional[Callable[..., Awaitable]] = None
         self._sio: AsyncClient = AsyncClient()
+        self._sync_disconnect_handler: Optional[Callable[..., Awaitable]] = None
         self._watchdog: WebsocketWatchdog = WebsocketWatchdog(self.async_reconnect)
 
         # Set by async_init():
@@ -229,11 +230,16 @@ class Websocket:
     async def async_disconnect(self) -> None:
         """Disconnect from the socket."""
         await self._sio.disconnect()
+        self._watchdog.cancel()
+
         if self._async_disconnect_handler:
             await self._async_disconnect_handler()
             self._async_disconnect_handler = None
+        if self._sync_disconnect_handler:
+            self._sync_disconnect_handler()
+            self._sync_disconnect_handler = None
 
-    def async_on_connect(self, target: Callable[..., Awaitable]) -> None:
+    def async_on_connect(self, target: Callable[..., Awaitable]) -> None:  # noqa: D202
         """Define a coroutine to be called when connecting.
 
         :param target: A coroutine
@@ -247,7 +253,7 @@ class Websocket:
 
         self._sio.on("connect", _async_on_connect)
 
-    def on_connect(self, target: Callable) -> None:
+    def on_connect(self, target: Callable) -> None:  # noqa: D202
         """Define a synchronous method to be called when connecting.
 
         :param target: A synchronous function
@@ -267,13 +273,7 @@ class Websocket:
         :param target: A coroutine
         :type target: ``Callable[..., Awaitable]``
         """
-
-        async def _async_on_disconnect():
-            """Act when disconnection occurs."""
-            self._watchdog.cancel()
-            await target()
-
-        self._async_disconnect_handler = _async_on_disconnect
+        self._async_disconnect_handler = target
 
     def on_disconnect(self, target: Callable) -> None:
         """Define a synchronous method to be called when disconnecting.
@@ -281,13 +281,7 @@ class Websocket:
         :param target: A synchronous function
         :type target: ``Callable``
         """
-
-        async def _async_on_disconnect():
-            """Act when disconnection occurs."""
-            self._watchdog.cancel()
-            target()
-
-        self._async_disconnect_handler = _async_on_disconnect
+        self._sync_disconnect_handler = target
 
     def async_on_event(self, target: Callable[..., Awaitable]) -> None:  # noqa: D202
         """Define a coroutine to be called an event is received.
@@ -327,6 +321,6 @@ class Websocket:
 
     async def async_reconnect(self) -> None:
         """Reconnect the websocket connection."""
-        await self._sio.disconnect()
+        await self.async_disconnect()
         await asyncio.sleep(1)
         await self.async_connect()

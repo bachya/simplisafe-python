@@ -48,7 +48,7 @@ voluptuous = "^0.11.7"
 websockets = "^8.1"
 
 [tool.poetry.dev-dependencies]
-Sphinx = "^2.2.1"
+Sphinx = "^3.0.0"
 aresponses = "^2.0.0"
 asynctest = "^0.13.0"
 pre-commit = "^2.0.1"

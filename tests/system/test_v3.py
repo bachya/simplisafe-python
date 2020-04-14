@@ -26,6 +26,15 @@ from tests.common import (
 
 
 @pytest.fixture()
+def subscriptions_alarm_state_response(subscriptions_fixture_filename):
+    """Define a fixture for a subscription with an ALARM alarm state."""
+    raw = load_fixture(subscriptions_fixture_filename)
+    data = json.loads(raw)
+    data["subscriptions"][0]["location"]["system"]["alarmState"] = "ALARM"
+    return json.dumps(data)
+
+
+@pytest.fixture()
 def settings_missing_basestation_response(v3_settings_response):
     """Define a fixture for settings that are missing base station status."""
     data = json.loads(v3_settings_response)
@@ -49,6 +58,22 @@ def subscriptions_unknown_state_response(subscriptions_fixture_filename):
     data = json.loads(raw)
     data["subscriptions"][0]["location"]["system"]["alarmState"] = "NOT_REAL_STATE"
     return json.dumps(data)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "v3_subscriptions_response", ["subscriptions_alarm_state_response"], indirect=True,
+)
+async def test_alarm_state(v3_server):
+    """Test handling of a triggered alarm."""
+    async with v3_server:
+        async with aiohttp.ClientSession() as websession:
+            simplisafe = await API.login_via_credentials(
+                TEST_EMAIL, TEST_PASSWORD, websession
+            )
+            systems = await simplisafe.get_systems()
+            system = systems[TEST_SYSTEM_ID]
+            assert system.state == SystemStates.alarm
 
 
 @pytest.mark.asyncio

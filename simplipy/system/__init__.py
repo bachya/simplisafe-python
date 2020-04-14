@@ -110,15 +110,16 @@ class SystemNotification:
 class SystemStates(Enum):
     """States that the system can be in."""
 
-    alarm_count = 1
-    away = 2
-    away_count = 3
-    entry_delay = 4
-    error = 5
-    exit_delay = 6
-    home = 7
-    home_count = 8
-    off = 9
+    alarm = 1
+    alarm_count = 2
+    away = 3
+    away_count = 4
+    entry_delay = 5
+    error = 6
+    exit_delay = 7
+    home = 8
+    home_count = 9
+    off = 10
     unknown = 99
 
 

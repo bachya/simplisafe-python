@@ -6,121 +6,76 @@ API Reference
 
 .. module:: simplipy
 
-``API``
-----------------
+API
+---
 
 .. autoclass:: API
    :members:
 
-``Entity``
----------------------
+Entities
+--------
 
 .. autoclass:: simplipy.entity.Entity
    :members:
-
-``EntityTypes``
----------------------
 
 .. autoclass:: simplipy.entity.EntityTypes
    :members:
    :undoc-members:
 
-``EntityV3``
-------------------
-
 .. autoclass:: simplipy.entity.EntityV3
    :members:
 
-``Lock``
---------------------
+Lock
+----
 
 .. autoclass:: simplipy.lock.Lock
    :members:
-
-``LockStates``
---------------------
 
 .. autoclass:: simplipy.lock.LockStates
    :members:
    :undoc-members:
 
-``InvalidCredentialsError``
----------------------------------
-
-.. autoclass:: simplipy.errors.InvalidCredentialsError
-   :members:
-
-``PinError``
-------------------
-
-.. autoclass:: simplipy.errors.PinError
-   :members:
-
-``RequestError``
-----------------------
-
-.. autoclass:: simplipy.errors.RequestError
-   :members:
-
-``SensorV2``
------------------------
+Sensors
+-------
 
 .. autoclass:: simplipy.sensor.v2.SensorV2
    :members:
 
-``SensorV3``
------------------------
-
 .. autoclass:: simplipy.sensor.v3.SensorV3
    :members:
 
-``System``
------------------------
+Systems
+-------
 
 .. autoclass:: simplipy.system.System
    :members:
 
-``SystemNotification``
------------------------
+.. autoclass:: simplipy.system.v2.SystemV2
+   :members:
+
+.. autoclass:: simplipy.system.v3.SystemV3
+   :members:
 
 .. autoclass:: simplipy.system.SystemNotification
    :members:
    :undoc-members:
 
-``SystemStates``
------------------------
-
 .. autoclass:: simplipy.system.SystemStates
    :members:
    :undoc-members:
 
-``SystemV2``
------------------------
-
-.. autoclass:: simplipy.system.v2.SystemV2
-   :members:
-
-``SystemV3``
------------------------
-
-.. autoclass:: simplipy.system.v3.SystemV3
-   :members:
-
-``SimplipyError``
------------------------
-
-.. autoclass:: simplipy.errors.SimplipyError
-   :members:
-
-``Websocket``
+Websocket Communication
 -----------------------
 
 .. autoclass:: simplipy.websocket.Websocket
    :members:
 
-``WebsocketEvent``
------------------------
-
 .. autoclass:: simplipy.websocket.WebsocketEvent
    :members:
    :undoc-members:
+
+Errors
+------
+
+.. automodule:: simplipy.errors
+   :members:

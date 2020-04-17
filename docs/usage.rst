@@ -41,7 +41,7 @@ Scaffolding
 
 Installing ``simplipy`` also includes ``aiohttp``, which is the engine that powers
 the entire library. All interactions with ``simplipy`` start within an
-`aiohttp ClientSession <https://aiohttp.readthedocs.io/en/stable/client_advanced.html#client-session>`_:
+``aiohttp`` ``ClientSession``:
 
 .. code:: python
 

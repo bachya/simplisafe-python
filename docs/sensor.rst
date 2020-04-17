@@ -1,13 +1,15 @@
 Sensors
 =======
 
-``Sensor`` objects provide information about the SimpliSafe™ sensors to
-which they relate.
+Sensor objects provide information about the SimpliSafe™ sensors to which they relate.
 
-Like their ``System`` cousins, two types of objects can be returned:
+Like their :meth:`System <simplipy.system.System>` cousins, two types of objects can be
+returned:
 
-* ``SensorV2``: an object to view V2 (classic) SimpliSafe™ sensors
-* ``SensorV3``: an object to view V3 (new, released in 2018) SimpliSafe™ sensors
+* :meth:`SensorV2 <simplipy.sensor.v2.SensorV2>`: an object to view V2 (classic)
+  SimpliSafe™ sensors
+* :meth:`SensorV3 <simplipy.sensor.v3.SensorV3>`: an object to view V3 (new, released in
+  2018) SimpliSafe™ sensors
 
 Once again, ``simplipy`` provides a common interface to
 these objects; however, there are some properties that are either (a) specific

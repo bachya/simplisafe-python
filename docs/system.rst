@@ -1,11 +1,13 @@
 Systems
 =======
 
-``System`` objects are used to retrieve data on and control the state
+:meth:`System <simplipy.system.System>` objects are used to retrieve data on and control the state
 of SimpliSafe™ systems. Two types of objects can be returned:
 
-* ``SystemV2``: an object to control V2 (classic) SimpliSafe™ systems
-* ``SystemV3``: an object to control V3 (new, released in 2018) SimpliSafe™ systems
+* :meth:`SystemV2 <simplipy.system.v2.SystemV2>`: an object to control V2 (classic)
+  SimpliSafe™ systems
+* :meth:`SystemV3 <simplipy.system.v3.SystemV3>`: an object to control V3 (new, released
+  in 2018) SimpliSafe™ systems
 
 Despite the differences, ``simplipy`` provides a common interface to
 these objects, meaning many of the same properties and methods are available to
@@ -38,7 +40,8 @@ To get all SimpliSafe™ systems associated with an account:
 Core Properties
 ---------------
 
-All ``System`` objects come with a standard set of properties
+All :meth:`System <simplipy.system.System>` objects come with a standard set of
+properties:
 
 .. code:: python
 
@@ -92,8 +95,8 @@ All ``System`` objects come with a standard set of properties
 V3 Properties
 -------------
 
-If a ``System`` object should be a V3 system, it will automatically come with
-additional properties:
+If a :meth:`System <simplipy.system.v3.SystemV3>` object should be a V3 system, it will
+automatically come with additional properties:
 
 .. code:: python
 
@@ -171,8 +174,8 @@ additional properties:
     system.wifi_strength
     # >>> -43
 
-V3 systems also come with a ``set_properties`` method to update the following system
-properties:
+V3 systems also come with a :meth:`set_properties <simplipy.system.v3.SystemV3.set_properties>`
+method to update the following system properties:
 
 * ``alarm_duration`` (in seconds): 30-480
 * ``alarm_volume``: 0 (off), 1 (low), 2 (medium), 3 (high)
@@ -185,7 +188,7 @@ properties:
 * ``voice_prompt_volume``: 0 (off), 1 (low), 2 (medium), 3 (high)
 
 Note that volume properties can accept integers or constants defined in
-``simplipy.system.v3``.
+``simplipy.system.v3.SystemV3``.
 
 .. code:: python
 
@@ -205,22 +208,21 @@ Note that volume properties can accept integers or constants defined in
         }
     )
 
-Note that ``system.set_exit_delay_away()``, ``system.set_exit_delay_home()``,
-``system.set_exit_delay_away()``, and ``system.set_exit_delay_away()``
-have limits imposed:
+Note that entry and exit delay durations have limits imposed:
 
-* ``system.set_entry_delay_away()``: 30–255 seconds
-* ``system.set_entry_delay_home()``: 45–255 seconds
-* ``system.set_exit_delay_away()``: 0–255 seconds
-* ``system.set_exit_delay_home()``: 0–255 seconds
+* Entry Delay (``away``): 30–255 seconds
+* Entry Delay (``home``): 45–255 seconds
+* Exit Delay (``away``): 0–255 seconds
+* Exit Delay (``home``): 0–255 seconds
 
 Attempting to call these coroutines with a value beyond these limits will raise a
-``SimplipyError``.
+:meth:`SimplipyError <simplipy.errors.SimplipyError>`.
 
 Updating the System
 -------------------
 
-Refreshing the ``System`` object is done via the ``update()`` coroutine:
+Refreshing the :meth:`System <simplipy.system.System>` object is done via the
+:meth:`update() <simplipy.system.System.update>` coroutine:
 
 .. code:: python
 
@@ -265,8 +267,8 @@ of three coroutines:
 Events
 ------
 
-The ``System`` object allows users to view events that have occurred with their
-system:
+The :meth:`System <simplipy.system.System>` object allows users to view events that have
+occurred with their system:
 
 .. code:: python
 
@@ -284,11 +286,13 @@ system:
 System Notifications
 --------------------
 
-The ``notifications`` property of the ``System`` object contains any active system
-notifications (in the form of :meth:`simplipy.system.SystemNotification` objects).
+The ``notifications`` property of the :meth:`System <simplipy.system.System>` object
+contains any active system notifications (in the form of
+:meth:`SystemNotification <simplipy.system.SystemNotification>` objects).
 
 As notifications are cleared (via the SimpliSafe™ web app, etc.), they will disappear
-from the ``notifications`` property when the ``update()`` coroutine is called.
+from the ``notifications`` property when the :meth:`update() <simplipy.system.System.update>`
+coroutine is called.
 
 PINs
 ----

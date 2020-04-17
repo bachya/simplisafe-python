@@ -3,7 +3,7 @@ Websocket
 
 ``simplipy`` provides a websocket that allows for near-real-time detection of certain
 events from a user's SimpliSafe™ system. This websocket can be accessed via the
-``websocket`` property of the ``API`` object:
+``websocket`` property of the :meth:`API <simplipy.api.API>` object:
 
 .. code:: python
 

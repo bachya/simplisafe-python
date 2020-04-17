@@ -4,9 +4,9 @@ Advanced Usage
 The SimpliSafe Object
 *********************
 
-Although 99% of users will focus primarily on the ``System`` object and its associated
-objects, the ``SimpliSafe`` object created at the very beginning of each example is
-useful for managing ongoing access to the API.
+Although 99% of users will focus primarily on the :meth:`System <simplipy.system.System>`
+object and its associated objects, the ``SimpliSafe`` object created at the very
+beginning of each example is useful for managing ongoing access to the API.
 
 **VERY IMPORTANT NOTE:** the ``SimpliSafe`` object contains references to
 SimpliSafe™ access and refresh tokens. **It is vitally important that you do
@@ -64,12 +64,12 @@ Errors/Exceptions
 
 ``simplipy`` exposes several useful error types:
 
-* ``simplipy.errors.SimplipyError``: a base error that all other ``simplipy``
-  errors inherit from
-* ``simplipy.errors.InvalidCredentialsError``: an error related to an invalid
-  username/password combo
-* ``simplipy.errors.PinError``: an error related to an invalid PIN operation,
-  such as attempting to delete a reserved PIN (e.g., "master"), adding too many
-  PINs, etc.
-* ``simplipy.errors.RequestError``: an error related to HTTP requests that return
-  something other than a ``200`` response code
+* :meth:`SimplipyError <simplipy.errors.SimplipyError>`: a base error that all other
+  ``simplipy`` errors inherit from
+* :meth:`InvalidCredentialsError <simplipy.errors.InvalidCredentialsError>`: an error
+  related to an invalid username/password combo
+* :meth:`PinError <simplipy.errors.PinError>`: an error related to an invalid PIN
+  operation, such as attempting to delete a reserved PIN (e.g., "master"), adding too
+  many PINs, etc.
+* :meth:`RequestError <simplipy.errors.RequestError>`: an error related to HTTP requests
+  that return something other than a ``200`` response code

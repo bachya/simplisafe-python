@@ -324,6 +324,16 @@ class System:
         """Raise if calling this undefined based method."""
         raise NotImplementedError()
 
+    async def clear_notifications(self):
+        """Clear all active notifications.
+
+        This will remove the notification from SimpliSafe's cloud, meaning it will no
+        longer visible in the SimpliSafe mobile and web apps.
+        """
+        if self._notifications:
+            await self._request("delete", f"subscriptions/{self.system_id}/messages")
+            self._notifications = []
+
     async def get_events(
         self, from_datetime: Optional[datetime] = None, num_events: Optional[int] = None
     ) -> list:

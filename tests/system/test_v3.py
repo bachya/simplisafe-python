@@ -1,6 +1,5 @@
 """Define tests for v3 System objects."""
 from datetime import datetime
-import json
 import logging
 
 import aiohttp
@@ -25,41 +24,6 @@ from tests.common import (
 )
 
 
-@pytest.fixture()
-def subscriptions_alarm_state_response(subscriptions_fixture_filename):
-    """Define a fixture for a subscription with an ALARM alarm state."""
-    raw = load_fixture(subscriptions_fixture_filename)
-    data = json.loads(raw)
-    data["subscriptions"][0]["location"]["system"]["alarmState"] = "ALARM"
-    return json.dumps(data)
-
-
-@pytest.fixture()
-def settings_missing_basestation_response(v3_settings_response):
-    """Define a fixture for settings that are missing base station status."""
-    data = json.loads(v3_settings_response)
-    data["settings"].pop("basestationStatus")
-    return json.dumps(data)
-
-
-@pytest.fixture()
-def subscriptions_missing_notifications_response(subscriptions_fixture_filename):
-    """Define a fixture for a subscription that is missing notifications."""
-    raw = load_fixture(subscriptions_fixture_filename)
-    data = json.loads(raw)
-    data["subscriptions"][0]["location"]["system"].pop("messages")
-    return json.dumps(data)
-
-
-@pytest.fixture()
-def subscriptions_unknown_state_response(subscriptions_fixture_filename):
-    """Define a fixture for a subscription with an unknown alarm state."""
-    raw = load_fixture(subscriptions_fixture_filename)
-    data = json.loads(raw)
-    data["subscriptions"][0]["location"]["system"]["alarmState"] = "NOT_REAL_STATE"
-    return json.dumps(data)
-
-
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "v3_subscriptions_response", ["subscriptions_alarm_state_response"], indirect=True,
@@ -74,6 +38,27 @@ async def test_alarm_state(v3_server):
             systems = await simplisafe.get_systems()
             system = systems[TEST_SYSTEM_ID]
             assert system.state == SystemStates.alarm
+
+
+async def test_clear_notifications(aresponses, v3_server):
+    """Test getting the latest event."""
+    async with v3_server:
+        v3_server.add(
+            "api.simplisafe.com",
+            f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/messages",
+            "delete",
+            aresponses.Response(text=None, status=200),
+        )
+
+        async with aiohttp.ClientSession() as websession:
+            simplisafe = await API.login_via_credentials(
+                TEST_EMAIL, TEST_PASSWORD, websession
+            )
+            systems = await simplisafe.get_systems()
+            system = systems[TEST_SYSTEM_ID]
+
+            await system.clear_notifications()
+            assert system.notifications == []
 
 
 @pytest.mark.asyncio

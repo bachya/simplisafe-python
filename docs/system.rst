@@ -290,9 +290,12 @@ The ``notifications`` property of the :meth:`System <simplipy.system.System>` ob
 contains any active system notifications (in the form of
 :meth:`SystemNotification <simplipy.system.SystemNotification>` objects).
 
-As notifications are cleared (via the SimpliSafe™ web app, etc.), they will disappear
-from the ``notifications`` property when the :meth:`update() <simplipy.system.System.update>`
-coroutine is called.
+Notifications remain within ``system.notifications`` until cleared, which can be
+accomplished by:
+
+1. Manually clearing them in the SimpliSafe™ web and mobile applications
+2. Using the :meth:`system.clear_notifications <simplipy.system.System.clear_notifications>`
+   coroutine.
 
 PINs
 ----

@@ -40,6 +40,7 @@ async def test_alarm_state(v3_server):
             assert system.state == SystemStates.alarm
 
 
+@pytest.mark.asyncio
 async def test_clear_notifications(aresponses, v3_server):
     """Test getting the latest event."""
     async with v3_server:

@@ -39,7 +39,7 @@ when it comes time to re-authenticate, simply:
 .. code:: python
 
     simplisafe = await simplipy.API.login_via_token(
-        "<REFRESH TOKEN>", websession
+        "<REFRESH TOKEN>", session=session
     )
 
 During usage, ``simplipy`` will automatically refresh the access token as needed.
@@ -48,7 +48,7 @@ At any point, the "dirtiness" of the token can be checked:
 .. code:: python
 
     simplisafe = await simplipy.API.login_via_token(
-        "<REFRESH TOKEN>", websession
+        "<REFRESH TOKEN>", session=session
     )
 
     # Assuming the access token was automatically refreshed:

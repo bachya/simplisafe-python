@@ -36,12 +36,14 @@ Please note that only Interactive plans can access sensor values and set the
 system state; using the API with a Standard plan will be limited to retrieving
 the current system state.
 
-Scaffolding
------------
+Connection Pooling
+------------------
 
-Installing ``simplipy`` also includes ``aiohttp``, which is the engine that powers
-the entire library. All interactions with ``simplipy`` start within an
-``aiohttp`` ``ClientSession``:
+By default, the :meth:`API <simplipy.api.API>` object creates a new connection to
+SimpliSafe™ with each coroutine. If you are calling a large number of coroutines (or
+merely want to squeeze out every second of runtime savings possible), an
+``aiohttp ClientSession`` can be supplied when logging into the API (via credentials or
+token) to achieve connection pooling:
 
 .. code:: python
 
@@ -53,10 +55,14 @@ the entire library. All interactions with ``simplipy`` start within an
 
     async def main() -> None:
         """Create the aiohttp session and run."""
-        async with ClientSession() as websession:
-            # YOUR CODE HERE
+        async with ClientSession() as session:
+            simplisafe = await API.login_via_credentials(
+                "<EMAIL>", "<PASSWORD>", session=session
+            )
+
+            # ...
 
 
-    asyncio.get_event_loop().run_until_complete(main())
+    asyncio.run(main())
 
-Every example within this documentation assumes the use of the above scaffolding.
+Every example in this documentation uses this pattern.

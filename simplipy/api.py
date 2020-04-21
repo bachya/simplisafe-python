@@ -4,7 +4,7 @@ import logging
 from typing import Dict, Optional, Type, TypeVar
 from uuid import UUID, uuid4
 
-from aiohttp import BasicAuth, ClientSession
+from aiohttp import BasicAuth, ClientSession, ClientTimeout
 from aiohttp.client_exceptions import ClientError
 
 from simplipy.errors import InvalidCredentialsError, RequestError
@@ -15,13 +15,15 @@ from simplipy.websocket import Websocket
 
 _LOGGER: logging.Logger = logging.getLogger(__name__)
 
-DEFAULT_USER_AGENT: str = "SimpliSafe/2105 CFNetwork/902.2 Darwin/17.7.0"
+API_URL_HOSTNAME: str = "api.simplisafe.com"
+API_URL_BASE: str = f"https://{API_URL_HOSTNAME}/v1"
+
 DEFAULT_AUTH_USERNAME: str = "{0}.2074.0.0.com.simplisafe.mobile"
+DEFAULT_TIMEOUT: int = 10
+DEFAULT_USER_AGENT: str = "SimpliSafe/2105 CFNetwork/902.2 Darwin/17.7.0"
 
 SYSTEM_MAP: Dict[int, Type[System]] = {2: SystemV2, 3: SystemV3}
 
-API_URL_HOSTNAME: str = "api.simplisafe.com"
-API_URL_BASE: str = f"https://{API_URL_HOSTNAME}/v1"
 
 ApiType = TypeVar("ApiType", bound="API")
 
@@ -33,18 +35,18 @@ class API:  # pylint: disable=too-many-instance-attributes
     :meth:`simplipy.API.login_via_credentials` and :meth:`simplipy.API.login_via_token`
     class methods should be used.
 
-    :param websession: The ``aiohttp`` ``ClientSession`` session used for all HTTP requests
-    :type websession: ``aiohttp.client.ClientSession``
+    :param session: The ``aiohttp`` ``ClientSession`` session used for all HTTP requests
+    :type session: ``aiohttp.client.ClientSession``
     """
 
-    def __init__(self, websession: ClientSession) -> None:
+    def __init__(self, *, session: Optional[ClientSession] = None) -> None:
         """Initialize."""
         self._access_token: str = ""
         self._access_token_expire: Optional[datetime] = None
         self._actively_refreshing: bool = False
         self._refresh_token: str = ""
         self._uuid: UUID = uuid4()
-        self._websession: ClientSession = websession
+        self._session: ClientSession = session
         self.email: Optional[str] = None
         self.user_id: Optional[int] = None
         self.websocket: Websocket = Websocket()
@@ -67,7 +69,11 @@ class API:  # pylint: disable=too-many-instance-attributes
 
     @classmethod
     async def login_via_credentials(
-        cls: Type[ApiType], email: str, password: str, websession: ClientSession
+        cls: Type[ApiType],
+        email: str,
+        password: str,
+        *,
+        session: Optional[ClientSession] = None,
     ) -> ApiType:
         """Create an API object from a email address and password.
 
@@ -75,11 +81,11 @@ class API:  # pylint: disable=too-many-instance-attributes
         :type email: ``str``
         :param password: A SimpliSafe password
         :type password: ``str``
-        :param websession: An ``aiohttp`` ``ClientSession``
-        :type websession: ``aiohttp.client.ClientSession``
+        :param session: An ``aiohttp`` ``ClientSession``
+        :type session: ``aiohttp.client.ClientSession``
         :rtype: :meth:`simplipy.API`
         """
-        klass = cls(websession)
+        klass = cls(session=session)
         klass.email = email
 
         await klass._authenticate(  # pylint: disable=protected-access
@@ -90,17 +96,20 @@ class API:  # pylint: disable=too-many-instance-attributes
 
     @classmethod
     async def login_via_token(
-        cls: Type[ApiType], refresh_token: str, websession: ClientSession
+        cls: Type[ApiType],
+        refresh_token: str,
+        *,
+        session: Optional[ClientSession] = None,
     ) -> ApiType:
         """Create an API object from a refresh token.
 
         :param refresh_token: A SimpliSafe refresh token
         :type refresh_token: ``str``
-        :param websession: An ``aiohttp`` ``ClientSession``
-        :type websession: ``aiohttp.client.ClientSession``
+        :param session: An ``aiohttp`` ``ClientSession``
+        :type session: ``aiohttp.client.ClientSession``
         :rtype: :meth:`simplipy.API`
         """
-        klass = cls(websession)
+        klass = cls(session=session)
         await klass.refresh_access_token(refresh_token)
         return klass
 
@@ -158,17 +167,23 @@ class API:  # pylint: disable=too-many-instance-attributes
             self._actively_refreshing = True
             await self.refresh_access_token(self._refresh_token)
 
-        if not headers:
-            headers = {}
+        _headers = headers or {}
         if not kwargs.get("auth") and self._access_token:
-            headers["Authorization"] = f"Bearer {self._access_token}"
-        headers.update({"Host": API_URL_HOSTNAME, "User-Agent": DEFAULT_USER_AGENT})
+            _headers["Authorization"] = f"Bearer {self._access_token}"
+        _headers.update({"Host": API_URL_HOSTNAME, "User-Agent": DEFAULT_USER_AGENT})
+
+        use_running_session = self._session and not self._session.closed
+
+        if use_running_session:
+            session = self._session
+        else:
+            session = ClientSession(timeout=ClientTimeout(total=DEFAULT_TIMEOUT))
 
         try:
-            async with self._websession.request(
+            async with session.request(
                 method,
                 f"{API_URL_BASE}/{endpoint}",
-                headers=headers,
+                headers=_headers,
                 params=params,
                 data=data,
                 json=json,
@@ -204,6 +219,9 @@ class API:  # pylint: disable=too-many-instance-attributes
                 )
 
             raise RequestError(f"Error requesting data from {endpoint}: {err}")
+        finally:
+            if not use_running_session:
+                await session.close()
 
     async def get_systems(self) -> Dict[str, System]:
         """Get systems associated to the associated SimpliSafe account.

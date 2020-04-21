@@ -12,9 +12,9 @@ from tests.common import TEST_EMAIL, TEST_PASSWORD, TEST_SYSTEM_ID
 async def test_properties_v2(v2_server):
     """Test that v2 sensor properties are created properly."""
     async with v2_server:
-        async with aiohttp.ClientSession() as websession:
+        async with aiohttp.ClientSession() as session:
             simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, websession
+                TEST_EMAIL, TEST_PASSWORD, session=session
             )
             systems = await simplisafe.get_systems()
             system = systems[TEST_SYSTEM_ID]

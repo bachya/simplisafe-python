@@ -25,9 +25,9 @@ To get all SimpliSafe™ systems associated with an account:
 
     async def main() -> None:
         """Create the aiohttp session and run."""
-        async with ClientSession() as websession:
+        async with ClientSession() as session:
             simplisafe = await simplipy.API.login_via_credentials(
-                "<EMAIL>", "<PASSWORD>", websession
+                "<EMAIL>", "<PASSWORD>", session=session
             )
 
             # Get a dict of systems with the system ID as the key:
@@ -35,7 +35,7 @@ To get all SimpliSafe™ systems associated with an account:
             # >>> {"1234abc": <simplipy.system.SystemV2 object>, ...}
 
 
-    asyncio.get_event_loop().run_until_complete(main())
+    asyncio.run(main())
 
 Core Properties
 ---------------

@@ -31,9 +31,9 @@ async def test_401_bad_credentials(aresponses):
         aresponses.Response(text="", status=401),
     )
 
-    async with aiohttp.ClientSession() as websession:
+    async with aiohttp.ClientSession() as session:
         with pytest.raises(InvalidCredentialsError):
-            await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
+            await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, session=session)
 
 
 @pytest.mark.asyncio
@@ -61,10 +61,10 @@ async def test_401_refresh_token_failure(
             aresponses.Response(text="", status=401),
         )
 
-        async with aiohttp.ClientSession() as websession:
+        async with aiohttp.ClientSession() as session:
             with pytest.raises(InvalidCredentialsError):
                 simplisafe = await API.login_via_credentials(
-                    TEST_EMAIL, TEST_PASSWORD, websession
+                    TEST_EMAIL, TEST_PASSWORD, session=session
                 )
 
                 systems = await simplisafe.get_systems()
@@ -115,9 +115,9 @@ async def test_401_refresh_token_success(
             ),
         )
 
-        async with aiohttp.ClientSession() as websession:
+        async with aiohttp.ClientSession() as session:
             simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, websession
+                TEST_EMAIL, TEST_PASSWORD, session=session
             )
             systems = await simplisafe.get_systems()
             system = systems[TEST_SYSTEM_ID]
@@ -136,9 +136,9 @@ async def test_bad_request(aresponses, v2_server):
             aresponses.Response(text="", status=404),
         )
 
-        async with aiohttp.ClientSession() as websession:
+        async with aiohttp.ClientSession() as session:
             simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, websession
+                TEST_EMAIL, TEST_PASSWORD, session=session
             )
             with pytest.raises(RequestError):
                 await simplisafe._request("get", "api/fakeEndpoint")
@@ -173,9 +173,9 @@ async def test_expired_token_refresh(aresponses, v2_server):
             ),
         )
 
-        async with aiohttp.ClientSession() as websession:
+        async with aiohttp.ClientSession() as session:
             simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, websession
+                TEST_EMAIL, TEST_PASSWORD, session=session
             )
             simplisafe._access_token_expire = datetime.now() - timedelta(hours=1)
             await simplisafe._request("get", "api/authCheck")
@@ -194,9 +194,11 @@ async def test_invalid_credentials(aresponses, v2_server):
             ),
         )
 
-        async with aiohttp.ClientSession() as websession:
+        async with aiohttp.ClientSession() as session:
             with pytest.raises(InvalidCredentialsError):
-                await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, websession)
+                await API.login_via_credentials(
+                    TEST_EMAIL, TEST_PASSWORD, session=session
+                )
 
 
 @pytest.mark.asyncio
@@ -246,9 +248,9 @@ async def test_unavailable_feature_v2(
             ),
         )
 
-        async with aiohttp.ClientSession() as websession:
+        async with aiohttp.ClientSession() as session:
             simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, websession
+                TEST_EMAIL, TEST_PASSWORD, session=session
             )
             systems = await simplisafe.get_systems()
             system = systems[TEST_SYSTEM_ID]
@@ -316,9 +318,9 @@ async def test_unavailable_feature_v3(
             ),
         )
 
-        async with aiohttp.ClientSession() as websession:
+        async with aiohttp.ClientSession() as session:
             simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, websession
+                TEST_EMAIL, TEST_PASSWORD, session=session
             )
             systems = await simplisafe.get_systems()
             system = systems[TEST_SYSTEM_ID]

@@ -15,12 +15,12 @@ SIMPLISAFE_PASSWORD = "<PASSWORD>"  # nosec
 
 async def main() -> None:
     """Create the aiohttp session and run the example."""
-    async with ClientSession() as websession:
+    async with ClientSession() as session:
         logging.basicConfig(level=logging.INFO)
 
         try:
             simplisafe = await API.login_via_credentials(
-                SIMPLISAFE_EMAIL, SIMPLISAFE_PASSWORD, websession
+                SIMPLISAFE_EMAIL, SIMPLISAFE_PASSWORD, session=session
             )
             systems = await simplisafe.get_systems()
             for system_id, system in systems.items():
@@ -45,4 +45,4 @@ async def main() -> None:
             _LOGGER.error(err)
 
 
-asyncio.get_event_loop().run_until_complete(main())
+asyncio.run(main())

@@ -35,6 +35,28 @@ ENTITY_MAP: Dict[int, dict] = {
 }
 
 
+def guard_from_missing_data(default_value: Any = None):
+    """Guard a missing property by returning a set value."""
+
+    def decorator(func):
+        """Decorate."""
+
+        def wrapper(system):
+            """Call the function and handle any issue."""
+            try:
+                return func(system)
+            except KeyError as err:
+                _LOGGER.warning(
+                    "SimpliSafe didn't return data for property: %s", func.__name__
+                )
+                _LOGGER.debug(err)
+                return default_value
+
+        return wrapper
+
+    return decorator
+
+
 def create_pin_payload(pins: dict, *, version: int = VERSION_V3) -> dict:
     """Create the appropriate PIN payload for the provided version."""
     empty_user_index: int
@@ -156,7 +178,8 @@ class System:
         self.locks: Dict[str, Lock] = {}
         self.sensors: Dict[str, Union[SensorV2, SensorV3]] = {}
 
-    @property
+    @property  # type: ignore
+    @guard_from_missing_data()
     def address(self) -> str:
         """Return the street address of the system.
 
@@ -164,7 +187,8 @@ class System:
         """
         return self._location_info["street1"]
 
-    @property
+    @property  # type: ignore
+    @guard_from_missing_data(False)
     def alarm_going_off(self) -> bool:
         """Return whether the alarm is going off.
 
@@ -172,7 +196,8 @@ class System:
         """
         return self._location_info["system"]["isAlarming"]
 
-    @property
+    @property  # type: ignore
+    @guard_from_missing_data()
     def connection_type(self) -> str:
         """Return the system's connection type (cell or WiFi).
 
@@ -188,7 +213,8 @@ class System:
         """
         return self._notifications
 
-    @property
+    @property  # type: ignore
+    @guard_from_missing_data()
     def serial(self) -> str:
         """Return the system's serial number.
 
@@ -204,7 +230,8 @@ class System:
         """
         return self._state
 
-    @property
+    @property  # type: ignore
+    @guard_from_missing_data()
     def system_id(self) -> int:
         """Return the SimpliSafe identifier for this system.
 
@@ -212,7 +239,8 @@ class System:
         """
         return self._location_info["sid"]
 
-    @property
+    @property  # type: ignore
+    @guard_from_missing_data()
     def temperature(self) -> int:
         """Return the overall temperature measured by the system.
 
@@ -220,7 +248,8 @@ class System:
         """
         return self._location_info["system"]["temperature"]
 
-    @property
+    @property  # type: ignore
+    @guard_from_missing_data()
     def version(self) -> int:
         """Return the system version.
 

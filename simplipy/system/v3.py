@@ -1,11 +1,17 @@
 """Define a V3 (new) SimpliSafe system."""
 from enum import Enum
 import logging
-from typing import Callable, Dict
+from typing import Dict
 
 import voluptuous as vol
 
-from simplipy.system import CONF_DURESS_PIN, CONF_MASTER_PIN, System, create_pin_payload
+from simplipy.system import (
+    CONF_DURESS_PIN,
+    CONF_MASTER_PIN,
+    System,
+    create_pin_payload,
+    guard_from_missing_data,
+)
 
 _LOGGER: logging.Logger = logging.getLogger(__name__)
 
@@ -64,23 +70,6 @@ SYSTEM_PROPERTIES_PAYLOAD_SCHEMA = vol.Schema(
 )
 
 
-def guard_missing_base_station_status(prop: Callable) -> Callable:
-    """Define a guard against missing base station status."""
-
-    def decorator(system: "SystemV3") -> None:
-        """Decorate."""
-        if system.settings_info.get("basestationStatus") is None:
-            _LOGGER.error(
-                "SimpliSafe cloud didn't return expected data for property %s: %s",
-                prop.__name__,
-                system.settings_info,
-            )
-            return None
-        return prop(system)
-
-    return decorator
-
-
 class SystemV3(System):
     """Define a V3 (new) system."""
 
@@ -89,7 +78,8 @@ class SystemV3(System):
         super().__init__(request, get_subscription_data, location_info)
         self.settings_info: dict = {}
 
-    @property
+    @property  # type: ignore
+    @guard_from_missing_data()
     def alarm_duration(self) -> int:
         """Return the number of seconds an activated alarm will sound for.
 
@@ -99,7 +89,8 @@ class SystemV3(System):
             SYSTEM_PROPERTIES_VALUE_MAP["alarm_duration"]
         ]
 
-    @property
+    @property  # type: ignore
+    @guard_from_missing_data()
     def alarm_volume(self) -> int:
         """Return the volume level of the alarm.
 
@@ -112,7 +103,7 @@ class SystemV3(System):
         )
 
     @property  # type: ignore
-    @guard_missing_base_station_status
+    @guard_from_missing_data()
     def battery_backup_power_level(self) -> int:
         """Return the power rating of the battery backup.
 
@@ -120,7 +111,8 @@ class SystemV3(System):
         """
         return self.settings_info["basestationStatus"]["backupBattery"]
 
-    @property
+    @property  # type: ignore
+    @guard_from_missing_data()
     def chime_volume(self) -> int:
         """Return the volume level of the door chime.
 
@@ -132,7 +124,8 @@ class SystemV3(System):
             ]
         )
 
-    @property
+    @property  # type: ignore
+    @guard_from_missing_data()
     def entry_delay_away(self) -> int:
         """Return the number of seconds to delay when returning to an "away" alarm.
 
@@ -142,7 +135,8 @@ class SystemV3(System):
             SYSTEM_PROPERTIES_VALUE_MAP["entry_delay_away"]
         ]
 
-    @property
+    @property  # type: ignore
+    @guard_from_missing_data()
     def entry_delay_home(self) -> int:
         """Return the number of seconds to delay when returning to an "home" alarm.
 
@@ -152,7 +146,8 @@ class SystemV3(System):
             SYSTEM_PROPERTIES_VALUE_MAP["entry_delay_home"]
         ]
 
-    @property
+    @property  # type: ignore
+    @guard_from_missing_data()
     def exit_delay_away(self) -> int:
         """Return the number of seconds to delay when exiting an "away" alarm.
 
@@ -162,7 +157,8 @@ class SystemV3(System):
             SYSTEM_PROPERTIES_VALUE_MAP["exit_delay_away"]
         ]
 
-    @property
+    @property  # type: ignore
+    @guard_from_missing_data()
     def exit_delay_home(self) -> int:
         """Return the number of seconds to delay when exiting an "home" alarm.
 
@@ -173,7 +169,7 @@ class SystemV3(System):
         ]
 
     @property  # type: ignore
-    @guard_missing_base_station_status
+    @guard_from_missing_data()
     def gsm_strength(self) -> int:
         """Return the signal strength of the cell antenna.
 
@@ -181,7 +177,8 @@ class SystemV3(System):
         """
         return self.settings_info["basestationStatus"]["gsmRssi"]
 
-    @property
+    @property  # type: ignore
+    @guard_from_missing_data()
     def light(self) -> bool:
         """Return whether the base station light is on.
 
@@ -191,7 +188,8 @@ class SystemV3(System):
             SYSTEM_PROPERTIES_VALUE_MAP["light"]
         ]
 
-    @property
+    @property  # type: ignore
+    @guard_from_missing_data(True)
     def offline(self) -> bool:
         """Return whether the system is offline.
 
@@ -199,7 +197,8 @@ class SystemV3(System):
         """
         return self._location_info["system"]["isOffline"]
 
-    @property
+    @property  # type: ignore
+    @guard_from_missing_data(False)
     def power_outage(self) -> bool:
         """Return whether the system is experiencing a power outage.
 
@@ -208,7 +207,7 @@ class SystemV3(System):
         return self._location_info["system"]["powerOutage"]
 
     @property  # type: ignore
-    @guard_missing_base_station_status
+    @guard_from_missing_data(False)
     def rf_jamming(self) -> bool:
         """Return whether the base station is noticing RF jamming.
 
@@ -216,7 +215,8 @@ class SystemV3(System):
         """
         return self.settings_info["basestationStatus"]["rfJamming"]
 
-    @property
+    @property  # type: ignore
+    @guard_from_missing_data()
     def voice_prompt_volume(self) -> int:
         """Return the volume level of the voice prompt.
 
@@ -227,7 +227,7 @@ class SystemV3(System):
         ]
 
     @property  # type: ignore
-    @guard_missing_base_station_status
+    @guard_from_missing_data()
     def wall_power_level(self) -> int:
         """Return the power rating of the A/C outlet.
 
@@ -235,7 +235,8 @@ class SystemV3(System):
         """
         return self.settings_info["basestationStatus"]["wallPower"]
 
-    @property
+    @property  # type: ignore
+    @guard_from_missing_data()
     def wifi_ssid(self) -> str:
         """Return the ssid of the base station.
 
@@ -244,7 +245,7 @@ class SystemV3(System):
         return self.settings_info["settings"]["normal"]["wifiSSID"]
 
     @property  # type: ignore
-    @guard_missing_base_station_status
+    @guard_from_missing_data()
     def wifi_strength(self) -> int:
         """Return the signal strength of the wifi antenna.
 

@@ -235,6 +235,13 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         systems: Dict[str, System] = {}
         for system_data in subscription_resp["subscriptions"]:
+            if "version" not in system_data["location"]["system"]:
+                _LOGGER.error(
+                    "Skipping location with missing system data: %s",
+                    system_data["location"]["sid"],
+                )
+                continue
+
             version = system_data["location"]["system"]["version"]
             system_class = SYSTEM_MAP[version]
             system = system_class(

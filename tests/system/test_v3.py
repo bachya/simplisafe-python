@@ -236,6 +236,56 @@ async def test_missing_events(aresponses, v3_server):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
+    "subscriptions_fixture_filename", ["subscriptions_missing_system_response.json"],
+)
+async def test_missing_system_info_initial(caplog, v3_server):
+    """Test that missing system data on system load is handled correctly."""
+    async with v3_server:
+        async with aiohttp.ClientSession() as session:
+            simplisafe = await API.login_via_credentials(
+                TEST_EMAIL, TEST_PASSWORD, session=session
+            )
+
+            systems = await simplisafe.get_systems()
+            assert systems == {}
+            assert any(
+                "Skipping location with missing system data" in e.message
+                for e in caplog.records
+            )
+
+
+@pytest.mark.asyncio
+async def test_missing_system_info_later_on(aresponses, caplog, v3_server):
+    """Test that missing system data after system load is handled correctly."""
+    async with v3_server:
+        v3_server.add(
+            "api.simplisafe.com",
+            f"/v1/users/{TEST_USER_ID}/subscriptions",
+            "get",
+            aresponses.Response(
+                text=load_fixture("subscriptions_missing_system_response.json"),
+                status=200,
+            ),
+        )
+
+        async with aiohttp.ClientSession() as session:
+            simplisafe = await API.login_via_credentials(
+                TEST_EMAIL, TEST_PASSWORD, session=session
+            )
+
+            systems = await simplisafe.get_systems()
+            system = systems[TEST_SYSTEM_ID]
+
+            await system.update(include_settings=False, include_entities=False)
+            assert system.offline is True
+            assert any(
+                "SimpliSafe didn't return data for property: offline" in e.message
+                for e in caplog.records
+            )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
     "v3_subscriptions_response",
     ["subscriptions_missing_notifications_response"],
     indirect=True,
@@ -287,26 +337,6 @@ async def test_no_state_change_on_failure(aresponses, v3_server):
             with pytest.raises(InvalidCredentialsError):
                 await system.set_away()
             assert system.state == SystemStates.off
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "v3_settings_response", ["settings_missing_basestation_response"],
-)
-async def test_missing_base_station_data(caplog, v3_server):
-    """Test that missing base station data is handled correctly."""
-    async with v3_server:
-        async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, session=session
-            )
-            systems = await simplisafe.get_systems()
-            system = systems[TEST_SYSTEM_ID]
-            assert system.gsm_strength is None
-            assert any(
-                "SimpliSafe cloud didn't return expected data for property" in e.message
-                for e in caplog.records
-            )
 
 
 @pytest.mark.asyncio

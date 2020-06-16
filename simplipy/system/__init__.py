@@ -302,11 +302,7 @@ class System:
                 _LOGGER.error("Unknown entity type: %s", entity_data["type"])
                 entity_type = EntityTypes.unknown
 
-            if entity_type == EntityTypes.lock:
-                prop = self.locks
-            else:
-                prop = self.sensors  # type: ignore
-
+            prop = self.locks if entity_type == EntityTypes.lock else self.sensors
             if entity_data["serial"] in prop:
                 entity = prop[entity_data["serial"]]
                 entity.entity_data = entity_data

@@ -9,6 +9,7 @@ from simplipy.errors import SimplipyError
 
 _LOGGER = logging.getLogger()
 
+SIMPLISAFE_CLIENT_ID = "<CLIENT ID>"
 SIMPLISAFE_EMAIL = "<EMAIL>"  # nosec
 SIMPLISAFE_PASSWORD = "<PASSWORD>"  # nosec
 
@@ -20,7 +21,10 @@ async def main() -> None:
 
         try:
             simplisafe = await API.login_via_credentials(
-                SIMPLISAFE_EMAIL, SIMPLISAFE_PASSWORD, session=session
+                SIMPLISAFE_EMAIL,
+                SIMPLISAFE_PASSWORD,
+                client_id=SIMPLISAFE_CLIENT_ID,
+                session=session,
             )
             systems = await simplisafe.get_systems()
             for system_id, system in systems.items():

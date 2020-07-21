@@ -51,10 +51,12 @@ class API:  # pylint: disable=too-many-instance-attributes
 
     :param session: The ``aiohttp`` ``ClientSession`` session used for all HTTP requests
     :type session: ``aiohttp.client.ClientSession``
+    :param client_id: The SimpliSafe client ID to use for this API object
+    :type client_id: ``str``
     """
 
     def __init__(
-        self, *, session: Optional[ClientSession] = None, client_id: str = None
+        self, *, client_id: str, session: Optional[ClientSession] = None
     ) -> None:
         """Initialize."""
         self._access_token: Optional[str] = None
@@ -93,9 +95,9 @@ class API:  # pylint: disable=too-many-instance-attributes
         cls: Type[ApiType],
         email: str,
         password: str,
+        client_id: str,
         *,
         session: Optional[ClientSession] = None,
-        client_id: Optional[str] = None,
     ) -> ApiType:
         """Create an API object from a email address and password.
 
@@ -105,6 +107,8 @@ class API:  # pylint: disable=too-many-instance-attributes
         :type password: ``str``
         :param session: An ``aiohttp`` ``ClientSession``
         :type session: ``aiohttp.client.ClientSession``
+        :param client_id: The SimpliSafe client ID to use for this API object
+        :type client_id: ``str``
         :rtype: :meth:`simplipy.API`
         """
         klass = cls(session=session, client_id=client_id)
@@ -128,9 +132,9 @@ class API:  # pylint: disable=too-many-instance-attributes
     async def login_via_token(
         cls: Type[ApiType],
         refresh_token: str,
+        client_id: str,
         *,
         session: Optional[ClientSession] = None,
-        client_id: Optional[str] = None,
     ) -> ApiType:
         """Create an API object from a refresh token.
 
@@ -138,6 +142,8 @@ class API:  # pylint: disable=too-many-instance-attributes
         :type refresh_token: ``str``
         :param session: An ``aiohttp`` ``ClientSession``
         :type session: ``aiohttp.client.ClientSession``
+        :param client_id: The SimpliSafe client ID to use for this API object
+        :type client_id: ``str``
         :rtype: :meth:`simplipy.API`
         """
         klass = cls(session=session, client_id=client_id)
@@ -187,7 +193,7 @@ class API:  # pylint: disable=too-many-instance-attributes
 
             raise PendingAuthorizationError(
                 f"Check your email for an MFA link, then use {self._client_id} "
-                "in future API calls"
+                "as the client_id parameter in future API calls"
             )
 
         self._access_token = token_resp["access_token"]
@@ -298,9 +304,9 @@ class API:  # pylint: disable=too-many-instance-attributes
                 raise RequestError(
                     f"There was an error while requesting /{endpoint}: {err}"
                 )
-
-            if not use_running_session:
-                await session.close()
+            finally:
+                if not use_running_session:
+                    await session.close()
 
         return data
 

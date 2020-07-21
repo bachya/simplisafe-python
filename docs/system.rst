@@ -27,7 +27,10 @@ To get all SimpliSafe™ systems associated with an account:
         """Create the aiohttp session and run."""
         async with ClientSession() as session:
             simplisafe = await simplipy.API.login_via_credentials(
-                "<EMAIL>", "<PASSWORD>", session=session
+                "<EMAIL>",
+                "<PASSWORD>",
+                client_id="<UNIQUE IDENTIFIER>",
+                session=session
             )
 
             # Get a dict of systems with the system ID as the key:

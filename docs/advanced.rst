@@ -28,6 +28,8 @@ usage of these properties is solely your responsibility.**
     simplisafe.user_id
     # >>> 1234567
 
+.. _refreshing-access-tokens:
+
 Refreshing Access Tokens
 ************************
 
@@ -39,7 +41,7 @@ when it comes time to re-authenticate, simply:
 .. code:: python
 
     simplisafe = await simplipy.API.login_via_token(
-        "<REFRESH TOKEN>", session=session
+        "<REFRESH TOKEN>", client_id="<UNIQUE IDENTIFIER>", session=session
     )
 
 During usage, ``simplipy`` will automatically refresh the access token as needed.
@@ -48,7 +50,7 @@ At any point, the "dirtiness" of the token can be checked:
 .. code:: python
 
     simplisafe = await simplipy.API.login_via_token(
-        "<REFRESH TOKEN>", session=session
+        "<REFRESH TOKEN>", client_id="<UNIQUE IDENTIFIER>", session=session
     )
 
     # Assuming the access token was automatically refreshed:

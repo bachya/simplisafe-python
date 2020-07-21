@@ -9,6 +9,7 @@ from simplipy.system import SystemStates
 
 from tests.common import (
     TEST_ADDRESS,
+    TEST_CLIENT_ID,
     TEST_EMAIL,
     TEST_PASSWORD,
     TEST_SYSTEM_ID,
@@ -30,8 +31,9 @@ async def test_get_events(aresponses, v2_server):
 
         async with aiohttp.ClientSession() as session:
             simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, session=session
+                TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID, session=session
             )
+
             systems = await simplisafe.get_systems()
             system = systems[TEST_SYSTEM_ID]
 
@@ -51,7 +53,10 @@ async def test_get_events_no_explicit_session(aresponses, v2_server):
             aresponses.Response(text=load_fixture("events_response.json"), status=200),
         )
 
-        simplisafe = await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD)
+        simplisafe = await API.login_via_credentials(
+            TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID
+        )
+
         systems = await simplisafe.get_systems()
         system = systems[TEST_SYSTEM_ID]
 
@@ -66,8 +71,9 @@ async def test_properties(v2_server):
     async with v2_server:
         async with aiohttp.ClientSession() as session:
             simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, session=session
+                TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID, session=session
             )
+
             systems = await simplisafe.get_systems()
             system = systems[TEST_SYSTEM_ID]
 
@@ -87,7 +93,8 @@ async def test_unknown_sensor_type(caplog, v2_server):
     async with v2_server:
         async with aiohttp.ClientSession() as session:
             simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, session=session
+                TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID, session=session
             )
-            _ = await simplisafe.get_systems()
+
+            await simplisafe.get_systems()
             assert any("Unknown" in e.message for e in caplog.records)

@@ -8,7 +8,11 @@ from aresponses import ResponsesMockServer
 import pytest
 
 from simplipy import API
-from simplipy.errors import InvalidCredentialsError, RequestError
+from simplipy.errors import (
+    InvalidCredentialsError,
+    PendingAuthorizationError,
+    RequestError,
+)
 
 from .common import (
     TEST_EMAIL,
@@ -23,12 +27,12 @@ from .common import (
 
 @pytest.mark.asyncio
 async def test_401_bad_credentials(aresponses):
-    """Test that an InvalidCredentialsError is raised with a 401 upon login."""
+    """Test that an RequestError is raised with a 401 upon login."""
     aresponses.add(
         "api.simplisafe.com",
         "/v1/api/token",
         "post",
-        aresponses.Response(text="", status=401),
+        aresponses.Response(text="Unauthorized", status=401),
     )
 
     async with aiohttp.ClientSession() as session:
@@ -40,7 +44,7 @@ async def test_401_bad_credentials(aresponses):
 async def test_401_refresh_token_failure(
     aresponses, v2_server, v2_subscriptions_response
 ):
-    """Test that an InvalidCredentialsError is raised with refresh token failure."""
+    """Test that an RequestError is raised with refresh token failure."""
     async with v2_server:
         v2_server.add(
             "api.simplisafe.com",
@@ -52,13 +56,13 @@ async def test_401_refresh_token_failure(
             "api.simplisafe.com",
             f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/settings",
             "get",
-            aresponses.Response(text="", status=401),
+            aresponses.Response(text="Unauthorized", status=401),
         )
         v2_server.add(
             "api.simplisafe.com",
             "/v1/api/token",
             "post",
-            aresponses.Response(text="", status=401),
+            aresponses.Response(text="Unauthorized", status=401),
         )
 
         async with aiohttp.ClientSession() as session:
@@ -82,7 +86,7 @@ async def test_401_refresh_token_success(
             "api.simplisafe.com",
             f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
-            aresponses.Response(text="", status=401),
+            aresponses.Response(text="Unauthorized", status=401),
         )
         v2_server.add(
             "api.simplisafe.com",
@@ -90,14 +94,6 @@ async def test_401_refresh_token_success(
             "post",
             aresponses.Response(
                 text=load_fixture("api_token_response.json"), status=200
-            ),
-        )
-        v2_server.add(
-            "api.simplisafe.com",
-            "/v1/api/authCheck",
-            "get",
-            aresponses.Response(
-                text=load_fixture("auth_check_response.json"), status=200
             ),
         )
         v2_server.add(
@@ -133,7 +129,7 @@ async def test_bad_request(aresponses, v2_server):
             "api.simplisafe.com",
             "/v1/api/fakeEndpoint",
             "get",
-            aresponses.Response(text="", status=404),
+            aresponses.Response(text="Not Found", status=404),
         )
 
         async with aiohttp.ClientSession() as session:
@@ -141,7 +137,7 @@ async def test_bad_request(aresponses, v2_server):
                 TEST_EMAIL, TEST_PASSWORD, session=session
             )
             with pytest.raises(RequestError):
-                await simplisafe._request("get", "api/fakeEndpoint")
+                await simplisafe.request("get", "api/fakeEndpoint")
 
 
 @pytest.mark.asyncio
@@ -158,18 +154,10 @@ async def test_expired_token_refresh(aresponses, v2_server):
         )
         v2_server.add(
             "api.simplisafe.com",
-            "/v1/api/authCheck",
-            "get",
+            "/v1/api/token",
+            "post",
             aresponses.Response(
-                text=load_fixture("auth_check_response.json"), status=200
-            ),
-        )
-        v2_server.add(
-            "api.simplisafe.com",
-            "/v1/api/authCheck",
-            "get",
-            aresponses.Response(
-                text=load_fixture("auth_check_response.json"), status=200
+                text=load_fixture("api_token_response.json"), status=200
             ),
         )
 
@@ -178,7 +166,7 @@ async def test_expired_token_refresh(aresponses, v2_server):
                 TEST_EMAIL, TEST_PASSWORD, session=session
             )
             simplisafe._access_token_expire = datetime.now() - timedelta(hours=1)
-            await simplisafe._request("get", "api/authCheck")
+            await simplisafe.request("post", "api/token")
 
 
 @pytest.mark.asyncio
@@ -202,6 +190,39 @@ async def test_invalid_credentials(aresponses, v2_server):
 
 
 @pytest.mark.asyncio
+async def test_mfa(aresponses):
+    """Test that a successful MFA flow throws the correct exception."""
+    aresponses.add(
+        "api.simplisafe.com",
+        "/v1/api/token",
+        "post",
+        aresponses.Response(
+            text=load_fixture("mfa_required_response.json"), status=401
+        ),
+    )
+    aresponses.add(
+        "api.simplisafe.com",
+        "/v1/api/mfa/challenge",
+        "post",
+        aresponses.Response(
+            text=load_fixture("mfa_challenge_response.json"), status=200
+        ),
+    )
+    aresponses.add(
+        "api.simplisafe.com",
+        "/v1/api/token",
+        "post",
+        aresponses.Response(
+            text=load_fixture("mfa_authorization_pending_response.json"), status=200
+        ),
+    )
+
+    async with aiohttp.ClientSession() as session:
+        with pytest.raises(PendingAuthorizationError):
+            await API.login_via_credentials(TEST_EMAIL, TEST_PASSWORD, session=session)
+
+
+@pytest.mark.asyncio
 async def test_unavailable_feature_v2(
     aresponses, caplog, v2_server, v2_subscriptions_response
 ):
@@ -219,17 +240,9 @@ async def test_unavailable_feature_v2(
         )
         v2_server.add(
             "api.simplisafe.com",
-            "/v1/api/authCheck",
-            "get",
-            aresponses.Response(
-                text=load_fixture("auth_check_response.json"), status=200
-            ),
-        )
-        v2_server.add(
-            "api.simplisafe.com",
             f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
-            aresponses.Response(text=v2_subscriptions_response, status=200,),
+            aresponses.Response(text=v2_subscriptions_response, status=200),
         )
         v2_server.add(
             "api.simplisafe.com",
@@ -257,9 +270,9 @@ async def test_unavailable_feature_v2(
             await system.update()
             await system.set_away()
             logs = [
-                l
-                for l in ["unavailable in plan" in e.message for e in caplog.records]
-                if l is not False
+                log
+                for log in ["unavailable in plan" in e.message for e in caplog.records]
+                if log is not False
             ]
 
             assert len(logs) == 2
@@ -279,14 +292,6 @@ async def test_unavailable_feature_v3(
             "post",
             aresponses.Response(
                 text=load_fixture("api_token_response.json"), status=200
-            ),
-        )
-        v3_server.add(
-            "api.simplisafe.com",
-            "/v1/api/authCheck",
-            "get",
-            aresponses.Response(
-                text=load_fixture("auth_check_response.json"), status=200
             ),
         )
         v3_server.add(
@@ -327,9 +332,9 @@ async def test_unavailable_feature_v3(
             await system.update()
             await system.set_away()
             logs = [
-                l
-                for l in ["unavailable in plan" in e.message for e in caplog.records]
-                if l is not False
+                log
+                for log in ["unavailable in plan" in e.message for e in caplog.records]
+                if log is not False
             ]
 
             assert len(logs) == 2

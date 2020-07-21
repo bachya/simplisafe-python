@@ -1,13 +1,18 @@
 """Define a SimpliSafe account."""
 from datetime import datetime, timedelta
+from json.decoder import JSONDecodeError
 import logging
 from typing import Dict, Optional, Type, TypeVar
-from uuid import UUID, uuid4
+from uuid import uuid4
 
-from aiohttp import BasicAuth, ClientSession, ClientTimeout
+from aiohttp import ClientSession, ClientTimeout
 from aiohttp.client_exceptions import ClientError
 
-from simplipy.errors import InvalidCredentialsError, RequestError
+from simplipy.errors import (
+    InvalidCredentialsError,
+    PendingAuthorizationError,
+    RequestError,
+)
 from simplipy.system import System
 from simplipy.system.v2 import SystemV2
 from simplipy.system.v3 import SystemV3
@@ -17,10 +22,19 @@ _LOGGER: logging.Logger = logging.getLogger(__name__)
 
 API_URL_HOSTNAME: str = "api.simplisafe.com"
 API_URL_BASE: str = f"https://{API_URL_HOSTNAME}/v1"
+API_URL_MFA_OOB: str = "http://simplisafe.com/oauth/grant-type/mfa-oob"
 
-DEFAULT_AUTH_USERNAME: str = "{0}.2074.0.0.com.simplisafe.mobile"
 DEFAULT_TIMEOUT: int = 10
-DEFAULT_USER_AGENT: str = "SimpliSafe/2105 CFNetwork/902.2 Darwin/17.7.0"
+DEFAULT_USER_AGENT: str = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/605.1.15 "
+    "(KHTML, like Gecko) Version/13.1.2 Safari/605.1.15"
+)
+
+DEVICE_ID_TEMPLATE = (
+    'WebApp; useragent="Safari 13.1 (SS-ID: t6X9Q-udA1A) / '
+    'macOS 10.15.6"; uuid="{0}"; '
+    'id="t6X9Q-udA1A"'
+)
 
 SYSTEM_MAP: Dict[int, Type[System]] = {2: SystemV2, 3: SystemV3}
 
@@ -39,20 +53,22 @@ class API:  # pylint: disable=too-many-instance-attributes
     :type session: ``aiohttp.client.ClientSession``
     """
 
-    def __init__(self, *, session: Optional[ClientSession] = None) -> None:
+    def __init__(
+        self, *, session: Optional[ClientSession] = None, client_id: str = None
+    ) -> None:
         """Initialize."""
-        self._access_token: str = ""
+        self._access_token: Optional[str] = None
         self._access_token_expire: Optional[datetime] = None
         self._actively_refreshing: bool = False
-        self._refresh_token: str = ""
-        self._uuid: UUID = uuid4()
+        self._client_id: str = client_id or str(uuid4())
+        self._refresh_token: Optional[str] = None
         self._session: ClientSession = session
         self.email: Optional[str] = None
         self.user_id: Optional[int] = None
         self.websocket: Websocket = Websocket()
 
     @property
-    def access_token(self) -> str:
+    def access_token(self) -> Optional[str]:
         """Return the current access token.
 
         :rtype: ``str``
@@ -60,7 +76,12 @@ class API:  # pylint: disable=too-many-instance-attributes
         return self._access_token
 
     @property
-    def refresh_token(self) -> str:
+    def client_id(self) -> str:
+        """Return the client ID of the API."""
+        return self._client_id
+
+    @property
+    def refresh_token(self) -> Optional[str]:
         """Return the current refresh token.
 
         :rtype: ``str``
@@ -74,6 +95,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         password: str,
         *,
         session: Optional[ClientSession] = None,
+        client_id: Optional[str] = None,
     ) -> ApiType:
         """Create an API object from a email address and password.
 
@@ -85,11 +107,19 @@ class API:  # pylint: disable=too-many-instance-attributes
         :type session: ``aiohttp.client.ClientSession``
         :rtype: :meth:`simplipy.API`
         """
-        klass = cls(session=session)
+        klass = cls(session=session, client_id=client_id)
         klass.email = email
 
-        await klass._authenticate(  # pylint: disable=protected-access
-            {"grant_type": "password", "username": email, "password": password}
+        await klass.authenticate(
+            {
+                "grant_type": "password",
+                "username": email,
+                "password": password,
+                "client_id": klass.client_id,
+                "device_id": DEVICE_ID_TEMPLATE.format(klass.client_id),
+                "app_version": "1.62.0",
+                "scope": "offline_access",
+            }
         )
 
         return klass
@@ -100,6 +130,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         refresh_token: str,
         *,
         session: Optional[ClientSession] = None,
+        client_id: Optional[str] = None,
     ) -> ApiType:
         """Create an API object from a refresh token.
 
@@ -109,119 +140,64 @@ class API:  # pylint: disable=too-many-instance-attributes
         :type session: ``aiohttp.client.ClientSession``
         :rtype: :meth:`simplipy.API`
         """
-        klass = cls(session=session)
+        klass = cls(session=session, client_id=client_id)
         await klass.refresh_access_token(refresh_token)
         return klass
 
-    async def _authenticate(self, payload_data: dict) -> None:
-        """Request a new token."""
-        token_resp: dict = await self._request(
-            "post",
-            "api/token",
-            data=payload_data,
-            auth=BasicAuth(  # nosec
-                login=DEFAULT_AUTH_USERNAME.format(self._uuid),
-                password="",
-                encoding="latin1",
-            ),
+    async def _get_subscription_data(self) -> dict:
+        """Get the latest location-level data."""
+        subscription_resp: dict = await self.request(
+            "get", f"users/{self.user_id}/subscriptions", params={"activeOnly": "true"}
         )
+
+        _LOGGER.debug(
+            "users/%s/subscriptions response: %s", self.user_id, subscription_resp
+        )
+
+        return subscription_resp
+
+    async def authenticate(self, payload: dict) -> None:
+        """Authenticate the API object using an authentication payload."""
+        _LOGGER.debug("Authentication payload: %s", payload)
+
+        token_resp: dict = await self.request("post", "api/token", json=payload)
+
+        if "mfa_token" in token_resp:
+            mfa_challenge_response: dict = await self.request(
+                "post",
+                "api/mfa/challenge",
+                json={
+                    "challenge_type": "oob",
+                    "client_id": self._client_id,
+                    "mfa_token": token_resp["mfa_token"],
+                },
+            )
+
+            await self.request(
+                "post",
+                "api/token",
+                json={
+                    "client_id": self._client_id,
+                    "grant_type": API_URL_MFA_OOB,
+                    "mfa_token": token_resp["mfa_token"],
+                    "oob_code": mfa_challenge_response["oob_code"],
+                    "scope": "offline_access",
+                },
+            )
+
+            raise PendingAuthorizationError(
+                f"Check your email for an MFA link, then use {self._client_id} "
+                "in future API calls"
+            )
 
         self._access_token = token_resp["access_token"]
         self._access_token_expire = datetime.now() + timedelta(
             seconds=int(token_resp["expires_in"]) - 60
         )
         self._refresh_token = token_resp["refresh_token"]
-
-        auth_check_resp: dict = await self._request("get", "api/authCheck")
-        self.user_id = auth_check_resp["userId"]
+        self.user_id = token_resp["scopes"][0]
 
         await self.websocket.async_init(self._access_token, self.user_id)
-
-    async def _get_subscription_data(self) -> dict:
-        """Get the latest location-level data."""
-        subscription_resp: dict = await self._request(
-            "get", f"users/{self.user_id}/subscriptions", params={"activeOnly": "true"}
-        )
-
-        _LOGGER.debug("Subscription response: %s", subscription_resp)
-
-        return subscription_resp
-
-    async def _request(
-        self,
-        method: str,
-        endpoint: str,
-        *,
-        headers: Optional[dict] = None,
-        params: Optional[dict] = None,
-        data: Optional[dict] = None,
-        json: Optional[dict] = None,
-        **kwargs,
-    ) -> dict:
-        """Make a request."""
-        if (
-            self._access_token_expire
-            and datetime.now() >= self._access_token_expire
-            and not self._actively_refreshing
-        ):
-            self._actively_refreshing = True
-            await self.refresh_access_token(self._refresh_token)
-
-        _headers = headers or {}
-        if not kwargs.get("auth") and self._access_token:
-            _headers["Authorization"] = f"Bearer {self._access_token}"
-        _headers.update({"Host": API_URL_HOSTNAME, "User-Agent": DEFAULT_USER_AGENT})
-
-        use_running_session = self._session and not self._session.closed
-
-        if use_running_session:
-            session = self._session
-        else:
-            session = ClientSession(timeout=ClientTimeout(total=DEFAULT_TIMEOUT))
-
-        try:
-            async with session.request(
-                method,
-                f"{API_URL_BASE}/{endpoint}",
-                headers=_headers,
-                params=params,
-                data=data,
-                json=json,
-                **kwargs,
-            ) as resp:
-                resp.raise_for_status()
-                return await resp.json(content_type=None)
-        except ClientError as err:
-            if "401" in str(err):
-                if self._actively_refreshing:
-                    raise InvalidCredentialsError(
-                        "Repeated 401s despite refreshing access token"
-                    )
-                if self._refresh_token:
-                    _LOGGER.info("401 detected; attempting refresh token")
-                    self._access_token_expire = datetime.now()
-                    return await self._request(
-                        method,
-                        endpoint,
-                        headers=headers,
-                        params=params,
-                        data=data,
-                        json=json,
-                        **kwargs,
-                    )
-                raise InvalidCredentialsError("Invalid username/password")
-            if "403" in str(err):
-                if self.user_id:
-                    _LOGGER.info("Endpoint unavailable in plan: %s", endpoint)
-                    return {}
-                raise InvalidCredentialsError(
-                    f"User does not have permission to access {endpoint}"
-                )
-
-            raise RequestError(f"Error requesting data from {endpoint}: {err}")
-        finally:
-            if not use_running_session:
-                await session.close()
 
     async def get_systems(self) -> Dict[str, System]:
         """Get systems associated to the associated SimpliSafe account.
@@ -245,23 +221,99 @@ class API:  # pylint: disable=too-many-instance-attributes
             version = system_data["location"]["system"]["version"]
             system_class = SYSTEM_MAP[version]
             system = system_class(
-                self._request, self._get_subscription_data, system_data["location"]
+                self.request, self._get_subscription_data, system_data["location"]
             )
             await system.update(include_system=False)
             systems[system_data["sid"]] = system
 
         return systems
 
-    async def refresh_access_token(self, refresh_token: str) -> None:
+    async def request(  # pylint: disable=too-many-branches
+        self, method: str, endpoint: str, **kwargs
+    ) -> dict:
+        """Make an API request."""
+        if (
+            self._access_token_expire
+            and datetime.now() >= self._access_token_expire
+            and not self._actively_refreshing
+        ):
+            _LOGGER.debug(
+                "Need to refresh access token (expiration: %s)",
+                self._access_token_expire,
+            )
+            self._actively_refreshing = True
+            await self.refresh_access_token(self._refresh_token)
+
+        kwargs.setdefault("headers", {})
+        if self._access_token:
+            kwargs["headers"]["Authorization"] = f"Bearer {self._access_token}"
+        kwargs["headers"]["Content-Type"] = "application/json; charset=utf-8"
+        kwargs["headers"]["Host"] = API_URL_HOSTNAME
+        kwargs["headers"]["User-Agent"] = DEFAULT_USER_AGENT
+
+        use_running_session = self._session and not self._session.closed
+
+        if use_running_session:
+            session = self._session
+        else:
+            session = ClientSession(timeout=ClientTimeout(total=DEFAULT_TIMEOUT))
+
+        async with session.request(
+            method, f"{API_URL_BASE}/{endpoint}", **kwargs
+        ) as resp:
+            try:
+                # We attempt to grab the data no matter what because SimpliSafe
+                # will return 4xx payloads with crucial data:
+                data = await resp.json(content_type=None)
+            except JSONDecodeError:
+                data = {"error": await resp.text()}
+
+            _LOGGER.debug("Data received from /%s: %s", endpoint, data)
+
+            try:
+                resp.raise_for_status()
+            except ClientError as err:
+                if data.get("error") == "mfa_required":
+                    return data
+
+                if resp.status == 401:
+                    if self._actively_refreshing:
+                        raise InvalidCredentialsError(
+                            "Repeated 401s despite refreshing access token"
+                        )
+                    if self._refresh_token:
+                        _LOGGER.info("401 detected; attempting refresh token")
+                        self._access_token_expire = datetime.now()
+                        return await self.request(method, endpoint, **kwargs)
+                    raise InvalidCredentialsError("Invalid username/password")
+
+                if resp.status == 403:
+                    if self.user_id:
+                        _LOGGER.info("Endpoint unavailable in plan: %s", endpoint)
+                        return {}
+                    raise InvalidCredentialsError(
+                        f"User does not have permission to access {endpoint}"
+                    )
+
+                raise RequestError(
+                    f"There was an error while requesting /{endpoint}: {err}"
+                )
+
+            if not use_running_session:
+                await session.close()
+
+        return data
+
+    async def refresh_access_token(self, refresh_token: Optional[str]) -> None:
         """Regenerate an access token.
 
         :param refresh_token: The refresh token to use
         :type refresh_token: str
         """
-        await self._authenticate(
+        await self.authenticate(
             {
                 "grant_type": "refresh_token",
-                "username": self.email,
+                "client_id": self._client_id,
                 "refresh_token": refresh_token,
             }
         )

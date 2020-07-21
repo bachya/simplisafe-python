@@ -61,14 +61,6 @@ async def test_get_systems(aresponses, v2_server, v2_subscriptions_response):
         )
         v2_server.add(
             "api.simplisafe.com",
-            "/v1/api/authCheck",
-            "get",
-            aresponses.Response(
-                text=load_fixture("auth_check_response.json"), status=200
-            ),
-        )
-        v2_server.add(
-            "api.simplisafe.com",
             f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
             aresponses.Response(text=v2_subscriptions_response, status=200),
@@ -126,7 +118,9 @@ async def test_set_pin(aresponses, v2_server):
             "api.simplisafe.com",
             f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/pins",
             "post",
-            aresponses.Response(text=None, status=200),
+            aresponses.Response(
+                text=load_fixture("v2_settings_response.json"), status=200
+            ),
         )
         v2_server.add(
             "api.simplisafe.com",

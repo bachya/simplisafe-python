@@ -48,7 +48,9 @@ async def test_clear_notifications(aresponses, v3_server):
             "api.simplisafe.com",
             f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/messages",
             "delete",
-            aresponses.Response(text=None, status=200),
+            aresponses.Response(
+                text=load_fixture("v3_settings_response.json"), status=200
+            ),
         )
 
         async with aiohttp.ClientSession() as session:
@@ -127,14 +129,6 @@ async def test_get_systems(
             "post",
             aresponses.Response(
                 text=load_fixture("api_token_response.json"), status=200
-            ),
-        )
-        v3_server.add(
-            "api.simplisafe.com",
-            "/v1/api/authCheck",
-            "get",
-            aresponses.Response(
-                text=load_fixture("auth_check_response.json"), status=200
             ),
         )
         v3_server.add(
@@ -316,13 +310,13 @@ async def test_no_state_change_on_failure(aresponses, v3_server):
             "api.simplisafe.com",
             f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/state/away",
             "post",
-            aresponses.Response(text=None, status=401),
+            aresponses.Response(text="Unauthorized", status=401),
         )
         v3_server.add(
             "api.simplisafe.com",
             "/v1/api/token",
             "post",
-            aresponses.Response(text="", status=401),
+            aresponses.Response(text="Unauthorized", status=401),
         )
 
         async with aiohttp.ClientSession() as session:

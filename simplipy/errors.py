@@ -8,7 +8,13 @@ class SimplipyError(Exception):
 
 
 class InvalidCredentialsError(SimplipyError):
-    """An error related to invalid requests."""
+    """An error related to invalid credentials."""
+
+    pass
+
+
+class PendingAuthorizationError(SimplipyError):
+    """An error ralted to an unconfirmed multi-factor authentication."""
 
     pass
 

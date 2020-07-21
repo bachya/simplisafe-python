@@ -2,5 +2,8 @@
     "access_token": "abcde12345",
     "refresh_token": "qrstu98765",
     "expires_in": 3600,
+    "scopes": [
+        12345
+    ],
     "token_type": "Bearer"
 }

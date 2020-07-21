@@ -66,7 +66,7 @@ Errors/Exceptions
 
 * :meth:`SimplipyError <simplipy.errors.SimplipyError>`: a base error that all other
   ``simplipy`` errors inherit from
-* :meth:`InvalidCredentialsError <simplipy.errors.InvalidCredentialsError>`: an error
+* :meth:`RequestError <simplipy.errors.RequestError>`: an error
   related to an invalid username/password combo
 * :meth:`PinError <simplipy.errors.PinError>`: an error related to an invalid PIN
   operation, such as attempting to delete a reserved PIN (e.g., "master"), adding too

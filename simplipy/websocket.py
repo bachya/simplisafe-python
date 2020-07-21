@@ -203,7 +203,7 @@ class Websocket:
         self._namespace: Optional[str] = None
 
     async def async_init(
-        self, access_token: str, user_id: Optional[int] = None
+        self, access_token: Optional[str], user_id: Optional[int] = None
     ) -> None:
         """Set the user ID and generate the namespace."""
         if not self._namespace:

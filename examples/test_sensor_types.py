@@ -5,18 +5,19 @@ import logging
 from aiohttp import ClientSession
 
 from simplipy import API
-from simplipy.errors import InvalidCredentialsError, SimplipyError
+from simplipy.errors import RequestError, SimplipyError
 
 _LOGGER = logging.getLogger()
 
-SIMPLISAFE_EMAIL = "<EMAIL>"  # nosec
+SIMPLISAFE_CLIENT_ID = "<CLIENT ID>"
+SIMPLISAFE_EMAIL = "<EMAIL ADDRESS>"  # nosec
 SIMPLISAFE_PASSWORD = "<PASSWORD>"  # nosec
 
 
 async def main() -> None:
     """Create the aiohttp session and run the example."""
     async with ClientSession() as session:
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=logging.DEBUG)
 
         try:
             simplisafe = await API.login_via_credentials(
@@ -30,7 +31,7 @@ async def main() -> None:
                         sensor_attrs.name,
                         sensor_attrs.type,
                     )
-        except InvalidCredentialsError:
+        except RequestError:
             _LOGGER.error("Invalid credentials")
         except SimplipyError as err:
             _LOGGER.error(err)

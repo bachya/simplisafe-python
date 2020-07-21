@@ -8,7 +8,9 @@ events from a user's SimpliSafe™ system. This websocket can be accessed via th
 .. code:: python
 
     simplisafe = await simplipy.API.login_via_credentials(
-        "<EMAIL>", "<PASSWORD>", session=session
+        "<EMAIL>",
+        "<PASSWORD>",
+        client_id="<UNIQUE IDENTIFIER>",
     )
 
     simplisafe.websocket

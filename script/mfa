@@ -1,0 +1,32 @@
+#!/usr/bin/env python
+"""Get a list of all sensors in a system."""
+import asyncio
+import logging
+import sys
+
+from simplipy import API
+from simplipy.errors import PendingAuthorizationError, RequestError, SimplipyError
+
+_LOGGER = logging.getLogger()
+
+SIMPLISAFE_CLIENT_ID = "<CLIENT ID>"
+SIMPLISAFE_EMAIL = "<EMAIL ADDRESS>"  # nosec
+SIMPLISAFE_PASSWORD = "<PASSWORD>"  # nosec
+
+
+async def main() -> None:
+    """Run!"""
+    while True:
+        try:
+            email = input("What is your SimpliSafe email address? ")
+            password = input("What is your SimpliSafe email password? ")
+
+            await API.login_via_credentials(email, password, client_id=None)
+        except PendingAuthorizationError as err:
+            print(str(err))
+            sys.exit(0)
+        except KeyboardInterrupt:
+            sys.exit(0)
+
+
+asyncio.run(main())

@@ -107,8 +107,8 @@ class API:  # pylint: disable=too-many-instance-attributes
         cls: Type[ApiType],
         email: str,
         password: str,
-        client_id: str,
         *,
+        client_id: str,
         session: Optional[ClientSession] = None,
     ) -> ApiType:
         """Create an API object from a email address and password.
@@ -144,8 +144,8 @@ class API:  # pylint: disable=too-many-instance-attributes
     async def login_via_token(
         cls: Type[ApiType],
         refresh_token: str,
-        client_id: str,
         *,
+        client_id: str,
         session: Optional[ClientSession] = None,
     ) -> ApiType:
         """Create an API object from a refresh token.

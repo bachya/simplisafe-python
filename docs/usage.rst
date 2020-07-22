@@ -88,6 +88,10 @@ completes, you should see a message like this:
     Check your email for an MFA link, then use <UNIQUE IDENTIFIER> as the client_id
     parameter in future API calls
 
+(Note that technically, the above message results from a
+:meth:`PendingAuthorizationError <simplipy.errors.PendingAuthorizationError>`)
+exception.)
+
 5. Check your email. You should see an email from SimpliSafe™ asking you to verify a
    new device access – note that the User-Agent header shown in the email should include
    the unique identifier from the ``mfa`` script:

@@ -2,6 +2,8 @@
 from datetime import datetime, timedelta
 from json.decoder import JSONDecodeError
 import logging
+import random
+import string
 from typing import Dict, Optional, Type, TypeVar
 from uuid import uuid4
 
@@ -31,15 +33,25 @@ DEFAULT_USER_AGENT: str = (
 )
 
 DEVICE_ID_TEMPLATE = (
-    'WebApp; useragent="Safari 13.1 (SS-ID: t6X9Q-udA1A) / '
-    'macOS 10.15.6"; uuid="{0}"; '
-    'id="t6X9Q-udA1A"'
+    'WebApp; useragent="Safari 13.1 (SS-ID: {0}) / macOS 10.15.6"; uuid="{1}"; id="{0}"'
 )
 
 SYSTEM_MAP: Dict[int, Type[System]] = {2: SystemV2, 3: SystemV3}
 
 
 ApiType = TypeVar("ApiType", bound="API")
+
+
+def generate_device_id(client_id: str) -> str:
+    """Generate a random 10-character ID to use as the SimpliSafe device ID."""
+    rand = "".join(
+        random.SystemRandom().choice(
+            string.ascii_uppercase + string.ascii_lowercase + string.digits
+        )
+        for _ in range(10)
+    )
+    device_id = f"{rand[:5]}-{rand[5:]}"
+    return DEVICE_ID_TEMPLATE.format(device_id, client_id)
 
 
 class API:  # pylint: disable=too-many-instance-attributes
@@ -120,7 +132,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 "username": email,
                 "password": password,
                 "client_id": klass.client_id,
-                "device_id": DEVICE_ID_TEMPLATE.format(klass.client_id),
+                "device_id": generate_device_id(klass.client_id),
                 "app_version": "1.62.0",
                 "scope": "offline_access",
             }

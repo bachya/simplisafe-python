@@ -311,7 +311,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 if data.get("error") == "mfa_required":
                     return data
 
-                if resp.status == 401 or data.get("error") == "Unauthorized":
+                if resp.status == 401:
                     if self._actively_refreshing:
                         raise InvalidCredentialsError(
                             "Repeated 401s despite refreshing access token"

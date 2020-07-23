@@ -295,8 +295,6 @@ class API:  # pylint: disable=too-many-instance-attributes
         async with session.request(
             method, f"{API_URL_BASE}/{endpoint}", **kwargs
         ) as resp:
-            # We attempt to grab the data no matter what because SimpliSafe
-            # will return 4xx payloads with crucial data:
             data = await resp.json(content_type=None)
 
             _LOGGER.debug("Data received from /%s: %s", endpoint, data)
@@ -304,7 +302,10 @@ class API:  # pylint: disable=too-many-instance-attributes
             try:
                 resp.raise_for_status()
             except ClientError as err:
-                if data.get("error") == "mfa_required":
+                if isinstance(data, dict) and data.get("error") == "mfa_required":
+                    # In the case of an MFA token, SimpliSafe's API will return a 401,
+                    # but will include the MFA token in the response body. This
+                    # somewhat-kludgy check handles that case:
                     return data
 
                 if "401" in str(err):

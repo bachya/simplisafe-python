@@ -73,7 +73,7 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         self._client_id: str
         if client_id is not None:
-            self._client = client_id
+            self._client_id = client_id
         else:
             self._client_id = str(uuid4())
         self._device_id: str = generate_device_id(self._client_id)

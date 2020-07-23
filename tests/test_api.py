@@ -159,10 +159,26 @@ async def test_expired_token_refresh(aresponses, v2_server):
         )
         v2_server.add(
             "api.simplisafe.com",
+            "/v1/api/authCheck",
+            "get",
+            aresponses.Response(
+                text=load_fixture("auth_check_response.json"), status=200
+            ),
+        )
+        v2_server.add(
+            "api.simplisafe.com",
             "/v1/api/token",
             "post",
             aresponses.Response(
                 text=load_fixture("api_token_response.json"), status=200
+            ),
+        )
+        v2_server.add(
+            "api.simplisafe.com",
+            "/v1/api/authCheck",
+            "get",
+            aresponses.Response(
+                text=load_fixture("auth_check_response.json"), status=200
             ),
         )
 

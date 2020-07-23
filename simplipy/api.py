@@ -69,7 +69,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         self._access_token_expire: Optional[datetime] = None
         self._actively_refreshing: bool = False
         self._client_id: str = client_id or str(uuid4())
-        self._device_id: str = generate_device_id(client_id)
+        self._device_id: str = generate_device_id(self._client_id)
         self._refresh_token: Optional[str] = None
         self._session: ClientSession = session
         self.email: Optional[str] = None
@@ -213,7 +213,9 @@ class API:  # pylint: disable=too-many-instance-attributes
             seconds=int(token_resp["expires_in"]) - 60
         )
         self._refresh_token = token_resp["refresh_token"]
-        self.user_id = token_resp["scopes"][0]
+
+        auth_check_resp: dict = await self.request("get", "api/authCheck")
+        self.user_id = auth_check_resp["userId"]
 
         await self.websocket.async_init(self._access_token, self.user_id)
 

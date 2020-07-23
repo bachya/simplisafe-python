@@ -138,6 +138,14 @@ async def test_get_systems(
         )
         v3_server.add(
             "api.simplisafe.com",
+            "/v1/api/authCheck",
+            "get",
+            aresponses.Response(
+                text=load_fixture("auth_check_response.json"), status=200
+            ),
+        )
+        v3_server.add(
+            "api.simplisafe.com",
             f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
             aresponses.Response(text=v3_subscriptions_response, status=200),

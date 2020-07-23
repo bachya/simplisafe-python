@@ -208,6 +208,14 @@ async def test_reconnect_on_new_access_token(aresponses, v3_server):
                 text=load_fixture("api_token_response.json"), status=200
             ),
         )
+        v3_server.add(
+            "api.simplisafe.com",
+            "/v1/api/authCheck",
+            "get",
+            aresponses.Response(
+                text=load_fixture("auth_check_response.json"), status=200
+            ),
+        )
 
         async with aiohttp.ClientSession() as session:
             simplisafe = await API.login_via_credentials(

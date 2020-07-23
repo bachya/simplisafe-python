@@ -75,6 +75,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         self._access_token_expire: Optional[datetime] = None
         self._actively_refreshing: bool = False
         self._client_id: str = client_id or str(uuid4())
+        self._device_id: str = generate_device_id(client_id)
         self._refresh_token: Optional[str] = None
         self._session: ClientSession = session
         self.email: Optional[str] = None
@@ -93,6 +94,11 @@ class API:  # pylint: disable=too-many-instance-attributes
     def client_id(self) -> str:
         """Return the client ID of the API."""
         return self._client_id
+
+    @property
+    def device_id(self) -> str:
+        """Return the generated device ID for this API instance."""
+        return self._device_id
 
     @property
     def refresh_token(self) -> Optional[str]:
@@ -132,7 +138,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 "username": email,
                 "password": password,
                 "client_id": klass.client_id,
-                "device_id": generate_device_id(klass.client_id),
+                "device_id": klass.device_id,
                 "app_version": "1.62.0",
                 "scope": "offline_access",
             }

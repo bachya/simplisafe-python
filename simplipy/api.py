@@ -1,7 +1,6 @@
 """Define a SimpliSafe account."""
 import base64
 from datetime import datetime, timedelta
-from json.decoder import JSONDecodeError
 import logging
 from typing import Dict, Optional, Type, TypeVar
 from uuid import uuid4
@@ -296,12 +295,9 @@ class API:  # pylint: disable=too-many-instance-attributes
         async with session.request(
             method, f"{API_URL_BASE}/{endpoint}", **kwargs
         ) as resp:
-            try:
-                # We attempt to grab the data no matter what because SimpliSafe
-                # will return 4xx payloads with crucial data:
-                data = await resp.json(content_type=None)
-            except JSONDecodeError:
-                data = {"error": await resp.text()}
+            # We attempt to grab the data no matter what because SimpliSafe
+            # will return 4xx payloads with crucial data:
+            data = await resp.json(content_type=None)
 
             _LOGGER.debug("Data received from /%s: %s", endpoint, data)
 
@@ -311,7 +307,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 if data.get("error") == "mfa_required":
                     return data
 
-                if resp.status == 401:
+                if "401" in str(err):
                     if self._actively_refreshing:
                         raise InvalidCredentialsError(
                             "Repeated 401s despite refreshing access token"
@@ -322,7 +318,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                         return await self.request(method, endpoint, **kwargs)
                     raise InvalidCredentialsError("Invalid username/password")
 
-                if resp.status == 403:
+                if "403" in str(err):
                     if self.user_id:
                         _LOGGER.info("Endpoint unavailable in plan: %s", endpoint)
                         return {}

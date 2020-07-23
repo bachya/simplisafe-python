@@ -7,8 +7,6 @@ import sys
 from simplipy import API
 from simplipy.errors import PendingAuthorizationError, RequestError, SimplipyError
 
-_LOGGER = logging.getLogger()
-
 SIMPLISAFE_CLIENT_ID = "<CLIENT ID>"
 SIMPLISAFE_EMAIL = "<EMAIL ADDRESS>"  # nosec
 SIMPLISAFE_PASSWORD = "<PASSWORD>"  # nosec
@@ -16,6 +14,7 @@ SIMPLISAFE_PASSWORD = "<PASSWORD>"  # nosec
 
 async def main() -> None:
     """Run!"""
+    logging.basicConfig(level=logging.DEBUG)
     while True:
         try:
             email = input("What is your SimpliSafe email address? ")

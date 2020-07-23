@@ -45,8 +45,7 @@ ApiType = TypeVar("ApiType", bound="API")
 def generate_device_id(client_id: str) -> str:
     """Generate a random 10-character ID to use as the SimpliSafe device ID."""
     seed = base64.b64encode(client_id.encode()).decode()[:10]
-    device_id = f"{seed[:5]}-{seed[5:]}"
-    return DEVICE_ID_TEMPLATE.format(device_id, client_id)
+    return f"{seed[:5]}-{seed[5:]}"
 
 
 class API:  # pylint: disable=too-many-instance-attributes
@@ -69,10 +68,18 @@ class API:  # pylint: disable=too-many-instance-attributes
         self._access_token: Optional[str] = None
         self._access_token_expire: Optional[datetime] = None
         self._actively_refreshing: bool = False
-        self._client_id: str = CLIENT_ID_TEMPLATE.format(client_id or str(uuid4()))
-        self._device_id: str = generate_device_id(self._client_id)
         self._refresh_token: Optional[str] = None
         self._session: ClientSession = session
+
+        self._client_id: str
+        if client_id is not None:
+            self._client = client_id
+        else:
+            self._client_id = str(uuid4())
+        self._device_id: str = generate_device_id(self._client_id)
+
+        self._client_id_string: str = CLIENT_ID_TEMPLATE.format(self._client_id)
+
         self.email: Optional[str] = None
         self.user_id: Optional[int] = None
         self.websocket: Websocket = Websocket()
@@ -89,6 +96,11 @@ class API:  # pylint: disable=too-many-instance-attributes
     def client_id(self) -> str:
         """Return the client ID of the API."""
         return self._client_id
+
+    @property
+    def client_id_string(self) -> str:
+        """Return the client ID of the API."""
+        return self._client_id_string
 
     @property
     def device_id(self) -> str:
@@ -132,8 +144,10 @@ class API:  # pylint: disable=too-many-instance-attributes
                 "grant_type": "password",
                 "username": email,
                 "password": password,
-                "client_id": klass.client_id,
-                "device_id": klass.device_id,
+                "client_id": klass.client_id_string,
+                "device_id": DEVICE_ID_TEMPLATE.format(
+                    klass.device_id, klass.client_id
+                ),
                 "app_version": "1.62.0",
                 "scope": "offline_access",
             }
@@ -187,7 +201,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 "api/mfa/challenge",
                 json={
                     "challenge_type": "oob",
-                    "client_id": self._client_id,
+                    "client_id": self._client_id_string,
                     "mfa_token": token_resp["mfa_token"],
                 },
             )
@@ -196,7 +210,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 "post",
                 "api/token",
                 json={
-                    "client_id": self._client_id,
+                    "client_id": self._client_id_string,
                     "grant_type": API_URL_MFA_OOB,
                     "mfa_token": token_resp["mfa_token"],
                     "oob_code": mfa_challenge_response["oob_code"],

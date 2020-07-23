@@ -1,9 +1,8 @@
 """Define a SimpliSafe account."""
+import base64
 from datetime import datetime, timedelta
 from json.decoder import JSONDecodeError
 import logging
-import random
-import string
 from typing import Dict, Optional, Type, TypeVar
 from uuid import uuid4
 
@@ -44,13 +43,8 @@ ApiType = TypeVar("ApiType", bound="API")
 
 def generate_device_id(client_id: str) -> str:
     """Generate a random 10-character ID to use as the SimpliSafe device ID."""
-    rand = "".join(
-        random.SystemRandom().choice(
-            string.ascii_uppercase + string.ascii_lowercase + string.digits
-        )
-        for _ in range(10)
-    )
-    device_id = f"{rand[:5]}-{rand[5:]}"
+    seed = base64.b64encode(client_id.encode()).decode()[:10]
+    device_id = f"{seed[:5]}-{seed[5:]}"
     return DEVICE_ID_TEMPLATE.format(device_id, client_id)
 
 

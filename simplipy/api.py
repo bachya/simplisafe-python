@@ -1,6 +1,7 @@
 """Define a SimpliSafe account."""
 import base64
 from datetime import datetime, timedelta
+from json.decoder import JSONDecodeError
 import logging
 from typing import Dict, Optional, Type, TypeVar
 from uuid import uuid4
@@ -295,7 +296,11 @@ class API:  # pylint: disable=too-many-instance-attributes
         async with session.request(
             method, f"{API_URL_BASE}/{endpoint}", **kwargs
         ) as resp:
-            data = await resp.json(content_type=None)
+            try:
+                data = await resp.json(content_type=None)
+            except JSONDecodeError:
+                message = await resp.text()
+                data = {"error": message}
 
             _LOGGER.debug("Data received from /%s: %s", endpoint, data)
 
@@ -305,7 +310,8 @@ class API:  # pylint: disable=too-many-instance-attributes
                 if isinstance(data, dict) and data.get("error") == "mfa_required":
                     # In the case of an MFA token, SimpliSafe's API will return a 401,
                     # but will include the MFA token in the response body. This
-                    # somewhat-kludgy check handles that case:
+                    # somewhat-kludgy check handles that case by ignoring the 401 and
+                    # returning the body for use:
                     return data
 
                 if "401" in str(err):

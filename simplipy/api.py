@@ -31,6 +31,7 @@ DEFAULT_USER_AGENT: str = (
     "(KHTML, like Gecko) Version/13.1.2 Safari/605.1.15"
 )
 
+CLIENT_ID_TEMPLATE = "{0}.WebApp.simplisafe.com"
 DEVICE_ID_TEMPLATE = (
     'WebApp; useragent="Safari 13.1 (SS-ID: {0}) / macOS 10.15.6"; uuid="{1}"; id="{0}"'
 )
@@ -68,7 +69,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         self._access_token: Optional[str] = None
         self._access_token_expire: Optional[datetime] = None
         self._actively_refreshing: bool = False
-        self._client_id: str = client_id or str(uuid4())
+        self._client_id: str = CLIENT_ID_TEMPLATE.format(client_id or str(uuid4()))
         self._device_id: str = generate_device_id(self._client_id)
         self._refresh_token: Optional[str] = None
         self._session: ClientSession = session

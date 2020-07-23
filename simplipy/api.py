@@ -326,9 +326,6 @@ class API:  # pylint: disable=too-many-instance-attributes
                     raise InvalidCredentialsError("Invalid username/password")
 
                 if "403" in str(err):
-                    if self.user_id:
-                        _LOGGER.info("Endpoint unavailable in plan: %s", endpoint)
-                        return {}
                     raise InvalidCredentialsError(
                         f"User does not have permission to access {endpoint}"
                     )

@@ -45,9 +45,6 @@ class SystemV2(System):
 
         _LOGGER.debug('Set "%s" response: %s', value.name, state_resp)
 
-        if not state_resp:
-            return
-
         if state_resp["success"]:
             self._state = SystemStates[state_resp["requestedState"]]
 

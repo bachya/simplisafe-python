@@ -318,21 +318,21 @@ class API:  # pylint: disable=too-many-instance-attributes
                     if self._actively_refreshing:
                         raise InvalidCredentialsError(
                             "Repeated 401s despite refreshing access token"
-                        )
+                        ) from None
                     if self._refresh_token:
                         _LOGGER.info("401 detected; attempting refresh token")
                         self._access_token_expire = datetime.now()
                         return await self.request(method, endpoint, **kwargs)
-                    raise InvalidCredentialsError("Invalid username/password")
+                    raise InvalidCredentialsError("Invalid username/password") from None
 
                 if "403" in str(err):
                     raise InvalidCredentialsError(
                         f"User does not have permission to access {endpoint}"
-                    )
+                    ) from None
 
                 raise RequestError(
                     f"There was an error while requesting /{endpoint}: {err}"
-                )
+                ) from None
             finally:
                 if not use_running_session:
                     await session.close()

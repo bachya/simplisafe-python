@@ -1,7 +1,6 @@
 """Define tests for the System object."""
 # pylint: disable=protected-access
 from datetime import datetime, timedelta
-import logging
 
 import aiohttp
 from aresponses import ResponsesMockServer
@@ -189,26 +188,6 @@ async def test_expired_token_refresh(aresponses, v2_server):
 
             simplisafe._access_token_expire = datetime.now() - timedelta(hours=1)
             await simplisafe.request("post", "api/token")
-
-
-@pytest.mark.asyncio
-async def test_invalid_credentials(aresponses, v2_server):
-    """Test that invalid credentials throw the correct exception."""
-    async with ResponsesMockServer() as v2_server:
-        v2_server.add(
-            "api.simplisafe.com",
-            "/v1/api/token",
-            "post",
-            aresponses.Response(
-                text=load_fixture("invalid_credentials_response.json"), status=403,
-            ),
-        )
-
-        async with aiohttp.ClientSession() as session:
-            with pytest.raises(InvalidCredentialsError):
-                await API.login_via_credentials(
-                    TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID, session=session
-                )
 
 
 @pytest.mark.asyncio

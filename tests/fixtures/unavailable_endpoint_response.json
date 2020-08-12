@@ -1,0 +1,7 @@
+{
+  "type": "NoRemoteManagement",
+  "message": "Subscription does not support remote management",
+  "code": "078",
+  "statusCode": 403,
+  "props": {}
+}

@@ -10,6 +10,7 @@ from aiohttp import ClientSession, ClientTimeout
 from aiohttp.client_exceptions import ClientError
 
 from simplipy.errors import (
+    EndpointUnavailable,
     InvalidCredentialsError,
     PendingAuthorizationError,
     RequestError,
@@ -302,12 +303,13 @@ class API:  # pylint: disable=too-many-instance-attributes
             try:
                 resp.raise_for_status()
             except ClientError as err:
-                if isinstance(data, dict) and data.get("error") == "mfa_required":
-                    # In the case of an MFA token, SimpliSafe's API will return a 401,
-                    # but will include the MFA token in the response body. This
-                    # somewhat-kludgy check handles that case by ignoring the 401 and
-                    # returning the body for use:
+                if data.get("error") == "mfa_required":
                     return data
+
+                if data.get("type") == "NoRemoteManagement":
+                    raise EndpointUnavailable(
+                        f"Endpoint unavailable in plan: {endpoint}"
+                    ) from None
 
                 if "401" in str(err):
                     if self._actively_refreshing:
@@ -319,11 +321,6 @@ class API:  # pylint: disable=too-many-instance-attributes
                         self._access_token_expire = datetime.now()
                         return await self.request(method, endpoint, **kwargs)
                     raise InvalidCredentialsError("Invalid username/password") from None
-
-                if "403" in str(err):
-                    raise InvalidCredentialsError(
-                        f"User does not have permission to access {endpoint}"
-                    ) from None
 
                 raise RequestError(
                     f"There was an error while requesting /{endpoint}: {err}"

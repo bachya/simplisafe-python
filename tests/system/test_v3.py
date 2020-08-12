@@ -7,7 +7,12 @@ import pytest
 import pytz
 
 from simplipy import API
-from simplipy.errors import InvalidCredentialsError, PinError, SimplipyError
+from simplipy.errors import (
+    EndpointUnavailable,
+    InvalidCredentialsError,
+    PinError,
+    SimplipyError,
+)
 from simplipy.system import SystemStates
 from simplipy.system.v3 import VOLUME_HIGH, VOLUME_MEDIUM
 
@@ -783,6 +788,31 @@ async def test_system_notifications(aresponses, v3_server, v3_subscriptions_resp
             )
             assert notification1.link == "http://link.to.info"
             assert notification1.link_label == "More Info"
+
+
+@pytest.mark.asyncio
+async def test_unavailable_endpoint(aresponses, v3_server):
+    """Test that an unavailable endpoint logs a message."""
+    async with v3_server:
+        v3_server.add(
+            "api.simplisafe.com",
+            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
+            "get",
+            aresponses.Response(
+                text=load_fixture("unavailable_endpoint_response.json"), status=403
+            ),
+        )
+
+        async with aiohttp.ClientSession() as session:
+            simplisafe = await API.login_via_credentials(
+                TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID, session=session
+            )
+
+            systems = await simplisafe.get_systems()
+            system = systems[TEST_SYSTEM_ID]
+
+            with pytest.raises(EndpointUnavailable):
+                await system.update(include_system=False, include_entities=False)
 
 
 @pytest.mark.asyncio

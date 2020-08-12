@@ -60,18 +60,3 @@ At any point, the "dirtiness" of the token can be checked:
     # Once the dirtiness is confirmed, the dirty bit resets:
     simplisafe.refresh_token_dirty
     # >>> False
-
-Errors/Exceptions
-*****************
-
-``simplipy`` exposes several useful error types:
-
-* :meth:`SimplipyError <simplipy.errors.SimplipyError>`: a base error that all other
-  ``simplipy`` errors inherit from
-* :meth:`RequestError <simplipy.errors.RequestError>`: an error
-  related to an invalid username/password combo
-* :meth:`PinError <simplipy.errors.PinError>`: an error related to an invalid PIN
-  operation, such as attempting to delete a reserved PIN (e.g., "master"), adding too
-  many PINs, etc.
-* :meth:`RequestError <simplipy.errors.RequestError>`: an error related to HTTP requests
-  that return something other than a ``200`` response code

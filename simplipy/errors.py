@@ -7,6 +7,12 @@ class SimplipyError(Exception):
     pass
 
 
+class EndpointUnavailable(SimplipyError):
+    """An error related to accessing an endpoint that isn't available in the plan."""
+
+    pass
+
+
 class InvalidCredentialsError(SimplipyError):
     """An error related to invalid credentials."""
 

@@ -59,8 +59,8 @@ repos:
     hooks:
       - id: pydocstyle
         files: ^((aioambient|tests)/.+)?[^/]+\.py$
-  - repo: https://github.com/ryanrhee/shellcheck-py
-    rev: v0.7.1.1
+  - repo: https://github.com/jumanjihouse/pre-commit-hooks
+    rev: 2.1.4
     hooks:
       - id: shellcheck
         args:

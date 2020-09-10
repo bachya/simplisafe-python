@@ -5,7 +5,6 @@ import json
 from urllib.parse import urlencode
 
 import aiohttp
-from asynctest import CoroutineMock, MagicMock
 import pytest
 import pytz
 from socketio.exceptions import SocketIOError
@@ -15,7 +14,8 @@ from simplipy.entity import EntityTypes
 from simplipy.errors import WebsocketError
 from simplipy.websocket import WebsocketEvent, WebsocketWatchdog
 
-from .common import (
+from tests.async_mock import AsyncMock
+from tests.common import (
     TEST_ACCESS_TOKEN,
     TEST_CLIENT_ID,
     TEST_EMAIL,
@@ -123,7 +123,7 @@ async def test_connect_sync_success(v3_server):
             simplisafe.websocket._sio.eio._trigger_event = async_mock()
             simplisafe.websocket._sio.eio.connect = async_mock()
 
-            on_connect = MagicMock()
+            on_connect = AsyncMock()
             simplisafe.websocket.on_connect(on_connect)
 
             connect_params = {
@@ -226,7 +226,7 @@ async def test_reconnect_on_new_access_token(aresponses, v3_server):
             simplisafe.websocket._sio.eio.connect = async_mock()
             simplisafe.websocket._sio.eio.disconnect = async_mock()
 
-            on_connect = MagicMock()
+            on_connect = AsyncMock()
             simplisafe.websocket.on_connect(on_connect)
 
             connect_params = {
@@ -263,9 +263,9 @@ async def test_sync_events(v3_server):
             simplisafe.websocket._sio.eio.connect = async_mock()
             simplisafe.websocket._sio.eio.disconnect = async_mock()
 
-            on_connect = MagicMock()
-            on_disconnect = MagicMock()
-            on_event = MagicMock()
+            on_connect = AsyncMock()
+            on_disconnect = AsyncMock()
+            on_event = AsyncMock()
 
             simplisafe.websocket.on_connect(on_connect)
             simplisafe.websocket.on_disconnect(on_disconnect)
@@ -305,7 +305,7 @@ async def test_sync_events(v3_server):
 @pytest.mark.asyncio
 async def test_watchdog_firing():
     """Test that the watchdog expiring fires the provided coroutine."""
-    mock_coro = CoroutineMock()
+    mock_coro = AsyncMock()
     mock_coro.__name__ = "mock_coro"
 
     watchdog = WebsocketWatchdog(mock_coro)

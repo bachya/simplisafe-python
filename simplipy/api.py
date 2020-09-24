@@ -322,6 +322,9 @@ class API:  # pylint: disable=too-many-instance-attributes
                         return await self.request(method, endpoint, **kwargs)
                     raise InvalidCredentialsError("Invalid username/password") from None
 
+                if "403" in str(err):
+                    raise InvalidCredentialsError("Invalid username/password") from None
+
                 raise RequestError(
                     f"There was an error while requesting /{endpoint}: {err}"
                 ) from None

@@ -303,36 +303,39 @@ class API:  # pylint: disable=too-many-instance-attributes
             try:
                 resp.raise_for_status()
             except ClientError as err:
-                if data.get("error") == "mfa_required":
-                    return data
-
-                if data.get("type") == "NoRemoteManagement":
-                    raise EndpointUnavailable(
-                        f"Endpoint unavailable in plan: {endpoint}"
-                    ) from None
-
-                if "401" in str(err):
-                    if self._actively_refreshing:
-                        raise InvalidCredentialsError(
-                            "Repeated 401s despite refreshing access token"
-                        ) from None
-                    if self._refresh_token:
-                        _LOGGER.info("401 detected; attempting refresh token")
-                        self._access_token_expire = datetime.now()
-                        return await self.request(method, endpoint, **kwargs)
-                    raise InvalidCredentialsError("Invalid username/password") from None
-
-                if "403" in str(err):
-                    raise InvalidCredentialsError("Invalid username/password") from None
-
-                raise RequestError(
-                    f"There was an error while requesting /{endpoint}: {err}"
-                ) from None
+                return await self.handle_error(data, endpoint, err, method)
             finally:
                 if not use_running_session:
                     await session.close()
 
         return data
+
+    async def handle_error(self, data, endpoint, err, method):
+        if data.get("error") == "mfa_required":
+            return data
+
+        if data.get("type") == "NoRemoteManagement":
+            raise EndpointUnavailable(
+                f"Endpoint unavailable in plan: {endpoint}"
+            ) from None
+
+        if "401" in str(err):
+            if self._actively_refreshing:
+                raise InvalidCredentialsError(
+                    "Repeated 401s despite refreshing access token"
+                ) from None
+            if self._refresh_token:
+                _LOGGER.info("401 detected; attempting refresh token")
+                self._access_token_expire = datetime.now()
+                return await self.request(method, endpoint, **kwargs)
+            raise InvalidCredentialsError("Invalid username/password") from None
+
+        if "403" in str(err):
+            raise InvalidCredentialsError("Invalid username/password") from None
+
+        raise RequestError(
+            f"There was an error while requesting /{endpoint}: {err}"
+        ) from None
 
     async def refresh_access_token(self, refresh_token: Optional[str]) -> None:
         """Regenerate an access token.

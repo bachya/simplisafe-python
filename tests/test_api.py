@@ -27,7 +27,7 @@ from .common import (
 
 @pytest.mark.asyncio
 async def test_401_bad_credentials(aresponses):
-    """Test that an RequestError is raised with a 401 upon login."""
+    """Test that an InvalidCredentialsError is raised with a 401 upon login."""
     aresponses.add(
         "api.simplisafe.com",
         "/v1/api/token",
@@ -46,7 +46,7 @@ async def test_401_bad_credentials(aresponses):
 async def test_401_refresh_token_failure(
     aresponses, v2_server, v2_subscriptions_response
 ):
-    """Test that an RequestError is raised with refresh token failure."""
+    """Test that a InvalidCredentialsError is raised with refresh token failure."""
     async with v2_server:
         v2_server.add(
             "api.simplisafe.com",
@@ -122,6 +122,23 @@ async def test_401_refresh_token_success(
             system = systems[TEST_SYSTEM_ID]
             await system.update()
             assert simplisafe.refresh_token == TEST_REFRESH_TOKEN
+
+
+@pytest.mark.asyncio
+async def test_403_bad_credentials(aresponses):
+    """Test that an InvalidCredentialsError is raised with a 403 upon login."""
+    aresponses.add(
+        "api.simplisafe.com",
+        "/v1/api/token",
+        "post",
+        aresponses.Response(text="Unauthorized", status=403),
+    )
+
+    async with aiohttp.ClientSession() as session:
+        with pytest.raises(InvalidCredentialsError):
+            await API.login_via_credentials(
+                TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID, session=session
+            )
 
 
 @pytest.mark.asyncio

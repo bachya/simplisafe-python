@@ -303,14 +303,14 @@ class API:  # pylint: disable=too-many-instance-attributes
             try:
                 resp.raise_for_status()
             except ClientError as err:
-                return await self.handle_error(data, endpoint, err, method)
+                return await self.handle_error(data, method, endpoint, err, kwargs)
             finally:
                 if not use_running_session:
                     await session.close()
 
         return data
 
-    async def handle_error(self, data, endpoint, err, method):
+    async def handle_error(self, data, method, endpoint, err, kwargs):
         if data.get("error") == "mfa_required":
             return data
 

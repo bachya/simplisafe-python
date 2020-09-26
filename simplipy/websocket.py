@@ -35,6 +35,7 @@ EVENT_DISARMED_BY_MASTER_PIN = "disarmed_by_master_pin"
 EVENT_DISARMED_BY_REMOTE = "disarmed_by_remote"
 EVENT_DOORBELL_DETECTED = "doorbell_detected"
 EVENT_ENTRY_DETECTED = "entry_detected"
+EVENT_ENTITY_TEST = "entity_test"
 EVENT_HOME_EXIT_DELAY = "home_exit_delay"
 EVENT_LOCK_ERROR = "lock_error"
 EVENT_LOCK_LOCKED = "lock_locked"
@@ -43,7 +44,9 @@ EVENT_MOTION_DETECTED = "motion_detected"
 EVENT_POWER_OUTAGE = "power_outage"
 EVENT_POWER_RESTORED = "power_restored"
 EVENT_SENSOR_NOT_RESPONDING = "sensor_not_responding"
+EVENT_SENSOR_PAIRED_AND_NAMED = "sensor_paired_and_named"
 EVENT_SENSOR_RESTORED = "sensor_restored"
+EVENT_USER_INITIATED_TEST = "user_initiated_test"
 
 EVENT_MAPPING = {
     1110: EVENT_ALARM_TRIGGERED,
@@ -63,7 +66,10 @@ EVENT_MAPPING = {
     1409: EVENT_MOTION_DETECTED,
     1429: EVENT_ENTRY_DETECTED,
     1458: EVENT_DOORBELL_DETECTED,
+    1531: EVENT_SENSOR_PAIRED_AND_NAMED,
+    1601: EVENT_USER_INITIATED_TEST,
     1602: EVENT_AUTOMATIC_TEST,
+    1604: EVENT_ENTITY_TEST,
     3301: EVENT_POWER_RESTORED,
     3350: EVENT_CONNECTION_RESTORED,
     3381: EVENT_SENSOR_RESTORED,
@@ -82,8 +88,8 @@ EVENT_MAPPING = {
 }
 
 
-@dataclass(frozen=True)  # pylint: disable=too-many-instance-attributes
-class WebsocketEvent:
+@dataclass(frozen=True)
+class WebsocketEvent:  # pylint: disable=too-many-instance-attributes
     """Define a representation of a message."""
 
     event_cid: InitVar[int]

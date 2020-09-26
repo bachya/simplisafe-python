@@ -117,8 +117,19 @@ Synchronous Event Callback
 Response Format
 ===============
 
-The ``event`` argument is a :meth:`simplipy.websocket.WebsocketEvent` object whose
-``event_type`` property is be one of the following values:
+The ``event`` argument shown above is a :meth:`simplipy.websocket.WebsocketEvent`
+object, which comes with several properties:
+
+``changed_by``: the PIN that caused the event (in the case of arming/disarming/etc.)
+``event_type``: the type of event (see below)
+``info``: a longer string describing the event
+``sensor_name``: the name of the entity that triggered the event
+``sensor_serial``: the serial number of the entity that triggered the event
+``sensor_type``: the type of the entity that triggered the event
+``system_id``: the SimpliSafe™ system ID
+``timestamp``: the UTC timestamp that the event occurred
+
+The ``event_type`` property will be one of the following values:
 
 * ``alarm_canceled``
 * ``alarm_triggered``
@@ -135,6 +146,7 @@ The ``event`` argument is a :meth:`simplipy.websocket.WebsocketEvent` object who
 * ``disarmed_by_master_pin``
 * ``disarmed_by_remote``
 * ``doorbell_detected``
+* ``entity_test``
 * ``entry_detected``
 * ``home_exit_delay``
 * ``lock_error``
@@ -144,8 +156,10 @@ The ``event`` argument is a :meth:`simplipy.websocket.WebsocketEvent` object who
 * ``power_outage``
 * ``power_restored``
 * ``sensor_not_responding``
+* ``sensor_paired_and_named``
 * ``sensor_restored``
+* ``user_initiated_test``
 
 If you should come across an event type that the library does not know about (and see
-a logger warning about it), please open an issue at
+a log message about it), please open an issue at
 https://github.com/bachya/simplisafe-python/issues.

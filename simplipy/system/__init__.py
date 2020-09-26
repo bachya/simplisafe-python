@@ -142,6 +142,7 @@ class SystemStates(Enum):
     home = 8
     home_count = 9
     off = 10
+    test = 11
     unknown = 99
 
 

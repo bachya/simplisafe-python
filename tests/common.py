@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 TEST_ACCESS_TOKEN = "abcde12345"
 TEST_ACCOUNT_ID = 12345
 TEST_ADDRESS = "1234 Main Street"
+TEST_CAMERA_ID = "1234567890"
 TEST_CLIENT_ID = "12345DEFG"
 TEST_EMAIL = "user@email.com"
 TEST_LOCK_ID = "987"

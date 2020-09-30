@@ -100,6 +100,14 @@ async def test_401_refresh_token_success(
         )
         v2_server.add(
             "api.simplisafe.com",
+            "/v1/api/authCheck",
+            "get",
+            aresponses.Response(
+                text=load_fixture("auth_check_response.json"), status=200
+            ),
+        )
+        v2_server.add(
+            "api.simplisafe.com",
             f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
             aresponses.Response(text=v2_subscriptions_response, status=200,),

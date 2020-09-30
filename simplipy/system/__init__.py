@@ -173,8 +173,8 @@ class System:
             SystemNotification
         ] = self._generate_system_notification_objects()
         self._request: Callable[..., Coroutine] = request
-        self._state: SystemStates = self._coerce_state_from_string(
-            location_info["system"]["alarmState"]
+        self._state: SystemStates = self._coerce_state_from_raw_value(
+            location_info["system"].get("alarmState")
         )
         self.locks: Dict[str, Lock] = {}
         self.sensors: Dict[str, Union[SensorV2, SensorV3]] = {}
@@ -259,8 +259,12 @@ class System:
         return self._location_info["system"]["version"]
 
     @staticmethod
-    def _coerce_state_from_string(value: str) -> SystemStates:
+    def _coerce_state_from_raw_value(value: Union[str, None]) -> SystemStates:
         """Return a proper state from a string input."""
+        if not value:
+            _LOGGER.warning("SimpliSafe didn't return current system state" "")
+            return SystemStates.unknown
+
         try:
             return SystemStates[convert_to_underscore(value)]
         except KeyError:
@@ -338,8 +342,8 @@ class System:
 
         self._location_info = location_info
         self._notifications = self._generate_system_notification_objects()
-        self._state = self._coerce_state_from_string(
-            location_info["system"]["alarmState"]
+        self._state = self._coerce_state_from_raw_value(
+            location_info["system"].get("alarmState")
         )
 
     async def _set_updated_pins(self, pins: dict) -> None:
@@ -502,21 +506,14 @@ class System:
         :param cached: Whether to used cached data.
         :type cached: ``bool``
         """
-        tasks: Dict[str, Coroutine] = {}
+        tasks: List[Coroutine] = []
+
         if include_system:
-            tasks["system"] = self._get_system_info()
+            tasks.append(self._get_system_info())
         if include_settings:
-            tasks["settings"] = self._get_settings(cached)
+            tasks.append(self._get_settings(cached))
 
-        results: List[Any] = await asyncio.gather(
-            *tasks.values(), return_exceptions=True
-        )
-
-        operation: str
-        result: dict
-        for operation, result in zip(tasks, results):
-            if isinstance(result, SimplipyError):
-                raise result
+        await asyncio.gather(*tasks)
 
         # We await entity updates after the task pool since including it can cause
         # HTTP 409s if that update occurs out of sequence:

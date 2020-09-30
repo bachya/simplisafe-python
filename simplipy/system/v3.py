@@ -282,7 +282,7 @@ class SystemV3(System):
 
         _LOGGER.debug('Set "%s" response: %s', value.name, state_resp)
 
-        self._state = self._coerce_state_from_string(state_resp["state"])
+        self._state = self._coerce_state_from_raw_value(state_resp["state"])
 
     async def _set_updated_pins(self, pins: dict) -> None:
         """Post new PINs."""

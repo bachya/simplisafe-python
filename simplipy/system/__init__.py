@@ -6,6 +6,7 @@ from enum import Enum
 import logging
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Set, Type, Union
 
+from simplipy.camera import Camera
 from simplipy.entity import Entity, EntityTypes
 from simplipy.errors import PinError, SimplipyError
 from simplipy.lock import Lock
@@ -178,6 +179,8 @@ class System:
         )
         self.locks: Dict[str, Lock] = {}
         self.sensors: Dict[str, Union[SensorV2, SensorV3]] = {}
+        self.cameras: Dict[str, Camera] = {}
+        self.doorbells: Dict[str, Camera] = {}
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -250,7 +253,7 @@ class System:
         return self._location_info["system"]["temperature"]
 
     @property  # type: ignore
-    @guard_from_missing_data()
+    @guard_from_missing_data(VERSION_V3)
     def version(self) -> int:
         """Return the system version.
 
@@ -346,6 +349,28 @@ class System:
         self._state = self._coerce_state_from_raw_value(
             location_info["system"].get("alarmState")
         )
+
+        cameras_list = location_info["system"]["cameras"]
+        for camera in cameras_list:
+            entity_type = (
+                EntityTypes.doorbell
+                if camera["model"] == "SS002"
+                else EntityTypes.camera
+            )
+            prop = (
+                self.doorbells if entity_type == EntityTypes.doorbell else self.cameras
+            )
+            if camera["uuid"] in prop:
+                entity = prop[camera["uuid"]]
+                entity.entity_data = camera
+            else:
+                prop[camera["uuid"]] = Camera(
+                    self._request,
+                    self._get_entities,
+                    self.system_id,
+                    entity_type,
+                    camera,
+                )
 
     async def _set_updated_pins(self, pins: dict) -> None:
         """Post new PINs."""

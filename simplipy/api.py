@@ -254,7 +254,7 @@ class API:  # pylint: disable=too-many-instance-attributes
             system = system_class(
                 self.request, self._get_subscription_data, system_data["location"]
             )
-            await system.update(include_system=False)
+            await system.update()
             systems[system_data["sid"]] = system
 
         return systems

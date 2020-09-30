@@ -10,3 +10,4 @@
 - Scott Newman (https://github.com/greencoder)
 - Scott Silence (https://github.com/ssilence5)
 - William Scanlon (https://github.com/w1ll1am23)
+- Niccolo Zapponi (https://github.com/nzapponi)

@@ -84,20 +84,12 @@ async def test_video_urls(aresponses, v3_server, v3_subscriptions_response):
                 == f"https://media.simplisafe.com/v1/{TEST_CAMERA_ID}/flv?x=720&audioEncoding=AAC"
             )
             assert (
-                camera.video_url(width=720, audio_encoding=None)
-                == f"https://media.simplisafe.com/v1/{TEST_CAMERA_ID}/flv?x=720"
-            )
-            assert (
                 camera.video_url(width=720, audio_encoding="OPUS")
                 == f"https://media.simplisafe.com/v1/{TEST_CAMERA_ID}/flv?x=720&audioEncoding=OPUS"
             )
             assert (
                 camera.video_url(audio_encoding="OPUS")
                 == f"https://media.simplisafe.com/v1/{TEST_CAMERA_ID}/flv?x=1280&audioEncoding=OPUS"
-            )
-            assert (
-                camera.video_url(audio_encoding=None)
-                == f"https://media.simplisafe.com/v1/{TEST_CAMERA_ID}/flv?x=1280"
             )
             assert (
                 camera.video_url(additional_param="1")

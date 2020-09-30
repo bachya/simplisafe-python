@@ -8,6 +8,7 @@ from simplipy.errors import InvalidCredentialsError
 from .common import (
     TEST_CAMERA_ID,
     TEST_CLIENT_ID,
+    TEST_DOORBELL_ID,
     TEST_EMAIL,
     TEST_PASSWORD,
     TEST_SUBSCRIPTION_ID,
@@ -36,7 +37,6 @@ async def test_properties(aresponses, v3_server, v3_subscriptions_response):
 
             systems = await simplisafe.get_systems()
 
-            # systems = await simplisafe.get_systems()
             system = systems[TEST_SYSTEM_ID]
             await system.update(include_settings=False, include_entities=False)
 
@@ -49,6 +49,9 @@ async def test_properties(aresponses, v3_server, v3_subscriptions_response):
             assert not camera.shutter_open_when_off
             assert not camera.shutter_open_when_home
             assert camera.shutter_open_when_away
+
+            doorbell = system.doorbells[TEST_DOORBELL_ID]
+            assert doorbell.name == "Doorbell"
 
 
 @pytest.mark.asyncio
@@ -81,18 +84,22 @@ async def test_video_urls(aresponses, v3_server, v3_subscriptions_response):
                 == f"https://media.simplisafe.com/v1/{TEST_CAMERA_ID}/flv?x=720&audioEncoding=AAC"
             )
             assert (
-                camera.video_url(width=720, params={})
+                camera.video_url(width=720, audio_encoding=None)
                 == f"https://media.simplisafe.com/v1/{TEST_CAMERA_ID}/flv?x=720"
             )
             assert (
-                camera.video_url(width=720, params={"audioEncoding": "OPUS"})
+                camera.video_url(width=720, audio_encoding="OPUS")
                 == f"https://media.simplisafe.com/v1/{TEST_CAMERA_ID}/flv?x=720&audioEncoding=OPUS"
             )
             assert (
-                camera.video_url(params={"audioEncoding": "OPUS"})
+                camera.video_url(audio_encoding="OPUS")
                 == f"https://media.simplisafe.com/v1/{TEST_CAMERA_ID}/flv?x=1280&audioEncoding=OPUS"
             )
             assert (
-                camera.video_url(params={})
+                camera.video_url(audio_encoding=None)
                 == f"https://media.simplisafe.com/v1/{TEST_CAMERA_ID}/flv?x=1280"
+            )
+            assert (
+                camera.video_url(additional_param="1")
+                == f"https://media.simplisafe.com/v1/{TEST_CAMERA_ID}/flv?x=1280&audioEncoding=AAC&additional_param=1"
             )

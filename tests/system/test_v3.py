@@ -341,9 +341,7 @@ async def test_missing_system_info_later_on(aresponses, caplog, v3_server):
             systems = await simplisafe.get_systems()
             system = systems[TEST_SYSTEM_ID]
 
-            await system.update(
-                include_system=False, include_settings=False, include_entities=False
-            )
+            await system.update(include_settings=False, include_entities=False)
             assert system.offline is True
             assert any(
                 "SimpliSafe didn't return data for property: offline" in e.message

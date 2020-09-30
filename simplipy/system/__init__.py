@@ -6,7 +6,7 @@ from enum import Enum
 import logging
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Set, Type, Union
 
-from simplipy.camera import Camera
+from simplipy.camera import DOORBELL_MODEL, Camera
 from simplipy.entity import Entity, EntityTypes
 from simplipy.errors import PinError, SimplipyError
 from simplipy.lock import Lock
@@ -179,8 +179,6 @@ class System:
         )
         self.locks: Dict[str, Lock] = {}
         self.sensors: Dict[str, Union[SensorV2, SensorV3]] = {}
-        self.cameras: Dict[str, Camera] = {}
-        self.doorbells: Dict[str, Camera] = {}
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -199,6 +197,42 @@ class System:
         :rtype: ``bool``
         """
         return self._location_info["system"]["isAlarming"]
+
+    @property  # type: ignore
+    def cameras(self) -> Dict[str, Camera]:
+        """Return list of cameras.
+
+        :rtype: ``List[:meth:`simplipy.camera.Camera`]``
+        """
+        cameras = {}
+        for camera in self._location_info["system"]["cameras"]:
+            if camera["model"] != DOORBELL_MODEL:
+                cameras[camera["uuid"]] = Camera(
+                    self._request,
+                    self._get_entities,
+                    self.system_id,
+                    EntityTypes.camera,
+                    camera,
+                )
+        return cameras
+
+    @property  # type: ignore
+    def doorbells(self) -> Dict[str, Camera]:
+        """Return list of doorbells.
+
+        :rtype: ``List[:meth:`simplipy.camera.Camera`]``
+        """
+        doorbells = {}
+        for camera in self._location_info["system"]["cameras"]:
+            if camera["model"] == DOORBELL_MODEL:
+                doorbells[camera["uuid"]] = Camera(
+                    self._request,
+                    self._get_entities,
+                    self.system_id,
+                    EntityTypes.camera,
+                    camera,
+                )
+        return doorbells
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -349,28 +383,6 @@ class System:
         self._state = self._coerce_state_from_raw_value(
             location_info["system"].get("alarmState")
         )
-
-        cameras_list = location_info["system"]["cameras"]
-        for camera in cameras_list:
-            entity_type = (
-                EntityTypes.doorbell
-                if camera["model"] == "SS002"
-                else EntityTypes.camera
-            )
-            prop = (
-                self.doorbells if entity_type == EntityTypes.doorbell else self.cameras
-            )
-            if camera["uuid"] in prop:
-                entity = prop[camera["uuid"]]
-                entity.entity_data = camera
-            else:
-                prop[camera["uuid"]] = Camera(
-                    self._request,
-                    self._get_entities,
-                    self.system_id,
-                    entity_type,
-                    camera,
-                )
 
     async def _set_updated_pins(self, pins: dict) -> None:
         """Post new PINs."""

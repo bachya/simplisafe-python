@@ -1,4 +1,12 @@
+from typing import Dict
+from urllib.parse import urlencode
+
 from simplipy.entity import Entity
+
+DOORBELL_MODEL: str = "SS002"
+
+MEDIA_URL_HOSTNAME: str = "media.simplisafe.com"
+MEDIA_URL_BASE: str = f"https://{MEDIA_URL_HOSTNAME}/v1"
 
 
 class Camera(Entity):
@@ -44,22 +52,6 @@ class Camera(Entity):
         """
         return self.entity_data["subscription"]["enabled"]
 
-    def video_url(self, width=1280, params={"audioEncoding": "AAC"}) -> str:
-        """Return the camera video URL.
-
-        :rtype: ``str``
-        """
-        additionalParams = []
-        for param in params:
-            additionalParams.append("{}={}".format(param, params[param]))
-        additionalParamsUrl = ""
-        if len(additionalParams) > 0:
-            additionalParamsUrl = "&{}".format("&".join(additionalParams))
-
-        return "https://media.simplisafe.com/v1/{}/flv?x={}{}".format(
-            self.serial, width, additionalParamsUrl
-        )
-
     @property
     def shutter_open_when_off(self) -> bool:
         """Return whether the privacy shutter is open when alarm system is off.
@@ -83,3 +75,23 @@ class Camera(Entity):
         :rtype: ``bool``
         """
         return self.camera_settings["shutterAway"] == "open"
+
+    def video_url(
+        self, width: int = 1280, audio_encoding: str = "AAC", **kwargs
+    ) -> str:
+        """Return the camera video URL.
+
+        :rtype: ``str``
+        """
+        url_params: Dict[str, str] = {}
+
+        if width:
+            url_params["x"] = f"{width}"
+
+        if audio_encoding:
+            url_params["audioEncoding"] = audio_encoding
+
+        for key, value in kwargs.items():
+            url_params[key] = value
+
+        return f"{MEDIA_URL_BASE}/{self.serial}/flv?{urlencode(url_params)}"

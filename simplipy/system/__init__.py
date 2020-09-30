@@ -287,7 +287,7 @@ class System:
         return self._location_info["system"]["temperature"]
 
     @property  # type: ignore
-    @guard_from_missing_data(VERSION_V3)
+    @guard_from_missing_data()
     def version(self) -> int:
         """Return the system version.
 

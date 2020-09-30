@@ -49,11 +49,9 @@ class Camera(Entity):
 
         :rtype: ``str``
         """
-        additionalParams = []
-        for param in params:
-            additionalParams.append("{}={}".format(param, params[param]))
+        additionalParams = ["{}={}".format(param, params[param]) for param in params]
         additionalParamsUrl = ""
-        if len(additionalParams) > 0:
+        if additionalParams:
             additionalParamsUrl = "&{}".format("&".join(additionalParams))
 
         return "https://media.simplisafe.com/v1/{}/flv?x={}{}".format(

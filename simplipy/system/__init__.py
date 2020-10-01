@@ -258,12 +258,13 @@ class System:
         """
         return self._location_info["system"]["version"]
 
-    @staticmethod
-    def _coerce_state_from_raw_value(value: Union[str, None]) -> SystemStates:
+    def _coerce_state_from_raw_value(self, value: Union[str, None]) -> SystemStates:
         """Return a proper state from a string input."""
         if not value:
-            _LOGGER.warning("SimpliSafe didn't return current system state")
-            return SystemStates.unknown
+            _LOGGER.debug(
+                "SimpliSafe didn't return system state; retaining current state"
+            )
+            return self.state
 
         try:
             return SystemStates[convert_to_underscore(value)]

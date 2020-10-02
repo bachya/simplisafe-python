@@ -2,11 +2,14 @@ from urllib.parse import urlencode
 
 from simplipy.entity import Entity
 
-DOORBELL_MODEL: str = "SS002"
-
 MEDIA_URL_BASE: str = "https://media.simplisafe.com/v1"
 DEFAULT_VIDEO_WIDTH: int = 1280
 DEFAULT_AUDIO_ENCODING: str = "AAC"
+
+CAMERA_MODEL_CAMERA: str = "CAMERA"
+CAMERA_MODEL_DOORBELL: str = "DOORBELL"
+
+MODEL_TO_TYPE = {"SS001": CAMERA_MODEL_CAMERA, "SS002": CAMERA_MODEL_DOORBELL}
 
 
 class Camera(Entity):
@@ -19,6 +22,14 @@ class Camera(Entity):
         :rtype: ``dict``
         """
         return self.entity_data["cameraSettings"]
+
+    @property
+    def camera_type(self) -> str:
+        """Return the type of camera.
+
+        :rtype: ``str``
+        """
+        return MODEL_TO_TYPE[self.entity_data["model"]]
 
     @property
     def name(self) -> str:

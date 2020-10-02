@@ -6,7 +6,7 @@ from enum import Enum
 import logging
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Set, Type, Union
 
-from simplipy.camera import DOORBELL_MODEL, Camera
+from simplipy.camera import CAMERA_MODEL_CAMERA, CAMERA_MODEL_DOORBELL, Camera
 from simplipy.entity import Entity, EntityTypes
 from simplipy.errors import PinError, SimplipyError
 from simplipy.lock import Lock
@@ -202,23 +202,27 @@ class System:
     def cameras(self) -> Dict[str, Camera]:
         """Return list of cameras.
 
-        :rtype: ``List[:meth:`simplipy.camera.Camera`]``
+        :rtype: ``Dict[str, :meth:`simplipy.camera.Camera`]``
         """
-        cameras = self._get_cameras_doorbells().items()
-        camera_uuids = self._get_camera_uuids()["cameras"]
-
-        return {uuid: camera for uuid, camera in cameras if uuid in camera_uuids}
+        cameras = [
+            camera
+            for camera in self._get_cameras_doorbells()
+            if camera.camera_type == CAMERA_MODEL_CAMERA
+        ]
+        return {camera.serial: camera for camera in cameras}
 
     @property
     def doorbells(self) -> Dict[str, Camera]:
         """Return list of doorbells.
 
-        :rtype: ``List[:meth:`simplipy.camera.Camera`]``
+        :rtype: ``Dict[str, :meth:`simplipy.camera.Camera`]``
         """
-        cameras = self._get_cameras_doorbells().items()
-        doorbell_uuids = self._get_camera_uuids()["doorbells"]
-
-        return {uuid: camera for uuid, camera in cameras if uuid in doorbell_uuids}
+        doorbells = [
+            doorbell
+            for doorbell in self._get_cameras_doorbells()
+            if doorbell.camera_type == CAMERA_MODEL_DOORBELL
+        ]
+        return {doorbell.serial: doorbell for doorbell in doorbells}
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -295,29 +299,18 @@ class System:
             _LOGGER.error("Unknown system state: %s", value)
             return SystemStates.unknown
 
-    def _get_camera_uuids(self) -> Dict[str, List[str]]:
-        """Get list of camera and doorbell UUIDs"""
-        cameras = []
-        doorbells = []
-        for camera in self._location_info["system"]["cameras"]:
-            if camera["model"] == DOORBELL_MODEL:
-                doorbells.append(camera["uuid"])
-            else:
-                cameras.append(camera["uuid"])
-        return {"cameras": cameras, "doorbells": doorbells}
-
-    def _get_cameras_doorbells(self) -> Dict[str, Camera]:
+    def _get_cameras_doorbells(self) -> List[Camera]:
         """Get list of cameras and doorbells."""
-        cameras = {}
-        for camera in self._location_info["system"]["cameras"]:
-            cameras[camera["uuid"]] = Camera(
+        return [
+            Camera(
                 self._request,
                 self._get_entities,
                 self.system_id,
                 EntityTypes.camera,
                 camera,
             )
-        return cameras
+            for camera in self._location_info["system"]["cameras"]
+        ]
 
     def _generate_system_notification_objects(self) -> List[SystemNotification]:
         """Generate message objects from the message data stored in location_info."""

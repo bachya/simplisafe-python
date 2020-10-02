@@ -6,7 +6,7 @@ from enum import Enum
 import logging
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Set, Type, Union
 
-from simplipy.camera import CAMERA_MODEL_CAMERA, CAMERA_MODEL_DOORBELL, Camera
+from simplipy.camera import Camera
 from simplipy.entity import Entity, EntityTypes
 from simplipy.errors import PinError, SimplipyError
 from simplipy.lock import Lock
@@ -200,29 +200,11 @@ class System:
 
     @property
     def cameras(self) -> Dict[str, Camera]:
-        """Return list of cameras.
+        """Return list of cameras and doorbells.
 
         :rtype: ``Dict[str, :meth:`simplipy.camera.Camera`]``
         """
-        cameras = [
-            camera
-            for camera in self._get_cameras_doorbells()
-            if camera.camera_type == CAMERA_MODEL_CAMERA
-        ]
-        return {camera.serial: camera for camera in cameras}
-
-    @property
-    def doorbells(self) -> Dict[str, Camera]:
-        """Return list of doorbells.
-
-        :rtype: ``Dict[str, :meth:`simplipy.camera.Camera`]``
-        """
-        doorbells = [
-            doorbell
-            for doorbell in self._get_cameras_doorbells()
-            if doorbell.camera_type == CAMERA_MODEL_DOORBELL
-        ]
-        return {doorbell.serial: doorbell for doorbell in doorbells}
+        return {camera.serial: camera for camera in self._get_cameras_doorbells()}
 
     @property  # type: ignore
     @guard_from_missing_data()

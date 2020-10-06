@@ -7,9 +7,9 @@ from simplipy.errors import InvalidCredentialsError
 
 from .common import (
     TEST_CAMERA_ID,
+    TEST_CAMERA_ID_2,
     TEST_CAMERA_TYPE,
     TEST_CLIENT_ID,
-    TEST_DOORBELL_ID,
     TEST_EMAIL,
     TEST_PASSWORD,
     TEST_SUBSCRIPTION_ID,
@@ -51,6 +51,9 @@ async def test_properties(aresponses, v3_server, v3_subscriptions_response):
             assert not camera.shutter_open_when_home
             assert camera.shutter_open_when_away
             assert camera.camera_type == TEST_CAMERA_TYPE
+
+            error_camera = system.cameras[TEST_CAMERA_ID_2]
+            assert error_camera.camera_type == "CAMERA_MODEL_UNKNOWN"
 
 
 @pytest.mark.asyncio

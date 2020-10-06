@@ -1,6 +1,9 @@
+import logging
 from urllib.parse import urlencode
 
 from simplipy.entity import Entity
+
+_LOGGER: logging.Logger = logging.getLogger(__name__)
 
 MEDIA_URL_BASE: str = "https://media.simplisafe.com/v1"
 DEFAULT_VIDEO_WIDTH: int = 1280
@@ -8,8 +11,13 @@ DEFAULT_AUDIO_ENCODING: str = "AAC"
 
 CAMERA_MODEL_CAMERA: str = "CAMERA"
 CAMERA_MODEL_DOORBELL: str = "DOORBELL"
+CAMERA_MODEL_UNKNOWN: str = "CAMERA_MODEL_UNKNOWN"
 
-MODEL_TO_TYPE = {"SS001": CAMERA_MODEL_CAMERA, "SS002": CAMERA_MODEL_DOORBELL}
+MODEL_TO_TYPE = {
+    "SS001": CAMERA_MODEL_CAMERA,
+    "SS002": CAMERA_MODEL_DOORBELL,
+    "unknown": CAMERA_MODEL_UNKNOWN,
+}
 
 
 class Camera(Entity):
@@ -29,7 +37,12 @@ class Camera(Entity):
 
         :rtype: ``str``
         """
-        return MODEL_TO_TYPE[self.entity_data["model"]]
+
+        try:
+            return MODEL_TO_TYPE[self.entity_data["model"]]
+        except KeyError:
+            _LOGGER.error("Unknown camera type: %s", self.entity_data["model"])
+            return MODEL_TO_TYPE["unknown"]
 
     @property
     def name(self) -> str:

@@ -16,7 +16,6 @@ CAMERA_MODEL_UNKNOWN: str = "CAMERA_MODEL_UNKNOWN"
 MODEL_TO_TYPE = {
     "SS001": CAMERA_MODEL_CAMERA,
     "SS002": CAMERA_MODEL_DOORBELL,
-    "unknown": CAMERA_MODEL_UNKNOWN,
 }
 
 
@@ -42,7 +41,7 @@ class Camera(Entity):
             return MODEL_TO_TYPE[self.entity_data["model"]]
         except KeyError:
             _LOGGER.error("Unknown camera type: %s", self.entity_data["model"])
-            return MODEL_TO_TYPE["unknown"]
+            return CAMERA_MODEL_UNKNOWN
 
     @property
     def name(self) -> str:

@@ -204,7 +204,18 @@ class System:
 
         :rtype: ``Dict[str, :meth:`simplipy.camera.Camera`]``
         """
-        return {camera.serial: camera for camera in self._get_cameras_doorbells()}
+
+        cameras_doorbells = [
+            Camera(
+                self._request,
+                self._get_entities,
+                self.system_id,
+                EntityTypes.camera,
+                camera,
+            )
+            for camera in self._location_info["system"]["cameras"]
+        ]
+        return {camera.serial: camera for camera in cameras_doorbells}
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -280,19 +291,6 @@ class System:
         except KeyError:
             _LOGGER.error("Unknown system state: %s", value)
             return SystemStates.unknown
-
-    def _get_cameras_doorbells(self) -> List[Camera]:
-        """Get list of cameras and doorbells."""
-        return [
-            Camera(
-                self._request,
-                self._get_entities,
-                self.system_id,
-                EntityTypes.camera,
-                camera,
-            )
-            for camera in self._location_info["system"]["cameras"]
-        ]
 
     def _generate_system_notification_objects(self) -> List[SystemNotification]:
         """Generate message objects from the message data stored in location_info."""

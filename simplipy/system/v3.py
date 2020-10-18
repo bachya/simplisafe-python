@@ -1,7 +1,7 @@
 """Define a V3 (new) SimpliSafe system."""
 from enum import Enum
 import logging
-from typing import Dict
+from typing import TYPE_CHECKING, Dict
 
 import voluptuous as vol
 
@@ -12,6 +12,9 @@ from simplipy.system import (
     create_pin_payload,
     guard_from_missing_data,
 )
+
+if TYPE_CHECKING:
+    from simplipy.api import API
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -73,9 +76,9 @@ SYSTEM_PROPERTIES_PAYLOAD_SCHEMA = vol.Schema(
 class SystemV3(System):
     """Define a V3 (new) system."""
 
-    def __init__(self, request, get_subscription_data, location_info) -> None:
+    def __init__(self, api: "API", location_info: dict) -> None:
         """Initialize."""
-        super().__init__(request, get_subscription_data, location_info)
+        super().__init__(api, location_info)
         self.settings_info: dict = {}
 
     @property  # type: ignore
@@ -255,7 +258,7 @@ class SystemV3(System):
 
     async def _get_entities_payload(self, cached: bool = True) -> dict:
         """Update sensors to the latest values."""
-        sensor_resp = await self._request(
+        sensor_resp = await self._api.request(
             "get",
             f"ss3/subscriptions/{self.system_id}/sensors",
             params={"forceUpdate": str(not cached).lower()},
@@ -265,7 +268,7 @@ class SystemV3(System):
 
     async def _get_settings(self, cached: bool = True) -> None:
         """Get all system settings."""
-        settings_resp = await self._request(
+        settings_resp = await self._api.request(
             "get",
             f"ss3/subscriptions/{self.system_id}/settings/normal",
             params={"forceUpdate": str(not cached).lower()},
@@ -276,7 +279,7 @@ class SystemV3(System):
 
     async def _set_state(self, value: Enum) -> None:
         """Set the state of the system."""
-        state_resp = await self._request(
+        state_resp = await self._api.request(
             "post", f"ss3/subscriptions/{self.system_id}/state/{value.name}"
         )
 
@@ -286,7 +289,7 @@ class SystemV3(System):
 
     async def _set_updated_pins(self, pins: dict) -> None:
         """Post new PINs."""
-        self.settings_info = await self._request(
+        self.settings_info = await self._api.request(
             "post",
             f"ss3/subscriptions/{self.system_id}/settings/pins",
             json=create_pin_payload(pins),
@@ -341,7 +344,7 @@ class SystemV3(System):
                 f"Using invalid values for system properties ({properties}): {err}"
             ) from None
 
-        settings_resp = await self._request(
+        settings_resp = await self._api.request(
             "post",
             f"ss3/subscriptions/{self.system_id}/settings/normal",
             json={

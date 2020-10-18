@@ -19,7 +19,7 @@ class SystemV2(System):
 
     async def _get_entities_payload(self, cached: bool = True) -> dict:
         """Update sensors to the latest values."""
-        sensor_resp = await self._request(
+        sensor_resp = await self._api.request(
             "get",
             f"subscriptions/{self.system_id}/settings",
             params={"settingsType": "all", "cached": str(cached).lower()},
@@ -29,7 +29,7 @@ class SystemV2(System):
 
     async def _set_updated_pins(self, pins: dict) -> None:
         """Post new PINs."""
-        await self._request(
+        await self._api.request(
             "post",
             f"subscriptions/{self.system_id}/pins",
             json=create_pin_payload(pins, version=2),
@@ -37,7 +37,7 @@ class SystemV2(System):
 
     async def _set_state(self, value: Enum) -> None:
         """Set the state of the system."""
-        state_resp = await self._request(
+        state_resp = await self._api.request(
             "post",
             f"subscriptions/{self.system_id}/state",
             params={"state": value.name},
@@ -58,7 +58,7 @@ class SystemV2(System):
         :type cached: ``bool``
         :rtype: ``Dict[str, str]``
         """
-        pins_resp = await self._request(
+        pins_resp = await self._api.request(
             "get",
             f"subscriptions/{self.system_id}/pins",
             params={"settingsType": "all", "cached": str(cached).lower()},

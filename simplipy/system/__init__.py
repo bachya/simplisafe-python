@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 import logging
-from typing import Any, Callable, Coroutine, Dict, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
 
 from simplipy.camera import Camera
 from simplipy.entity import Entity, EntityTypes
@@ -14,6 +14,9 @@ from simplipy.sensor.v2 import SensorV2
 from simplipy.sensor.v3 import SensorV3
 from simplipy.util.dt import utc_from_timestamp
 from simplipy.util.string import convert_to_underscore
+
+if TYPE_CHECKING:
+    from simplipy.api import API
 
 _LOGGER: logging.Logger = logging.getLogger(__name__)
 
@@ -155,24 +158,24 @@ class System:
     :type location_info: ``dict``
     """
 
-    def __init__(
-        self,
-        request: Callable[..., Coroutine],
-        get_subscription_data: Callable[..., Coroutine],
-        location_info: dict,
-    ) -> None:
+    def __init__(self, api: "API", location_info: dict) -> None:
         """Initialize."""
-        self._get_subscription_data: Callable[..., Coroutine] = get_subscription_data
+        self._api: "API" = api
         self._location_info: dict = location_info
-        self._notifications: List[
-            SystemNotification
-        ] = self._generate_system_notification_objects()
-        self._request: Callable[..., Coroutine] = request
-        self._state: SystemStates = self._coerce_state_from_raw_value(
-            location_info["system"].get("alarmState")
-        )
+
+        # These will get filled in after initial authentication:
+        self._notifications: List = []
+        self._state: SystemStates = SystemStates.unknown
+
         self.locks: Dict[str, Lock] = {}
         self.sensors: Dict[str, Union[SensorV2, SensorV3]] = {}
+
+    def init(self):
+        """Perform some post-creation initialization."""
+        self._notifications = self._generate_system_notification_objects()
+        self._state = self._coerce_state_from_raw_value(
+            self._location_info["system"].get("alarmState")
+        )
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -200,7 +203,7 @@ class System:
         """
         cameras_doorbells = [
             Camera(
-                self._request,
+                self._api.request,
                 self._get_entities,
                 self.system_id,
                 EntityTypes.camera,
@@ -326,8 +329,8 @@ class System:
                 entity.entity_data = entity_data
             else:
                 klass = get_entity_class(entity_type, version=self.version)
-                prop[entity_data["serial"]] = klass(  # type: ignore
-                    self._request,
+                prop[entity_data["serial"]] = klass(
+                    self._api.request,
                     self._get_entities,
                     self.system_id,
                     entity_type,
@@ -344,7 +347,7 @@ class System:
 
     async def _get_system_info(self) -> None:
         """Update information on the system."""
-        subscription_resp = await self._get_subscription_data()
+        subscription_resp = await self._api.get_subscription_data()
         location_info = next(
             (
                 system["location"]
@@ -370,11 +373,13 @@ class System:
     async def clear_notifications(self):
         """Clear all active notifications.
 
-        This will remove the notification from SimpliSafe's cloud, meaning it will no
+        This will remove the notifications from SimpliSafe's cloud, meaning they will no
         longer visible in the SimpliSafe mobile and web apps.
         """
         if self._notifications:
-            await self._request("delete", f"subscriptions/{self.system_id}/messages")
+            await self._api.request(
+                "delete", f"subscriptions/{self.system_id}/messages"
+            )
             self._notifications = []
 
     async def get_events(
@@ -396,7 +401,7 @@ class System:
         if num_events:
             params["numEvents"] = num_events
 
-        events_resp: dict = await self._request(
+        events_resp = await self._api.request(
             "get", f"subscriptions/{self.system_id}/events", params=params
         )
 

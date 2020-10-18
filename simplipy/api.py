@@ -162,18 +162,6 @@ class API:  # pylint: disable=too-many-instance-attributes
         await instance.refresh_access_token(refresh_token)
         return instance
 
-    async def _get_subscriptions(self) -> dict:
-        """Get the latest location-level data."""
-        subscription_resp = await self.request(
-            "get", f"users/{self.user_id}/subscriptions", params={"activeOnly": "true"}
-        )
-
-        _LOGGER.debug(
-            "users/%s/subscriptions response: %s", self.user_id, subscription_resp
-        )
-
-        return subscription_resp
-
     async def authenticate(self, payload: dict) -> None:
         """Authenticate the API object using an authentication payload."""
         _LOGGER.debug("Authentication payload: %s", payload)
@@ -231,7 +219,7 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         :rtype: ``Dict[int, simplipy.system.System]``
         """
-        subscription_resp = await self._get_subscriptions()
+        subscription_resp = await self.get_subscription_data()
 
         systems = {}
 
@@ -247,21 +235,30 @@ class API:  # pylint: disable=too-many-instance-attributes
 
             system: Union[SystemV2, SystemV3]
             if version == 2:
-                system = SystemV2(
-                    self.request, self._get_subscriptions, system_data["location"]
-                )
+                system = SystemV2(self, system_data["location"])
             else:
-                system = SystemV3(
-                    self.request, self._get_subscriptions, system_data["location"]
-                )
+                system = SystemV3(self, system_data["location"])
 
-            # Update the system, but don't include system data, since that was already
-            # fetched in this method:
+            # Initialize and update the system. Don't include system data, since that
+            # was already fetched in this method:
+            system.init()
             await system.update(include_system=False)
 
             systems[system_data["sid"]] = system
 
         return systems
+
+    async def get_subscription_data(self) -> dict:
+        """Get the latest location-level data."""
+        subscription_resp = await self.request(
+            "get", f"users/{self.user_id}/subscriptions", params={"activeOnly": "true"}
+        )
+
+        _LOGGER.debug(
+            "users/%s/subscriptions response: %s", self.user_id, subscription_resp
+        )
+
+        return subscription_resp
 
     async def request(  # pylint: disable=too-many-branches
         self, method: str, endpoint: str, **kwargs

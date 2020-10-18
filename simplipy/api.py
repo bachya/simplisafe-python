@@ -72,7 +72,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         self._refresh_token: Optional[str] = None
         self._session: ClientSession = session
 
-        self._client_id = client_id if client_id else str(uuid4())
+        self._client_id = client_id or str(uuid4())
         self._client_id_string: str = CLIENT_ID_TEMPLATE.format(self._client_id)
         self._device_id: str = generate_device_id(self._client_id)
 

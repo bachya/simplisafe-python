@@ -4,7 +4,7 @@ import logging
 from simplipy.entity import Entity, EntityTypes
 from simplipy.errors import SimplipyError
 
-_LOGGER: logging.Logger = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 
 class SensorV2(Entity):

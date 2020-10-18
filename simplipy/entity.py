@@ -3,7 +3,7 @@ from enum import Enum
 import logging
 from typing import Callable, Coroutine
 
-_LOGGER: logging.Logger = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 
 class EntityTypes(Enum):

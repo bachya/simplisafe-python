@@ -11,7 +11,7 @@ from simplipy.system import (
     create_pin_payload,
 )
 
-_LOGGER: logging.Logger = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 
 class SystemV2(System):
@@ -37,7 +37,7 @@ class SystemV2(System):
 
     async def _set_state(self, value: Enum) -> None:
         """Set the state of the system."""
-        state_resp: dict = await self._request(
+        state_resp = await self._request(
             "post",
             f"subscriptions/{self.system_id}/state",
             params={"state": value.name},
@@ -58,18 +58,17 @@ class SystemV2(System):
         :type cached: ``bool``
         :rtype: ``Dict[str, str]``
         """
-        pins_resp: dict = await self._request(
+        pins_resp = await self._request(
             "get",
             f"subscriptions/{self.system_id}/pins",
             params={"settingsType": "all", "cached": str(cached).lower()},
         )
 
-        pins: Dict[str, str] = {
+        pins = {
             CONF_MASTER_PIN: pins_resp["pins"].pop("pin1")["value"],
             CONF_DURESS_PIN: pins_resp["pins"].pop("duress")["value"],
         }
 
-        user_pin: dict
         for user_pin in [p for p in pins_resp["pins"].values() if p["value"]]:
             pins[user_pin["name"]] = user_pin["value"]
 

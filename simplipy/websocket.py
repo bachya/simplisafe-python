@@ -15,7 +15,7 @@ from simplipy.util.dt import utc_from_timestamp
 
 _LOGGER = logging.getLogger(__name__)
 
-API_URL_BASE: str = "wss://api.simplisafe.com/socket.io"
+API_URL_BASE = "wss://api.simplisafe.com/socket.io"
 
 DEFAULT_WATCHDOG_TIMEOUT = 900
 

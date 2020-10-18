@@ -22,12 +22,12 @@ from simplipy.websocket import Websocket
 
 _LOGGER: logging.Logger = logging.getLogger(__name__)
 
-API_URL_HOSTNAME: str = "api.simplisafe.com"
-API_URL_BASE: str = f"https://{API_URL_HOSTNAME}/v1"
-API_URL_MFA_OOB: str = "http://simplisafe.com/oauth/grant-type/mfa-oob"
+API_URL_HOSTNAME = "api.simplisafe.com"
+API_URL_BASE = f"https://{API_URL_HOSTNAME}/v1"
+API_URL_MFA_OOB = "http://simplisafe.com/oauth/grant-type/mfa-oob"
 
-DEFAULT_TIMEOUT: int = 10
-DEFAULT_USER_AGENT: str = (
+DEFAULT_TIMEOUT = 10
+DEFAULT_USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/605.1.15 "
     "(KHTML, like Gecko) Version/13.1.2 Safari/605.1.15"
 )
@@ -37,7 +37,7 @@ DEVICE_ID_TEMPLATE = (
     'WebApp; useragent="Safari 13.1 (SS-ID: {0}) / macOS 10.15.6"; uuid="{1}"; id="{0}"'
 )
 
-SYSTEM_MAP: Dict[int, Type[System]] = {2: SystemV2, 3: SystemV3}
+SYSTEM_MAP = {2: SystemV2, 3: SystemV3}
 
 
 ApiType = TypeVar("ApiType", bound="API")
@@ -175,7 +175,7 @@ class API:  # pylint: disable=too-many-instance-attributes
 
     async def _get_subscription_data(self) -> dict:
         """Get the latest location-level data."""
-        subscription_resp: dict = await self.request(
+        subscription_resp = await self.request(
             "get", f"users/{self.user_id}/subscriptions", params={"activeOnly": "true"}
         )
 
@@ -189,7 +189,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         """Authenticate the API object using an authentication payload."""
         _LOGGER.debug("Authentication payload: %s", payload)
 
-        token_resp: dict = await self.request("post", "api/token", json=payload)
+        token_resp = await self.request("post", "api/token", json=payload)
 
         if "mfa_token" in token_resp:
             mfa_challenge_response: dict = await self.request(
@@ -238,9 +238,9 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         :rtype: ``Dict[str, simplipy.system.System]``
         """
-        subscription_resp: dict = await self._get_subscription_data()
+        subscription_resp = await self._get_subscription_data()
 
-        systems: Dict[str, System] = {}
+        systems = {}
         for system_data in subscription_resp["subscriptions"]:
             if "version" not in system_data["location"]["system"]:
                 _LOGGER.error(

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 import logging
-from typing import Any, Callable, Coroutine, Dict, List, Optional, Set, Type, Union
+from typing import Any, Callable, Coroutine, Dict, List, Optional, Type, Union
 
 from simplipy.camera import Camera
 from simplipy.entity import Entity, EntityTypes
@@ -22,13 +22,13 @@ VERSION_V3 = 3
 
 EVENT_SYSTEM_NOTIFICATION = "system_notification"
 
-CONF_DEFAULT: str = "default"
-CONF_DURESS_PIN: str = "duress"
-CONF_MASTER_PIN: str = "master"
+CONF_DEFAULT = "default"
+CONF_DURESS_PIN = "duress"
+CONF_MASTER_PIN = "master"
 
-DEFAULT_MAX_USER_PINS: int = 4
-MAX_PIN_LENGTH: int = 4
-RESERVED_PIN_LABELS: Set[str] = {CONF_DURESS_PIN, CONF_MASTER_PIN}
+DEFAULT_MAX_USER_PINS = 4
+MAX_PIN_LENGTH = 4
+RESERVED_PIN_LABELS = {CONF_DURESS_PIN, CONF_MASTER_PIN}
 
 ENTITY_MAP: Dict[int, dict] = {
     VERSION_V2: {CONF_DEFAULT: SensorV2},
@@ -60,12 +60,6 @@ def guard_from_missing_data(default_value: Any = None):
 
 def create_pin_payload(pins: dict, *, version: int = VERSION_V3) -> dict:
     """Create the appropriate PIN payload for the provided version."""
-    empty_user_index: int
-    idx: int
-    label: str
-    payload: dict
-    pin: str
-
     if version == VERSION_V2:
         payload = {
             "pins": {
@@ -204,7 +198,6 @@ class System:
 
         :rtype: ``Dict[str, :meth:`simplipy.camera.Camera`]``
         """
-
         cameras_doorbells = [
             Camera(
                 self._request,
@@ -313,11 +306,10 @@ class System:
 
     async def _get_entities(self, cached: bool = True) -> None:
         """Update sensors to the latest values."""
-        entities: dict = await self._get_entities_payload(cached)
+        entities = await self._get_entities_payload(cached)
 
         _LOGGER.debug("Get entities response: %s", entities)
 
-        entity_data: dict
         for entity_data in entities:
             if not entity_data:
                 continue
@@ -352,8 +344,8 @@ class System:
 
     async def _get_system_info(self) -> None:
         """Update information on the system."""
-        subscription_resp: dict = await self._get_subscription_data()
-        location_info: dict = next(
+        subscription_resp = await self._get_subscription_data()
+        location_info = next(
             (
                 system["location"]
                 for system in subscription_resp["subscriptions"]
@@ -398,7 +390,7 @@ class System:
         :type num_events: ``int``
         :rtype: ``list``
         """
-        params: Dict[str, Any] = {}
+        params = {}
         if from_datetime:
             params["fromTimestamp"] = round(from_datetime.timestamp())
         if num_events:
@@ -417,7 +409,7 @@ class System:
 
         :rtype: ``dict``
         """
-        events: list = await self.get_events(num_events=1)
+        events = await self.get_events(num_events=1)
 
         try:
             return events[0]
@@ -445,7 +437,7 @@ class System:
         # Because SimpliSafe's API works by sending the entire payload of PINs, we
         # can't reasonably check a local cache for up-to-date PIN data; so, we fetch the
         # latest each time:
-        latest_pins: Dict[str, str] = await self.get_pins(cached=False)
+        latest_pins = await self.get_pins(cached=False)
 
         if pin_or_label in RESERVED_PIN_LABELS:
             raise PinError(f"Refusing to delete reserved PIN: {pin_or_label}")
@@ -492,12 +484,12 @@ class System:
         # Because SimpliSafe's API works by sending the entire payload of PINs, we
         # can't reasonably check a local cache for up-to-date PIN data; so, we fetch the
         # latest each time.
-        latest_pins: Dict[str, str] = await self.get_pins(cached=False)
+        latest_pins = await self.get_pins(cached=False)
 
         if pin in latest_pins.values():
             raise PinError(f"Refusing to create duplicate PIN: {pin}")
 
-        max_pins: int = DEFAULT_MAX_USER_PINS + len(RESERVED_PIN_LABELS)
+        max_pins = DEFAULT_MAX_USER_PINS + len(RESERVED_PIN_LABELS)
         if len(latest_pins) == max_pins and label not in RESERVED_PIN_LABELS:
             raise PinError(f"Refusing to create more than {max_pins} user PINs")
 
@@ -527,7 +519,7 @@ class System:
         :param cached: Whether to used cached data.
         :type cached: ``bool``
         """
-        tasks: List[Coroutine] = []
+        tasks = []
 
         if include_system:
             tasks.append(self._get_system_info())

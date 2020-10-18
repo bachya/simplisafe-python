@@ -13,7 +13,7 @@ from simplipy.system import (
     guard_from_missing_data,
 )
 
-_LOGGER: logging.Logger = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 CONF_ALARM_DURATION = "alarm_duration"
 CONF_ALARM_VOLUME = "alarm_volume"
@@ -265,7 +265,7 @@ class SystemV3(System):
 
     async def _get_settings(self, cached: bool = True) -> None:
         """Get all system settings."""
-        settings_resp: dict = await self._request(
+        settings_resp = await self._request(
             "get",
             f"ss3/subscriptions/{self.system_id}/settings/normal",
             params={"forceUpdate": str(not cached).lower()},
@@ -276,7 +276,7 @@ class SystemV3(System):
 
     async def _set_state(self, value: Enum) -> None:
         """Set the state of the system."""
-        state_resp: dict = await self._request(
+        state_resp = await self._request(
             "post", f"ss3/subscriptions/{self.system_id}/state/{value.name}"
         )
 
@@ -304,7 +304,7 @@ class SystemV3(System):
         """
         await self._get_settings(cached)
 
-        pins: Dict[str, str] = {
+        pins = {
             CONF_MASTER_PIN: self.settings_info["settings"]["pins"]["master"]["pin"],
             CONF_DURESS_PIN: self.settings_info["settings"]["pins"]["duress"]["pin"],
         }

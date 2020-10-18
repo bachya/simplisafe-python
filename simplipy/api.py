@@ -3,7 +3,7 @@ import base64
 from datetime import datetime, timedelta
 from json.decoder import JSONDecodeError
 import logging
-from typing import Dict, Optional, Type, TypeVar
+from typing import Dict, Optional, Type, TypeVar, Union
 from uuid import uuid4
 
 from aiohttp import ClientSession, ClientTimeout
@@ -15,17 +15,17 @@ from simplipy.errors import (
     PendingAuthorizationError,
     RequestError,
 )
-from simplipy.system import System
 from simplipy.system.v2 import SystemV2
 from simplipy.system.v3 import SystemV3
 from simplipy.websocket import Websocket
 
-_LOGGER: logging.Logger = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 API_URL_HOSTNAME = "api.simplisafe.com"
 API_URL_BASE = f"https://{API_URL_HOSTNAME}/v1"
 API_URL_MFA_OOB = "http://simplisafe.com/oauth/grant-type/mfa-oob"
 
+DEFAULT_APP_VERSION = "1.62.0"
 DEFAULT_TIMEOUT = 10
 DEFAULT_USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/605.1.15 "
@@ -36,8 +36,6 @@ CLIENT_ID_TEMPLATE = "{0}.WebApp.simplisafe.com"
 DEVICE_ID_TEMPLATE = (
     'WebApp; useragent="Safari 13.1 (SS-ID: {0}) / macOS 10.15.6"; uuid="{1}"; id="{0}"'
 )
-
-SYSTEM_MAP = {2: SystemV2, 3: SystemV3}
 
 
 ApiType = TypeVar("ApiType", bound="API")
@@ -66,18 +64,21 @@ class API:  # pylint: disable=too-many-instance-attributes
         self, *, client_id: str, session: Optional[ClientSession] = None
     ) -> None:
         """Initialize."""
-        self._access_token: Optional[str] = None
-        self._access_token_expire: Optional[datetime] = None
         self._actively_refreshing: bool = False
-        self._refresh_token: Optional[str] = None
+        self._client_id = client_id or str(uuid4())
         self._session: ClientSession = session
 
-        self._client_id = client_id or str(uuid4())
-        self._client_id_string: str = CLIENT_ID_TEMPLATE.format(self._client_id)
-        self._device_id: str = generate_device_id(self._client_id)
-
+        # These will get filled in after initial authentication:
+        self._access_token: Optional[str] = None
+        self._access_token_expire: Optional[datetime] = None
+        self._refresh_token: Optional[str] = None
         self.email: Optional[str] = None
         self.user_id: Optional[int] = None
+
+        self.client_id_string: str = CLIENT_ID_TEMPLATE.format(self._client_id)
+        self.device_id_string: str = DEVICE_ID_TEMPLATE.format(
+            generate_device_id(self._client_id), self._client_id
+        )
         self.websocket: Websocket = Websocket()
 
     @property
@@ -92,16 +93,6 @@ class API:  # pylint: disable=too-many-instance-attributes
     def client_id(self) -> str:
         """Return the client ID of the API."""
         return self._client_id
-
-    @property
-    def client_id_string(self) -> str:
-        """Return the client ID of the API."""
-        return self._client_id_string
-
-    @property
-    def device_id(self) -> str:
-        """Return the generated device ID for this API instance."""
-        return self._device_id
 
     @property
     def refresh_token(self) -> Optional[str]:
@@ -132,24 +123,22 @@ class API:  # pylint: disable=too-many-instance-attributes
         :type client_id: ``str``
         :rtype: :meth:`simplipy.API`
         """
-        klass = cls(session=session, client_id=client_id)
-        klass.email = email
+        instance = cls(session=session, client_id=client_id)
+        instance.email = email
 
-        await klass.authenticate(
+        await instance.authenticate(
             {
                 "grant_type": "password",
                 "username": email,
                 "password": password,
-                "client_id": klass.client_id_string,
-                "device_id": DEVICE_ID_TEMPLATE.format(
-                    klass.device_id, klass.client_id
-                ),
-                "app_version": "1.62.0",
+                "client_id": instance.client_id_string,
+                "device_id": instance.device_id_string,
+                "app_version": DEFAULT_APP_VERSION,
                 "scope": "offline_access",
             }
         )
 
-        return klass
+        return instance
 
     @classmethod
     async def login_via_token(
@@ -169,11 +158,11 @@ class API:  # pylint: disable=too-many-instance-attributes
         :type client_id: ``str``
         :rtype: :meth:`simplipy.API`
         """
-        klass = cls(session=session, client_id=client_id)
-        await klass.refresh_access_token(refresh_token)
-        return klass
+        instance = cls(session=session, client_id=client_id)
+        await instance.refresh_access_token(refresh_token)
+        return instance
 
-    async def _get_subscription_data(self) -> dict:
+    async def _get_subscriptions(self) -> dict:
         """Get the latest location-level data."""
         subscription_resp = await self.request(
             "get", f"users/{self.user_id}/subscriptions", params={"activeOnly": "true"}
@@ -197,7 +186,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 "api/mfa/challenge",
                 json={
                     "challenge_type": "oob",
-                    "client_id": self._client_id_string,
+                    "client_id": self.client_id_string,
                     "mfa_token": token_resp["mfa_token"],
                 },
             )
@@ -206,7 +195,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 "post",
                 "api/token",
                 json={
-                    "client_id": self._client_id_string,
+                    "client_id": self.client_id_string,
                     "grant_type": API_URL_MFA_OOB,
                     "mfa_token": token_resp["mfa_token"],
                     "oob_code": mfa_challenge_response["oob_code"],
@@ -219,28 +208,33 @@ class API:  # pylint: disable=too-many-instance-attributes
                 "as the client_id parameter in future API calls"
             )
 
+        # Set access and refresh tokens, as well as the datetime that the access token
+        # is set to expire:
         self._access_token = token_resp["access_token"]
         self._access_token_expire = datetime.now() + timedelta(
             seconds=int(token_resp["expires_in"]) - 60
         )
         self._refresh_token = token_resp["refresh_token"]
 
-        auth_check_resp: dict = await self.request("get", "api/authCheck")
+        # Fetch the SimpliSafe user ID:
+        auth_check_resp = await self.request("get", "api/authCheck")
         self.user_id = auth_check_resp["userId"]
 
+        # Start the websocket:
         await self.websocket.async_init(self._access_token, self.user_id)
 
-    async def get_systems(self) -> Dict[str, System]:
+    async def get_systems(self) -> Dict[int, Union[SystemV2, SystemV3]]:
         """Get systems associated to the associated SimpliSafe account.
 
         In the dict that is returned, the keys are the system ID and the values are
         actual ``System`` objects.
 
-        :rtype: ``Dict[str, simplipy.system.System]``
+        :rtype: ``Dict[int, simplipy.system.System]``
         """
-        subscription_resp = await self._get_subscription_data()
+        subscription_resp = await self._get_subscriptions()
 
         systems = {}
+
         for system_data in subscription_resp["subscriptions"]:
             if "version" not in system_data["location"]["system"]:
                 _LOGGER.error(
@@ -250,12 +244,21 @@ class API:  # pylint: disable=too-many-instance-attributes
                 continue
 
             version = system_data["location"]["system"]["version"]
-            system_class = SYSTEM_MAP[version]
-            system = system_class(
-                self.request, self._get_subscription_data, system_data["location"]
-            )
 
+            system: Union[SystemV2, SystemV3]
+            if version == 2:
+                system = SystemV2(
+                    self.request, self._get_subscriptions, system_data["location"]
+                )
+            else:
+                system = SystemV3(
+                    self.request, self._get_subscriptions, system_data["location"]
+                )
+
+            # Update the system, but don't include system data, since that was already
+            # fetched in this method:
             await system.update(include_system=False)
+
             systems[system_data["sid"]] = system
 
         return systems
@@ -304,6 +307,9 @@ class API:  # pylint: disable=too-many-instance-attributes
             try:
                 resp.raise_for_status()
             except ClientError as err:
+                # If we get an "error" related to MFA, the response body data is
+                # necessary for continuing on, so we swallow the error and return that
+                # data:
                 if data.get("error") == "mfa_required":
                     return data
 

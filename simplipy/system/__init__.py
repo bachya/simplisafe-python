@@ -34,7 +34,7 @@ MAX_PIN_LENGTH = 4
 RESERVED_PIN_LABELS = {CONF_DURESS_PIN, CONF_MASTER_PIN}
 
 
-@dataclass(frozen=True)  # pylint: disable=too-many-instance-attributes
+@dataclass(frozen=True)
 class SystemNotification:
     """Define a representation of a system notification."""
 

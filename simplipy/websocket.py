@@ -245,7 +245,7 @@ class Websocket:
             self._sync_disconnect_handler()
             self._sync_disconnect_handler = None
 
-    def async_on_connect(self, target: Callable[..., Awaitable]) -> None:  # noqa: D202
+    def async_on_connect(self, target: Callable[..., Awaitable]) -> None:
         """Define a coroutine to be called when connecting.
 
         :param target: A coroutine
@@ -259,7 +259,7 @@ class Websocket:
 
         self._sio.on("connect", _async_on_connect)
 
-    def on_connect(self, target: Callable) -> None:  # noqa: D202
+    def on_connect(self, target: Callable) -> None:
         """Define a synchronous method to be called when connecting.
 
         :param target: A synchronous function
@@ -289,7 +289,7 @@ class Websocket:
         """
         self._sync_disconnect_handler = target
 
-    def async_on_event(self, target: Callable[..., Awaitable]) -> None:  # noqa: D202
+    def async_on_event(self, target: Callable[..., Awaitable]) -> None:
         """Define a coroutine to be called an event is received.
 
         The couroutine will have a ``data`` parameter that contains the raw data from
@@ -307,7 +307,7 @@ class Websocket:
 
         self._sio.on("event", _async_on_event, namespace=self._namespace)
 
-    def on_event(self, target: Callable) -> None:  # noqa: D202
+    def on_event(self, target: Callable) -> None:
         """Define a synchronous method to be called when an event is received.
 
         The method will have a ``data`` parameter that contains the raw data from the

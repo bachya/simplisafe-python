@@ -2,13 +2,13 @@ Locks
 =====
 
 :meth:`Lock <simplipy.lock.Lock>` objects correspond to SimpliSafe™ locks (only
-available for V3 systems) and allows users to retrieve information on them and alter
+available for V3 systems) and allow users to retrieve information on them and alter
 their state by locking/unlocking them.
 
 Core Properties
 ---------------
 
-All :meth:`Lock <simplipy.lock.Lock>` objects come with a standard set of properties
+All :meth:`Lock <simplipy.lock.Lock>` objects come with a standard set of properties:
 
 .. code:: python
 

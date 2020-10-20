@@ -26,6 +26,7 @@ and more.
    system
    sensor
    lock
+   camera
    websocket
    advanced
    api

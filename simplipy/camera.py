@@ -12,9 +12,9 @@ MEDIA_URL_BASE = "https://media.simplisafe.com/v1"
 DEFAULT_VIDEO_WIDTH = 1280
 DEFAULT_AUDIO_ENCODING = "AAC"
 
-CAMERA_MODEL_CAMERA = "CAMERA"
-CAMERA_MODEL_DOORBELL = "DOORBELL"
-CAMERA_MODEL_UNKNOWN = "CAMERA_MODEL_UNKNOWN"
+CAMERA_MODEL_CAMERA = "camera"
+CAMERA_MODEL_DOORBELL = "doorbell"
+CAMERA_MODEL_UNKNOWN = "unknown"
 
 MODEL_TO_TYPE = {
     "SS001": CAMERA_MODEL_CAMERA,
@@ -68,7 +68,7 @@ class Camera:
 
     @property
     def shutter_open_when_away(self) -> bool:
-        """Return whether the privacy shutter is open when alarm system is armed in away mode.
+        """Return whether the privacy shutter is open when the alarm is armed in away mode.
 
         :rtype: ``bool``
         """
@@ -76,7 +76,7 @@ class Camera:
 
     @property
     def shutter_open_when_home(self) -> bool:
-        """Return whether the privacy shutter is open when alarm system is armed in home mode.
+        """Return whether the privacy shutter is open when the alarm is armed in home mode.
 
         :rtype: ``bool``
         """
@@ -84,7 +84,7 @@ class Camera:
 
     @property
     def shutter_open_when_off(self) -> bool:
-        """Return whether the privacy shutter is open when alarm system is off.
+        """Return whether the privacy shutter is open when the alarm is disarmed.
 
         :rtype: ``bool``
         """

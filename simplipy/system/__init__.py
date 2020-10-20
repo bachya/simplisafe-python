@@ -283,8 +283,6 @@ class System:  # pylint: disable=too-many-instance-attributes
             "get", f"subscriptions/{self.system_id}/events", params=params
         )
 
-        _LOGGER.debug("Events response: %s", events_resp)
-
         return events_resp.get("events", [])
 
     async def get_latest_event(self) -> dict:

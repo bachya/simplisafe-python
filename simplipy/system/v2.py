@@ -68,8 +68,6 @@ class SystemV2(System):
             params={"state": value.name},
         )
 
-        _LOGGER.debug('Set "%s" response: %s', value.name, state_resp)
-
         if state_resp["success"]:
             self._state = SystemStates[state_resp["requestedState"]]
 

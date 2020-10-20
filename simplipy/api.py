@@ -170,7 +170,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         token_resp = await self.request("post", "api/token", json=payload)
 
         if "mfa_token" in token_resp:
-            mfa_challenge_response: dict = await self.request(
+            mfa_challenge_response = await self.request(
                 "post",
                 "api/mfa/challenge",
                 json={

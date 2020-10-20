@@ -296,8 +296,6 @@ class SystemV3(System):
             "post", f"ss3/subscriptions/{self.system_id}/state/{value.name}"
         )
 
-        _LOGGER.debug('Set "%s" response: %s', value.name, state_resp)
-
         self._state = coerce_state_from_raw_value(state_resp["state"])
 
     async def _set_updated_pins(self, pins: dict) -> None:

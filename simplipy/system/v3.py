@@ -5,11 +5,13 @@ from typing import TYPE_CHECKING, Dict
 
 import voluptuous as vol
 
+from simplipy.camera import Camera
 from simplipy.system import (
     CONF_DURESS_PIN,
     CONF_MASTER_PIN,
     DEFAULT_MAX_USER_PINS,
     System,
+    coerce_state_from_raw_value,
     guard_from_missing_data,
 )
 
@@ -104,10 +106,14 @@ def create_pin_payload(pins: dict) -> Dict[str, Dict[str, Dict[str, str]]]:
 class SystemV3(System):
     """Define a V3 (new) system."""
 
-    def __init__(self, api: "API", location_info: dict) -> None:
+    def __init__(self, api: "API", system_id: int) -> None:
         """Initialize."""
-        super().__init__(api, location_info)
-        self.settings_info: dict = {}
+        super().__init__(api, system_id)
+        self.camera_data: Dict[str, dict] = {}
+        self.settings_data: Dict[str, dict] = {}
+
+        self.cameras: Dict[str, Camera] = {}
+        self._update_camera_data()
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -116,7 +122,7 @@ class SystemV3(System):
 
         :rtype: ``int``
         """
-        return self.settings_info["settings"]["normal"][
+        return self.settings_data["settings"]["normal"][
             SYSTEM_PROPERTIES_VALUE_MAP["alarm_duration"]
         ]
 
@@ -128,7 +134,7 @@ class SystemV3(System):
         :rtype: ``int``
         """
         return int(
-            self.settings_info["settings"]["normal"][
+            self.settings_data["settings"]["normal"][
                 SYSTEM_PROPERTIES_VALUE_MAP["alarm_volume"]
             ]
         )
@@ -140,7 +146,7 @@ class SystemV3(System):
 
         :rtype: ``int``
         """
-        return self.settings_info["basestationStatus"]["backupBattery"]
+        return self.settings_data["basestationStatus"]["backupBattery"]
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -150,7 +156,7 @@ class SystemV3(System):
         :rtype: ``int``
         """
         return int(
-            self.settings_info["settings"]["normal"][
+            self.settings_data["settings"]["normal"][
                 SYSTEM_PROPERTIES_VALUE_MAP["chime_volume"]
             ]
         )
@@ -162,7 +168,7 @@ class SystemV3(System):
 
         :rtype: ``int``
         """
-        return self.settings_info["settings"]["normal"][
+        return self.settings_data["settings"]["normal"][
             SYSTEM_PROPERTIES_VALUE_MAP["entry_delay_away"]
         ]
 
@@ -173,7 +179,7 @@ class SystemV3(System):
 
         :rtype: ``int``
         """
-        return self.settings_info["settings"]["normal"][
+        return self.settings_data["settings"]["normal"][
             SYSTEM_PROPERTIES_VALUE_MAP["entry_delay_home"]
         ]
 
@@ -184,7 +190,7 @@ class SystemV3(System):
 
         :rtype: ``int``
         """
-        return self.settings_info["settings"]["normal"][
+        return self.settings_data["settings"]["normal"][
             SYSTEM_PROPERTIES_VALUE_MAP["exit_delay_away"]
         ]
 
@@ -195,7 +201,7 @@ class SystemV3(System):
 
         :rtype: ``int``
         """
-        return self.settings_info["settings"]["normal"][
+        return self.settings_data["settings"]["normal"][
             SYSTEM_PROPERTIES_VALUE_MAP["exit_delay_home"]
         ]
 
@@ -206,7 +212,7 @@ class SystemV3(System):
 
         :rtype: ``int``
         """
-        return self.settings_info["basestationStatus"]["gsmRssi"]
+        return self.settings_data["basestationStatus"]["gsmRssi"]
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -215,7 +221,7 @@ class SystemV3(System):
 
         :rtype: ``bool``
         """
-        return self.settings_info["settings"]["normal"][
+        return self.settings_data["settings"]["normal"][
             SYSTEM_PROPERTIES_VALUE_MAP["light"]
         ]
 
@@ -226,7 +232,7 @@ class SystemV3(System):
 
         :rtype: ``bool``
         """
-        return self._location_info["system"]["isOffline"]
+        return self.system_data["location"]["system"]["isOffline"]
 
     @property  # type: ignore
     @guard_from_missing_data(False)
@@ -235,7 +241,7 @@ class SystemV3(System):
 
         :rtype: ``bool``
         """
-        return self._location_info["system"]["powerOutage"]
+        return self.system_data["location"]["system"]["powerOutage"]
 
     @property  # type: ignore
     @guard_from_missing_data(False)
@@ -244,7 +250,7 @@ class SystemV3(System):
 
         :rtype: ``bool``
         """
-        return self.settings_info["basestationStatus"]["rfJamming"]
+        return self.settings_data["basestationStatus"]["rfJamming"]
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -253,7 +259,7 @@ class SystemV3(System):
 
         :rtype: ``int``
         """
-        return self.settings_info["settings"]["normal"][
+        return self.settings_data["settings"]["normal"][
             SYSTEM_PROPERTIES_VALUE_MAP["voice_prompt_volume"]
         ]
 
@@ -264,7 +270,7 @@ class SystemV3(System):
 
         :rtype: ``int``
         """
-        return self.settings_info["basestationStatus"]["wallPower"]
+        return self.settings_data["basestationStatus"]["wallPower"]
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -273,7 +279,7 @@ class SystemV3(System):
 
         :rtype: ``str``
         """
-        return self.settings_info["settings"]["normal"]["wifiSSID"]
+        return self.settings_data["settings"]["normal"]["wifiSSID"]
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -282,28 +288,7 @@ class SystemV3(System):
 
         :rtype: ``int``
         """
-        return self.settings_info["basestationStatus"]["wifiRssi"]
-
-    async def _get_entities_payload(self, cached: bool = True) -> dict:
-        """Update sensors to the latest values."""
-        sensor_resp = await self._api.request(
-            "get",
-            f"ss3/subscriptions/{self.system_id}/sensors",
-            params={"forceUpdate": str(not cached).lower()},
-        )
-
-        return sensor_resp.get("sensors", [])
-
-    async def _get_settings(self, cached: bool = True) -> None:
-        """Get all system settings."""
-        settings_resp = await self._api.request(
-            "get",
-            f"ss3/subscriptions/{self.system_id}/settings/normal",
-            params={"forceUpdate": str(not cached).lower()},
-        )
-
-        if settings_resp:
-            self.settings_info = settings_resp
+        return self.settings_data["basestationStatus"]["wifiRssi"]
 
     async def _set_state(self, value: Enum) -> None:
         """Set the state of the system."""
@@ -313,15 +298,50 @@ class SystemV3(System):
 
         _LOGGER.debug('Set "%s" response: %s', value.name, state_resp)
 
-        self._state = self._coerce_state_from_raw_value(state_resp["state"])
+        self._state = coerce_state_from_raw_value(state_resp["state"])
 
     async def _set_updated_pins(self, pins: dict) -> None:
         """Post new PINs."""
-        self.settings_info = await self._api.request(
+        self.settings_data = await self._api.request(
             "post",
             f"ss3/subscriptions/{self.system_id}/settings/pins",
             json=create_pin_payload(pins),
         )
+
+    def _update_camera_data(self) -> None:
+        """Update all system data."""
+        self.cameras = {}
+        for camera in self.system_data["location"]["system"].get("cameras", []):
+            uuid = camera["uuid"]
+            self.camera_data[uuid] = camera
+            self.cameras[uuid] = Camera(self, uuid)
+
+    async def _update_entity_data_internal(self, cached: bool = True) -> None:
+        """Update sensors to the latest values."""
+        sensor_resp = await self._api.request(
+            "get",
+            f"ss3/subscriptions/{self.system_id}/sensors",
+            params={"forceUpdate": str(not cached).lower()},
+        )
+        self.entity_data = {
+            entity["serial"]: entity for entity in sensor_resp.get("sensors", [])
+        }
+
+    async def _update_settings_data(self, cached: bool = True) -> None:
+        """Get all system settings."""
+        settings_resp = await self._api.request(
+            "get",
+            f"ss3/subscriptions/{self.system_id}/settings/normal",
+            params={"forceUpdate": str(not cached).lower()},
+        )
+
+        if settings_resp:
+            self.settings_data = settings_resp
+
+    async def _update_system_data(self) -> None:
+        """Update all system data."""
+        await super()._update_system_data()
+        self._update_camera_data()
 
     async def get_pins(self, cached: bool = True) -> Dict[str, str]:
         """Return all of the set PINs, including master and duress.
@@ -333,16 +353,16 @@ class SystemV3(System):
         :type cached: ``bool``
         :rtype: ``Dict[str, str]``
         """
-        await self._get_settings(cached)
+        await self._update_settings_data(cached)
 
         pins = {
-            CONF_MASTER_PIN: self.settings_info["settings"]["pins"]["master"]["pin"],
-            CONF_DURESS_PIN: self.settings_info["settings"]["pins"]["duress"]["pin"],
+            CONF_MASTER_PIN: self.settings_data["settings"]["pins"]["master"]["pin"],
+            CONF_DURESS_PIN: self.settings_data["settings"]["pins"]["duress"]["pin"],
         }
 
         user_pin: dict
         for user_pin in [
-            p for p in self.settings_info["settings"]["pins"]["users"] if p["pin"]
+            p for p in self.settings_data["settings"]["pins"]["users"] if p["pin"]
         ]:
             pins[user_pin["name"]] = user_pin["pin"]
 
@@ -384,4 +404,4 @@ class SystemV3(System):
         )
 
         if settings_resp:
-            self.settings_info = settings_resp
+            self.settings_data = settings_resp

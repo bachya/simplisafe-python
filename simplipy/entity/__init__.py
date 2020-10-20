@@ -1,7 +1,11 @@
 """Define a base SimpliSafe entity."""
 from enum import Enum
 import logging
-from typing import Callable, Coroutine
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from simplipy.api import API
+    from simplipy.system import System
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -46,20 +50,15 @@ class Entity:
     :type entity_data: ``dict``
     """
 
-    def __init__(  # pylint: disable=too-many-arguments
-        self,
-        request: Callable[..., Coroutine],
-        update_func: Callable[..., Coroutine],
-        system_id: int,
-        entity_type: EntityTypes,
-        entity_data: dict,
+    def __init__(
+        self, api: "API", system: "System", entity_type: EntityTypes, serial: str
     ) -> None:
         """Initialize."""
-        self._request: Callable[..., Coroutine] = request
-        self._system_id: int = system_id
-        self._type: EntityTypes = entity_type
-        self._update_func: Callable[..., Coroutine] = update_func
-        self.entity_data: dict = entity_data
+        self._api = api
+        self._entity_data = system.entity_data[serial]
+        self._entity_type = entity_type
+        self._serial = serial
+        self._system = system
 
     @property
     def name(self) -> str:
@@ -67,7 +66,7 @@ class Entity:
 
         :rtype: ``str``
         """
-        return self.entity_data["name"]
+        return self._entity_data["name"]
 
     @property
     def serial(self) -> str:
@@ -75,7 +74,7 @@ class Entity:
 
         :rtype: ``str``
         """
-        return self.entity_data["serial"]
+        return self._entity_data["serial"]
 
     @property
     def type(self) -> EntityTypes:
@@ -83,7 +82,7 @@ class Entity:
 
         :rtype: :meth:`simplipy.entity.EntityTypes`
         """
-        return self._type
+        return self._entity_type
 
     async def update(self, cached: bool = True) -> None:
         """Retrieve the latest state/properties for the entity.
@@ -94,7 +93,9 @@ class Entity:
         :param cached: Whether to used cached data.
         :type cached: ``bool``
         """
-        await self._update_func(cached)
+        await self._system.update(
+            include_system=False, include_settings=False, cached=cached
+        )
 
 
 class EntityV3(Entity):
@@ -110,7 +111,7 @@ class EntityV3(Entity):
 
         :rtype: ``bool``
         """
-        return self.entity_data["status"].get("malfunction", False)
+        return self._entity_data["status"].get("malfunction", False)
 
     @property
     def low_battery(self) -> bool:
@@ -118,7 +119,7 @@ class EntityV3(Entity):
 
         :rtype: ``bool``
         """
-        return self.entity_data["flags"]["lowBattery"]
+        return self._entity_data["flags"]["lowBattery"]
 
     @property
     def offline(self) -> bool:
@@ -126,7 +127,7 @@ class EntityV3(Entity):
 
         :rtype: ``bool``
         """
-        return self.entity_data["flags"]["offline"]
+        return self._entity_data["flags"]["offline"]
 
     @property
     def settings(self) -> dict:
@@ -136,4 +137,4 @@ class EntityV3(Entity):
 
         :rtype: ``dict``
         """
-        return self.entity_data["setting"]
+        return self._entity_data["setting"]

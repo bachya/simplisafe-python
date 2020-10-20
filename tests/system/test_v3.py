@@ -1,6 +1,5 @@
 """Define tests for v3 System objects."""
 from datetime import datetime
-import logging
 
 import aiohttp
 import pytest
@@ -183,7 +182,7 @@ async def test_get_systems(
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.system_id == TEST_SYSTEM_ID
             assert simplisafe.access_token == TEST_ACCESS_TOKEN
-            assert len(system.sensors) == 22
+            assert len(system.sensors) == 24
 
 
 @pytest.mark.asyncio
@@ -244,7 +243,7 @@ async def test_get_systems_via_token(
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.system_id == TEST_SYSTEM_ID
             assert simplisafe.access_token == TEST_ACCESS_TOKEN
-            assert len(system.sensors) == 22
+            assert len(system.sensors) == 24
 
 
 @pytest.mark.asyncio
@@ -320,17 +319,21 @@ async def test_missing_system_info_initial(caplog, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_missing_system_info_later_on(aresponses, caplog, v3_server):
-    """Test that missing system data after system load is handled correctly."""
+@pytest.mark.parametrize(
+    "v3_subscriptions_response",
+    ["subscriptions_offline_missing_response"],
+    indirect=True,
+)
+async def test_missing_property(
+    aresponses, caplog, v3_server, v3_subscriptions_response
+):
+    """Test that the missing property guard works properly."""
     async with v3_server:
         v3_server.add(
             "api.simplisafe.com",
             f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
-            aresponses.Response(
-                text=load_fixture("subscriptions_missing_system_response.json"),
-                status=200,
-            ),
+            aresponses.Response(text=v3_subscriptions_response, status=200),
         )
 
         async with aiohttp.ClientSession() as session:
@@ -342,35 +345,11 @@ async def test_missing_system_info_later_on(aresponses, caplog, v3_server):
             system = systems[TEST_SYSTEM_ID]
 
             await system.update(include_settings=False, include_entities=False)
+
             assert system.offline is True
             assert any(
                 "SimpliSafe didn't return data for property: offline" in e.message
                 for e in caplog.records
-            )
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "v3_subscriptions_response",
-    ["subscriptions_missing_notifications_response"],
-    indirect=True,
-)
-async def test_no_notifications_in_basic_plan(caplog, v3_server):
-    """Test that missing notification data is handled correctly."""
-    caplog.set_level(logging.INFO)
-
-    async with v3_server:
-        async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID, session=session
-            )
-
-            systems = await simplisafe.get_systems()
-            system = systems[TEST_SYSTEM_ID]
-
-            assert system.notifications == []
-            assert any(
-                "Notifications unavailable in plan" in e.message for e in caplog.records
             )
 
 
@@ -446,15 +425,15 @@ async def test_properties(aresponses, v3_server, v3_settings_response):
 
             # Test "setting" various system properties by overriding their values, then
             # calling the update functions:
-            system.settings_info["settings"]["normal"]["alarmDuration"] = 0
-            system.settings_info["settings"]["normal"]["alarmVolume"] = 0
-            system.settings_info["settings"]["normal"]["doorChime"] = 0
-            system.settings_info["settings"]["normal"]["entryDelayAway"] = 0
-            system.settings_info["settings"]["normal"]["entryDelayHome"] = 0
-            system.settings_info["settings"]["normal"]["exitDelayAway"] = 0
-            system.settings_info["settings"]["normal"]["exitDelayHome"] = 1000
-            system.settings_info["settings"]["normal"]["light"] = False
-            system.settings_info["settings"]["normal"]["voicePrompts"] = 0
+            system.settings_data["settings"]["normal"]["alarmDuration"] = 0
+            system.settings_data["settings"]["normal"]["alarmVolume"] = 0
+            system.settings_data["settings"]["normal"]["doorChime"] = 0
+            system.settings_data["settings"]["normal"]["entryDelayAway"] = 0
+            system.settings_data["settings"]["normal"]["entryDelayHome"] = 0
+            system.settings_data["settings"]["normal"]["exitDelayAway"] = 0
+            system.settings_data["settings"]["normal"]["exitDelayHome"] = 1000
+            system.settings_data["settings"]["normal"]["light"] = False
+            system.settings_data["settings"]["normal"]["voicePrompts"] = 0
 
             await system.set_properties(
                 {
@@ -922,7 +901,7 @@ async def test_update_system_data(
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.system_id == TEST_SYSTEM_ID
             assert simplisafe.access_token == TEST_ACCESS_TOKEN
-            assert len(system.sensors) == 22
+            assert len(system.sensors) == 24
 
 
 @pytest.mark.asyncio

@@ -4,10 +4,10 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
-from simplipy.camera import Camera
-from simplipy.entity import Entity, EntityTypes
+from simplipy.entity import EntityTypes
+from simplipy.entity.factory import EntityFactory
 from simplipy.errors import PinError, SimplipyError
 from simplipy.lock import Lock
 from simplipy.sensor.v2 import SensorV2
@@ -32,40 +32,6 @@ CONF_MASTER_PIN = "master"
 DEFAULT_MAX_USER_PINS = 4
 MAX_PIN_LENGTH = 4
 RESERVED_PIN_LABELS = {CONF_DURESS_PIN, CONF_MASTER_PIN}
-
-ENTITY_MAP: Dict[int, dict] = {
-    VERSION_V2: {CONF_DEFAULT: SensorV2},
-    VERSION_V3: {CONF_DEFAULT: SensorV3, EntityTypes.lock: Lock},
-}
-
-
-def guard_from_missing_data(default_value: Any = None):
-    """Guard a missing property by returning a set value."""
-
-    def decorator(func):
-        """Decorate."""
-
-        def wrapper(system):
-            """Call the function and handle any issue."""
-            try:
-                return func(system)
-            except KeyError as err:
-                _LOGGER.warning(
-                    "SimpliSafe didn't return data for property: %s", func.__name__
-                )
-                _LOGGER.debug(err)
-                return default_value
-
-        return wrapper
-
-    return decorator
-
-
-def get_entity_class(
-    entity_type: EntityTypes, *, version: int = VERSION_V3
-) -> Type[Entity]:
-    """Return the appropriate entity class based on version and entity type."""
-    return ENTITY_MAP[version].get(entity_type, ENTITY_MAP[version][CONF_DEFAULT])
 
 
 @dataclass(frozen=True)  # pylint: disable=too-many-instance-attributes
@@ -103,7 +69,37 @@ class SystemStates(Enum):
     unknown = 99
 
 
-class System:
+def coerce_state_from_raw_value(value: str) -> SystemStates:
+    """Return a proper state from a string input."""
+    try:
+        return SystemStates[convert_to_underscore(value)]
+    except KeyError:
+        _LOGGER.error("Unknown system state: %s", value)
+        return SystemStates.unknown
+
+
+def guard_from_missing_data(default_value: Any = None):
+    """Guard a missing property by returning a set value."""
+
+    def decorator(func):
+        """Decorate."""
+
+        def wrapper(system):
+            """Call the function and handle any issue."""
+            try:
+                return func(system)
+            except KeyError:
+                _LOGGER.warning(
+                    "SimpliSafe didn't return data for property: %s", func.__name__
+                )
+                return default_value
+
+        return wrapper
+
+    return decorator
+
+
+class System:  # pylint: disable=too-many-instance-attributes
     """Define a system.
 
     Note that this class shouldn't be instantiated directly; it will be instantiated as
@@ -117,24 +113,20 @@ class System:
     :type location_info: ``dict``
     """
 
-    def __init__(self, api: "API", location_info: dict) -> None:
+    def __init__(self, api: "API", system_id: int) -> None:
         """Initialize."""
-        self._api: "API" = api
-        self._location_info: dict = location_info
+        self._api = api
+        self._entity_factory = EntityFactory(api, self)
+        self._system_id = system_id
 
-        # These will get filled in after initial authentication:
-        self._notifications: List = []
-        self._state: SystemStates = SystemStates.unknown
+        # These will get filled in after initial update:
+        self._notifications: List[SystemNotification] = []
+        self._state = SystemStates.unknown
+        self.entity_data: Dict[str, dict] = {}
+        self.system_data = api.subscription_data[system_id]
 
         self.locks: Dict[str, Lock] = {}
         self.sensors: Dict[str, Union[SensorV2, SensorV3]] = {}
-
-    def init(self):
-        """Perform some post-creation initialization."""
-        self._notifications = self._generate_system_notification_objects()
-        self._state = self._coerce_state_from_raw_value(
-            self._location_info["system"].get("alarmState")
-        )
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -143,7 +135,7 @@ class System:
 
         :rtype: ``str``
         """
-        return self._location_info["street1"]
+        return self.system_data["location"]["street1"]
 
     @property  # type: ignore
     @guard_from_missing_data(False)
@@ -152,25 +144,7 @@ class System:
 
         :rtype: ``bool``
         """
-        return self._location_info["system"]["isAlarming"]
-
-    @property
-    def cameras(self) -> Dict[str, Camera]:
-        """Return list of cameras and doorbells.
-
-        :rtype: ``Dict[str, :meth:`simplipy.camera.Camera`]``
-        """
-        cameras_doorbells = [
-            Camera(
-                self._api.request,
-                self._get_entities,
-                self.system_id,
-                EntityTypes.camera,
-                camera,
-            )
-            for camera in self._location_info["system"]["cameras"]
-        ]
-        return {camera.serial: camera for camera in cameras_doorbells}
+        return self.system_data["location"]["system"]["isAlarming"]
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -179,7 +153,7 @@ class System:
 
         :rtype: ``str``
         """
-        return self._location_info["system"]["connType"]
+        return self.system_data["location"]["system"]["connType"]
 
     @property
     def notifications(self) -> List[SystemNotification]:
@@ -196,7 +170,7 @@ class System:
 
         :rtype: ``str``
         """
-        return self._location_info["system"]["serial"]
+        return self.system_data["location"]["system"]["serial"]
 
     @property
     def state(self) -> SystemStates:
@@ -213,7 +187,7 @@ class System:
 
         :rtype: ``int``
         """
-        return self._location_info["sid"]
+        return self._system_id
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -222,7 +196,7 @@ class System:
 
         :rtype: ``int``
         """
-        return self._location_info["system"]["temperature"]
+        return self.system_data["location"]["system"]["temperature"]
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -231,95 +205,7 @@ class System:
 
         :rtype: ``int``
         """
-        return self._location_info["system"]["version"]
-
-    def _coerce_state_from_raw_value(self, value: Union[str, None]) -> SystemStates:
-        """Return a proper state from a string input."""
-        if not value:
-            _LOGGER.debug(
-                "SimpliSafe didn't return system state; retaining current state"
-            )
-            return self.state
-
-        try:
-            return SystemStates[convert_to_underscore(value)]
-        except KeyError:
-            _LOGGER.error("Unknown system state: %s", value)
-            return SystemStates.unknown
-
-    def _generate_system_notification_objects(self) -> List[SystemNotification]:
-        """Generate message objects from the message data stored in location_info."""
-        if self._location_info["system"].get("messages") is None:
-            _LOGGER.info("Notifications unavailable in plan")
-            return []
-
-        return [
-            SystemNotification(
-                raw_message["id"],
-                raw_message["text"],
-                raw_message["category"],
-                raw_message["code"],
-                raw_message["timestamp"],
-                link=raw_message["link"],
-                link_label=raw_message["linkLabel"],
-            )
-            for raw_message in self._location_info["system"]["messages"]
-        ]
-
-    async def _get_entities(self, cached: bool = True) -> None:
-        """Update sensors to the latest values."""
-        entities = await self._get_entities_payload(cached)
-
-        _LOGGER.debug("Get entities response: %s", entities)
-
-        for entity_data in entities:
-            if not entity_data:
-                continue
-
-            try:
-                entity_type: EntityTypes = EntityTypes(entity_data["type"])
-            except ValueError:
-                _LOGGER.error("Unknown entity type: %s", entity_data["type"])
-                entity_type = EntityTypes.unknown
-
-            prop = self.locks if entity_type == EntityTypes.lock else self.sensors
-            if entity_data["serial"] in prop:
-                entity = prop[entity_data["serial"]]
-                entity.entity_data = entity_data
-            else:
-                klass = get_entity_class(entity_type, version=self.version)
-                prop[entity_data["serial"]] = klass(
-                    self._api.request,
-                    self._get_entities,
-                    self.system_id,
-                    entity_type,
-                    entity_data,
-                )
-
-    async def _get_entities_payload(self, cached: bool = False) -> dict:
-        """Return the current sensor payload."""
-        raise NotImplementedError()
-
-    async def _get_settings(self, cached: bool = True) -> None:
-        """Get all system settings."""
-        pass
-
-    async def _get_system_info(self) -> None:
-        """Update information on the system."""
-        subscription_resp = await self._api.get_subscription_data()
-        location_info = next(
-            (
-                system["location"]
-                for system in subscription_resp["subscriptions"]
-                if system["sid"] == self.system_id
-            )
-        )
-
-        self._location_info = location_info
-        self._notifications = self._generate_system_notification_objects()
-        self._state = self._coerce_state_from_raw_value(
-            location_info["system"].get("alarmState")
-        )
+        return self.system_data["location"]["system"]["version"]
 
     async def _set_updated_pins(self, pins: dict) -> None:
         """Post new PINs."""
@@ -328,6 +214,39 @@ class System:
     async def _set_state(self, value: SystemStates) -> None:
         """Raise if calling this undefined based method."""
         raise NotImplementedError()
+
+    async def _update_entity_data(self, cached: bool = True) -> None:
+        """Get all entities related to this system."""
+        await self._update_entity_data_internal(cached)
+
+        self.locks = {}
+        self.sensors = {}
+
+        for serial, entity in self.entity_data.items():
+            try:
+                entity_type: EntityTypes = EntityTypes(entity["type"])
+            except ValueError:
+                _LOGGER.error("Unknown entity type: %s", entity["type"])
+                entity_type = EntityTypes.unknown
+
+            instance = self._entity_factory.create(entity_type, serial)
+
+            if isinstance(instance, Lock):
+                self.locks[instance.serial] = instance
+            else:
+                self.sensors[instance.serial] = instance
+
+    async def _update_entity_data_internal(self, cached: bool = False) -> None:
+        """Update all entity data."""
+        raise NotImplementedError()
+
+    async def _update_settings_data(self, cached: bool = True) -> None:
+        """Update all settings data."""
+        pass
+
+    async def _update_system_data(self) -> None:
+        """Update all system data."""
+        await self._api.update_subscription_data()
 
     async def clear_notifications(self):
         """Clear all active notifications.
@@ -478,7 +397,7 @@ class System:
         :type include_system: ``bool``
         :param include_settings: Whether system settings (like PINs) should be updated
         :type include_settings: ``bool``
-        :param include_entities: Whether sensors/locks/etc. should be updated
+        :param include_entities: whether sensors/locks/etc. should be updated
         :type include_entities: ``bool``
         :param cached: Whether to used cached data.
         :type cached: ``bool``
@@ -486,13 +405,32 @@ class System:
         tasks = []
 
         if include_system:
-            tasks.append(self._get_system_info())
+            tasks.append(self._update_system_data())
         if include_settings:
-            tasks.append(self._get_settings(cached))
+            tasks.append(self._update_settings_data(cached))
 
         await asyncio.gather(*tasks)
 
         # We await entity updates after the task pool since including it can cause
         # HTTP 409s if that update occurs out of sequence:
         if include_entities:
-            await self._get_entities(cached)
+            await self._update_entity_data(cached)
+
+        self._notifications = [
+            SystemNotification(
+                raw_message["id"],
+                raw_message["text"],
+                raw_message["category"],
+                raw_message["code"],
+                raw_message["timestamp"],
+                link=raw_message["link"],
+                link_label=raw_message["linkLabel"],
+            )
+            for raw_message in self.system_data["location"]["system"].get(
+                "messages", []
+            )
+        ]
+
+        self._state = coerce_state_from_raw_value(
+            self.system_data["location"]["system"].get("alarmState")
+        )

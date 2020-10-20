@@ -39,7 +39,6 @@ async def test_properties(aresponses, v3_server, v3_subscriptions_response):
             systems = await simplisafe.get_systems()
 
             system = systems[TEST_SYSTEM_ID]
-            await system.update(include_settings=False, include_entities=False)
 
             camera = system.cameras[TEST_CAMERA_ID]
             assert camera.name == "Camera"

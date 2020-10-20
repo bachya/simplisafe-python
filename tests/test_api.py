@@ -125,6 +125,7 @@ async def test_401_refresh_token_success(
             simplisafe = await API.login_via_credentials(
                 TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID, session=session
             )
+            assert simplisafe.client_id == TEST_CLIENT_ID
 
             systems = await simplisafe.get_systems()
             system = systems[TEST_SYSTEM_ID]

@@ -75,11 +75,12 @@ class API:  # pylint: disable=too-many-instance-attributes
         self.email: Optional[str] = None
         self.user_id: Optional[int] = None
 
-        self.client_id_string: str = CLIENT_ID_TEMPLATE.format(self._client_id)
-        self.device_id_string: str = DEVICE_ID_TEMPLATE.format(
+        self.client_id_string = CLIENT_ID_TEMPLATE.format(self._client_id)
+        self.device_id_string = DEVICE_ID_TEMPLATE.format(
             generate_device_id(self._client_id), self._client_id
         )
-        self.websocket: Websocket = Websocket()
+        self.subscription_data: Dict[int, dict] = {}
+        self.websocket = Websocket()
 
     @property
     def access_token(self) -> Optional[str]:
@@ -219,46 +220,25 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         :rtype: ``Dict[int, simplipy.system.System]``
         """
-        subscription_resp = await self.get_subscription_data()
+        await self.update_subscription_data()
 
         systems = {}
 
-        for system_data in subscription_resp["subscriptions"]:
-            if "version" not in system_data["location"]["system"]:
-                _LOGGER.error(
-                    "Skipping location with missing system data: %s",
-                    system_data["location"]["sid"],
-                )
-                continue
-
-            version = system_data["location"]["system"]["version"]
+        for system_id, subscription in self.subscription_data.items():
+            version = subscription["location"]["system"]["version"]
 
             system: Union[SystemV2, SystemV3]
             if version == 2:
-                system = SystemV2(self, system_data["location"])
+                system = SystemV2(self, system_id)
             else:
-                system = SystemV3(self, system_data["location"])
+                system = SystemV3(self, system_id)
 
-            # Initialize and update the system. Don't include system data, since that
-            # was already fetched in this method:
-            system.init()
+            # Update the system, but don't include system data, since that was already
+            # fetched in this method:
             await system.update(include_system=False)
-
-            systems[system_data["sid"]] = system
+            systems[system_id] = system
 
         return systems
-
-    async def get_subscription_data(self) -> dict:
-        """Get the latest location-level data."""
-        subscription_resp = await self.request(
-            "get", f"users/{self.user_id}/subscriptions", params={"activeOnly": "true"}
-        )
-
-        _LOGGER.debug(
-            "users/%s/subscriptions response: %s", self.user_id, subscription_resp
-        )
-
-        return subscription_resp
 
     async def request(  # pylint: disable=too-many-branches
         self, method: str, endpoint: str, **kwargs
@@ -353,3 +333,19 @@ class API:  # pylint: disable=too-many-instance-attributes
         )
 
         self._actively_refreshing = False
+
+    async def update_subscription_data(self) -> None:
+        """Update our internal "raw data" listing of subscriptions."""
+        subscription_resp = await self.request(
+            "get", f"users/{self.user_id}/subscriptions", params={"activeOnly": "true"}
+        )
+
+        for subscription in subscription_resp["subscriptions"]:
+            if "version" not in subscription["location"]["system"]:
+                _LOGGER.error(
+                    "Skipping location with missing system data: %s",
+                    subscription["location"]["sid"],
+                )
+                continue
+
+            self.subscription_data[subscription["sid"]] = subscription

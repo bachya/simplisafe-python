@@ -20,7 +20,7 @@ class SensorV2(Entity):
 
         :rtype: ``int``
         """
-        return self.entity_data["sensorData"]
+        return self._entity_data["sensorData"]
 
     @property
     def error(self) -> bool:
@@ -28,7 +28,7 @@ class SensorV2(Entity):
 
         :rtype: ``bool``
         """
-        return self.entity_data["error"]
+        return self._entity_data["error"]
 
     @property
     def low_battery(self) -> bool:
@@ -36,7 +36,7 @@ class SensorV2(Entity):
 
         :rtype: ``bool``
         """
-        return self.entity_data.get("battery", "ok") != "ok"
+        return self._entity_data.get("battery", "ok") != "ok"
 
     @property
     def settings(self) -> bool:
@@ -44,7 +44,7 @@ class SensorV2(Entity):
 
         :rtype: ``bool``
         """
-        return self.entity_data["setting"]
+        return self._entity_data["setting"]
 
     @property
     def trigger_instantly(self) -> bool:
@@ -52,7 +52,7 @@ class SensorV2(Entity):
 
         :rtype: ``bool``
         """
-        return self.entity_data["instant"]
+        return self._entity_data["instant"]
 
     @property
     def triggered(self) -> bool:
@@ -61,6 +61,6 @@ class SensorV2(Entity):
         :rtype: ``bool``
         """
         if self.type == EntityTypes.entry:
-            return self.entity_data.get("entryStatus", "closed") == "open"
+            return self._entity_data.get("entryStatus", "closed") == "open"
 
         raise SimplipyError(f"Cannot determine triggered state for sensor: {self.name}")

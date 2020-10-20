@@ -20,7 +20,7 @@ class SensorV3(EntityV3):
 
         :rtype: ``bool``
         """
-        return self.entity_data["setting"].get("instantTrigger", False)
+        return self._entity_data["setting"].get("instantTrigger", False)
 
     @property
     def triggered(self) -> bool:
@@ -37,7 +37,7 @@ class SensorV3(EntityV3):
             EntityTypes.smoke,
             EntityTypes.temperature,
         ):
-            return self.entity_data["status"].get("triggered", False)
+            return self._entity_data["status"].get("triggered", False)
 
         return False
 
@@ -52,4 +52,4 @@ class SensorV3(EntityV3):
         if self.type != EntityTypes.temperature:
             raise AttributeError("Non-temperature sensor cannot have a temperature")
 
-        return self.entity_data["status"]["temperature"]
+        return self._entity_data["status"]["temperature"]

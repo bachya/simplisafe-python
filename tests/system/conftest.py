@@ -16,6 +16,15 @@ def subscriptions_alarm_state_response(subscriptions_fixture_filename):
 
 
 @pytest.fixture()
+def subscriptions_offline_missing_response(subscriptions_fixture_filename):
+    """Define a fixture for a subscription that is missing its isOffline key."""
+    raw = load_fixture(subscriptions_fixture_filename)
+    data = json.loads(raw)
+    data["subscriptions"][0]["location"]["system"].pop("isOffline")
+    return json.dumps(data)
+
+
+@pytest.fixture()
 def settings_missing_basestation_response(v3_settings_response):
     """Define a fixture for settings that are missing base station status."""
     data = json.loads(v3_settings_response)

@@ -32,7 +32,7 @@ class Lock(EntityV3):
 
         :rtype: ``bool``
         """
-        return self.entity_data["status"]["lockDisabled"]
+        return self._entity_data["status"]["lockDisabled"]
 
     @property
     def lock_low_battery(self) -> bool:
@@ -40,7 +40,7 @@ class Lock(EntityV3):
 
         :rtype: ``bool``
         """
-        return self.entity_data["status"]["lockLowBattery"]
+        return self._entity_data["status"]["lockLowBattery"]
 
     @property
     def pin_pad_low_battery(self) -> bool:
@@ -48,7 +48,7 @@ class Lock(EntityV3):
 
         :rtype: ``bool``
         """
-        return self.entity_data["status"]["pinPadLowBattery"]
+        return self._entity_data["status"]["pinPadLowBattery"]
 
     @property
     def pin_pad_offline(self) -> bool:
@@ -56,7 +56,7 @@ class Lock(EntityV3):
 
         :rtype: ``bool``
         """
-        return self.entity_data["status"]["pinPadOffline"]
+        return self._entity_data["status"]["pinPadOffline"]
 
     @property
     def state(self) -> LockStates:
@@ -64,10 +64,10 @@ class Lock(EntityV3):
 
         :rtype: :meth:`simplipy.lock.LockStates`
         """
-        if bool(self.entity_data["status"]["lockJamState"]):
+        if bool(self._entity_data["status"]["lockJamState"]):
             return LockStates.jammed
 
-        raw_state = self.entity_data["status"]["lockState"]
+        raw_state = self._entity_data["status"]["lockState"]
 
         try:
             return LockStates(raw_state)
@@ -77,13 +77,13 @@ class Lock(EntityV3):
 
     async def _set_lock_state(self, state: LockStates) -> None:
         """Set the lock state."""
-        await self._request(
+        await self._api.request(
             "post",
-            f"doorlock/{self._system_id}/{self.serial}/state",
+            f"doorlock/{self._system.system_id}/{self.serial}/state",
             json={"state": SET_STATE_MAP[state]},
         )
 
-        self.entity_data["status"]["lockState"] = state.value
+        self._entity_data["status"]["lockState"] = state.value
 
     async def lock(self) -> None:
         """Lock the lock."""

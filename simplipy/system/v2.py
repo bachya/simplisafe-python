@@ -39,7 +39,7 @@ def create_pin_payload(pins: dict) -> Dict[str, Dict[str, Dict[str, str]]]:
 class SystemV2(System):
     """Define a V2 (original) system."""
 
-    async def _get_entities_payload(self, cached: bool = True) -> dict:
+    async def _update_entity_data_internal(self, cached: bool = True) -> None:
         """Update sensors to the latest values."""
         sensor_resp = await self._api.request(
             "get",
@@ -47,7 +47,10 @@ class SystemV2(System):
             params={"settingsType": "all", "cached": str(cached).lower()},
         )
 
-        return sensor_resp.get("settings", {}).get("sensors", [])
+        for entity in sensor_resp.get("settings", {}).get("sensors", []):
+            if not entity:
+                continue
+            self.entity_data[entity["serial"]] = entity
 
     async def _set_updated_pins(self, pins: dict) -> None:
         """Post new PINs."""

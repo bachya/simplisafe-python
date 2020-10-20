@@ -1,7 +1,10 @@
+"""Define SimpliSafe cameras (SimpliCams)."""
 import logging
+from typing import TYPE_CHECKING
 from urllib.parse import urlencode
 
-from simplipy.entity import Entity
+if TYPE_CHECKING:
+    from simplipy.system.v3 import SystemV3
 
 _LOGGER: logging.Logger = logging.getLogger(__name__)
 
@@ -19,8 +22,13 @@ MODEL_TO_TYPE = {
 }
 
 
-class Camera(Entity):
-    """A SimpliCam."""
+class Camera:
+    """Define a SimpliCam."""
+
+    def __init__(self, system: "SystemV3", uuid: str) -> None:
+        """Initialize."""
+        self._camera_data = system.camera_data[uuid]
+        self._uuid = uuid
 
     @property
     def camera_settings(self) -> dict:
@@ -28,7 +36,7 @@ class Camera(Entity):
 
         :rtype: ``dict``
         """
-        return self.entity_data["cameraSettings"]
+        return self._camera_data["cameraSettings"]
 
     @property
     def camera_type(self) -> str:
@@ -36,11 +44,10 @@ class Camera(Entity):
 
         :rtype: ``str``
         """
-
         try:
-            return MODEL_TO_TYPE[self.entity_data["model"]]
+            return MODEL_TO_TYPE[self._camera_data["model"]]
         except KeyError:
-            _LOGGER.error("Unknown camera type: %s", self.entity_data["model"])
+            _LOGGER.error("Unknown camera type: %s", self._camera_data["model"])
             return CAMERA_MODEL_UNKNOWN
 
     @property
@@ -49,7 +56,7 @@ class Camera(Entity):
 
         :rtype: ``str``
         """
-        return self.entity_data["cameraSettings"]["cameraName"]
+        return self._camera_data["cameraSettings"]["cameraName"]
 
     @property
     def serial(self) -> str:
@@ -57,7 +64,7 @@ class Camera(Entity):
 
         :rtype: ``str``
         """
-        return self.entity_data["uuid"]
+        return self._uuid
 
     @property
     def shutter_open_when_away(self) -> bool:
@@ -65,7 +72,7 @@ class Camera(Entity):
 
         :rtype: ``bool``
         """
-        return self.camera_settings["shutterAway"] == "open"
+        return self._camera_data["cameraSettings"]["shutterAway"] == "open"
 
     @property
     def shutter_open_when_home(self) -> bool:
@@ -73,7 +80,7 @@ class Camera(Entity):
 
         :rtype: ``bool``
         """
-        return self.camera_settings["shutterHome"] == "open"
+        return self._camera_data["cameraSettings"]["shutterHome"] == "open"
 
     @property
     def shutter_open_when_off(self) -> bool:
@@ -81,7 +88,7 @@ class Camera(Entity):
 
         :rtype: ``bool``
         """
-        return self.camera_settings["shutterOff"] == "open"
+        return self._camera_data["cameraSettings"]["shutterOff"] == "open"
 
     @property
     def status(self) -> str:
@@ -89,7 +96,7 @@ class Camera(Entity):
 
         :rtype: ``str``
         """
-        return self.entity_data["status"]
+        return self._camera_data["status"]
 
     @property
     def subscription_enabled(self) -> bool:
@@ -97,7 +104,7 @@ class Camera(Entity):
 
         :rtype: ``bool``
         """
-        return self.entity_data["subscription"]["enabled"]
+        return self._camera_data["subscription"]["enabled"]
 
     def video_url(
         self,
@@ -110,5 +117,4 @@ class Camera(Entity):
         :rtype: ``str``
         """
         url_params = {"x": width, "audioEncoding": audio_encoding, **kwargs}
-
         return f"{MEDIA_URL_BASE}/{self.serial}/flv?{urlencode(url_params)}"

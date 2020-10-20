@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from simplipy.api import API
     from simplipy.system import System
 
-_LOGGER: logging.Logger = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 
 class UnknownEntityType(Exception):

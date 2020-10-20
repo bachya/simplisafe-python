@@ -159,7 +159,7 @@ class WebsocketWatchdog:  # pylint: disable=too-few-public-methods
         self._action: Callable[..., Awaitable] = action
         self._loop = asyncio.get_event_loop()
         self._timer_task: Optional[asyncio.TimerHandle] = None
-        self._timeout: int = timeout_seconds
+        self._timeout = timeout_seconds
 
     def cancel(self):
         """Cancel the watchdog."""

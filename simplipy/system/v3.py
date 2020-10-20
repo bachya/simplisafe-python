@@ -358,7 +358,6 @@ class SystemV3(System):
             CONF_DURESS_PIN: self.settings_data["settings"]["pins"]["duress"]["pin"],
         }
 
-        user_pin: dict
         for user_pin in [
             p for p in self.settings_data["settings"]["pins"]["users"] if p["pin"]
         ]:

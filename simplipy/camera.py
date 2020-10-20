@@ -6,7 +6,7 @@ from urllib.parse import urlencode
 if TYPE_CHECKING:
     from simplipy.system.v3 import SystemV3
 
-_LOGGER: logging.Logger = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 MEDIA_URL_BASE = "https://media.simplisafe.com/v1"
 DEFAULT_VIDEO_WIDTH = 1280

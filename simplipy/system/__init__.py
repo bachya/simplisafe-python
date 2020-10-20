@@ -18,7 +18,7 @@ from simplipy.util.string import convert_to_underscore
 if TYPE_CHECKING:
     from simplipy.api import API
 
-_LOGGER: logging.Logger = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 VERSION_V2 = 2
 VERSION_V3 = 3
@@ -224,7 +224,7 @@ class System:  # pylint: disable=too-many-instance-attributes
 
         for serial, entity in self.entity_data.items():
             try:
-                entity_type: EntityTypes = EntityTypes(entity["type"])
+                entity_type = EntityTypes(entity["type"])
             except ValueError:
                 _LOGGER.error("Unknown entity type: %s", entity["type"])
                 entity_type = EntityTypes.unknown
@@ -324,9 +324,7 @@ class System:  # pylint: disable=too-many-instance-attributes
             raise PinError(f"Refusing to delete reserved PIN: {pin_or_label}")
 
         try:
-            label: str = next(
-                (k for k, v in latest_pins.items() if pin_or_label in (k, v))
-            )
+            label = next((k for k, v in latest_pins.items() if pin_or_label in (k, v)))
         except StopIteration:
             raise PinError(f"Cannot delete nonexistent PIN: {pin_or_label}")
 

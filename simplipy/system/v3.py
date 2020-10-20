@@ -1,5 +1,4 @@
 """Define a V3 (new) SimpliSafe system."""
-from enum import Enum
 import logging
 from typing import TYPE_CHECKING, Dict
 
@@ -11,6 +10,7 @@ from simplipy.system import (
     CONF_MASTER_PIN,
     DEFAULT_MAX_USER_PINS,
     System,
+    SystemStates,
     coerce_state_from_raw_value,
     guard_from_missing_data,
 )
@@ -290,7 +290,7 @@ class SystemV3(System):
         """
         return self.settings_data["basestationStatus"]["wifiRssi"]
 
-    async def _set_state(self, value: Enum) -> None:
+    async def _set_state(self, value: SystemStates) -> None:
         """Set the state of the system."""
         state_resp = await self._api.request(
             "post", f"ss3/subscriptions/{self.system_id}/state/{value.name}"

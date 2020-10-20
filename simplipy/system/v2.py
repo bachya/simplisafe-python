@@ -1,5 +1,4 @@
 """Define a V2 (original) SimpliSafe system."""
-from enum import Enum
 import logging
 from typing import Dict
 
@@ -60,7 +59,7 @@ class SystemV2(System):
             json=create_pin_payload(pins),
         )
 
-    async def _set_state(self, value: Enum) -> None:
+    async def _set_state(self, value: SystemStates) -> None:
         """Set the state of the system."""
         state_resp = await self._api.request(
             "post",

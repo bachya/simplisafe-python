@@ -3,19 +3,15 @@ import aiohttp
 import pytest
 
 from simplipy import API
-from simplipy.errors import InvalidCredentialsError
 
 from .common import (
     TEST_CAMERA_ID,
     TEST_CAMERA_ID_2,
-    TEST_CAMERA_TYPE,
     TEST_CLIENT_ID,
     TEST_EMAIL,
     TEST_PASSWORD,
-    TEST_SUBSCRIPTION_ID,
     TEST_SYSTEM_ID,
     TEST_USER_ID,
-    load_fixture,
 )
 
 
@@ -49,10 +45,10 @@ async def test_properties(aresponses, v3_server, v3_subscriptions_response):
             assert not camera.shutter_open_when_off
             assert not camera.shutter_open_when_home
             assert camera.shutter_open_when_away
-            assert camera.camera_type == TEST_CAMERA_TYPE
+            assert camera.camera_type == "camera"
 
             error_camera = system.cameras[TEST_CAMERA_ID_2]
-            assert error_camera.camera_type == "CAMERA_MODEL_UNKNOWN"
+            assert error_camera.camera_type == "unknown"
 
 
 @pytest.mark.asyncio
@@ -92,7 +88,7 @@ async def test_video_urls(aresponses, v3_server, v3_subscriptions_response):
                 camera.video_url(audio_encoding="OPUS")
                 == f"https://media.simplisafe.com/v1/{TEST_CAMERA_ID}/flv?x=1280&audioEncoding=OPUS"
             )
-            assert (
-                camera.video_url(additional_param="1")
-                == f"https://media.simplisafe.com/v1/{TEST_CAMERA_ID}/flv?x=1280&audioEncoding=AAC&additional_param=1"
+            assert camera.video_url(additional_param="1") == (
+                f"https://media.simplisafe.com/v1/{TEST_CAMERA_ID}/flv"
+                "?x=1280&audioEncoding=AAC&additional_param=1"
             )

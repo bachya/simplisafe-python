@@ -26,7 +26,7 @@ class Camera:
 
     def __init__(self, system: "SystemV3", uuid: str) -> None:
         """Initialize."""
-        self._camera_data = system.camera_data[uuid]
+        self._system = system
         self._uuid = uuid
 
     @property
@@ -35,7 +35,7 @@ class Camera:
 
         :rtype: ``dict``
         """
-        return self._camera_data["cameraSettings"]
+        return self._system.camera_data[self._uuid]["cameraSettings"]
 
     @property
     def camera_type(self) -> str:
@@ -44,9 +44,11 @@ class Camera:
         :rtype: ``str``
         """
         try:
-            return MODEL_TO_TYPE[self._camera_data["model"]]
+            return MODEL_TO_TYPE[self._system.camera_data[self._uuid]["model"]]
         except KeyError:
-            LOGGER.error("Unknown camera type: %s", self._camera_data["model"])
+            LOGGER.error(
+                "Unknown camera type: %s", self._system.camera_data[self._uuid]["model"]
+            )
             return CAMERA_MODEL_UNKNOWN
 
     @property
@@ -55,7 +57,7 @@ class Camera:
 
         :rtype: ``str``
         """
-        return self._camera_data["cameraSettings"]["cameraName"]
+        return self._system.camera_data[self._uuid]["cameraSettings"]["cameraName"]
 
     @property
     def serial(self) -> str:
@@ -71,7 +73,10 @@ class Camera:
 
         :rtype: ``bool``
         """
-        return self._camera_data["cameraSettings"]["shutterAway"] == "open"
+        return (
+            self._system.camera_data[self._uuid]["cameraSettings"]["shutterAway"]
+            == "open"
+        )
 
     @property
     def shutter_open_when_home(self) -> bool:
@@ -79,7 +84,10 @@ class Camera:
 
         :rtype: ``bool``
         """
-        return self._camera_data["cameraSettings"]["shutterHome"] == "open"
+        return (
+            self._system.camera_data[self._uuid]["cameraSettings"]["shutterHome"]
+            == "open"
+        )
 
     @property
     def shutter_open_when_off(self) -> bool:
@@ -87,7 +95,10 @@ class Camera:
 
         :rtype: ``bool``
         """
-        return self._camera_data["cameraSettings"]["shutterOff"] == "open"
+        return (
+            self._system.camera_data[self._uuid]["cameraSettings"]["shutterOff"]
+            == "open"
+        )
 
     @property
     def status(self) -> str:
@@ -95,7 +106,7 @@ class Camera:
 
         :rtype: ``str``
         """
-        return self._camera_data["status"]
+        return self._system.camera_data[self._uuid]["status"]
 
     @property
     def subscription_enabled(self) -> bool:
@@ -103,7 +114,7 @@ class Camera:
 
         :rtype: ``bool``
         """
-        return self._camera_data["subscription"]["enabled"]
+        return self._system.camera_data[self._uuid]["subscription"]["enabled"]
 
     def video_url(
         self,

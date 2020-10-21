@@ -1,10 +1,6 @@
 """Define a v2 (old) SimpliSafe sensor."""
-import logging
-
 from simplipy.entity import Entity, EntityTypes
 from simplipy.errors import SimplipyError
-
-_LOGGER = logging.getLogger(__name__)
 
 
 class SensorV2(Entity):

@@ -1,5 +1,4 @@
 """Define an entity factory to generate entity objects."""
-import logging
 from typing import TYPE_CHECKING
 
 from simplipy.entity import Entity, EntityTypes
@@ -10,8 +9,6 @@ from simplipy.sensor.v3 import SensorV3
 if TYPE_CHECKING:
     from simplipy.api import API
     from simplipy.system import System
-
-_LOGGER = logging.getLogger(__name__)
 
 
 class UnknownEntityType(Exception):

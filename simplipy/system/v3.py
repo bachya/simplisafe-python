@@ -1,5 +1,4 @@
 """Define a V3 (new) SimpliSafe system."""
-import logging
 from typing import TYPE_CHECKING, Dict
 
 import voluptuous as vol
@@ -17,8 +16,6 @@ from simplipy.system import (
 
 if TYPE_CHECKING:
     from simplipy.api import API
-
-_LOGGER = logging.getLogger(__name__)
 
 CONF_ALARM_DURATION = "alarm_duration"
 CONF_ALARM_VOLUME = "alarm_volume"

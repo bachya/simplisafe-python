@@ -2,18 +2,16 @@
 import asyncio
 from dataclasses import InitVar, dataclass, field
 from datetime import datetime
-import logging
 from typing import Awaitable, Callable, Optional
 from urllib.parse import urlencode
 
 from socketio import AsyncClient
 from socketio.exceptions import ConnectionError as ConnError, SocketIOError
 
+from simplipy.const import LOGGER
 from simplipy.entity import EntityTypes
 from simplipy.errors import WebsocketError
 from simplipy.util.dt import utc_from_timestamp
-
-_LOGGER = logging.getLogger(__name__)
 
 API_URL_BASE = "wss://api.simplisafe.com/socket.io"
 
@@ -109,7 +107,7 @@ class WebsocketEvent:  # pylint: disable=too-many-instance-attributes
         if event_cid in EVENT_MAPPING:
             object.__setattr__(self, "event_type", EVENT_MAPPING[event_cid])
         else:
-            _LOGGER.warning(
+            LOGGER.warning(
                 'Encountered unknown websocket event type: %s ("%s"). Please report it '
                 "at https://github.com/bachya/simplisafe-python/issues.",
                 event_cid,
@@ -123,7 +121,7 @@ class WebsocketEvent:  # pylint: disable=too-many-instance-attributes
             try:
                 object.__setattr__(self, "sensor_type", EntityTypes(self.sensor_type))
             except ValueError:
-                _LOGGER.warning(
+                LOGGER.warning(
                     'Encountered unknown entity type: %s ("%s"). Please report it at'
                     "https://github.com/home-assistant/home-assistant/issues.",
                     self.sensor_type,
@@ -169,12 +167,12 @@ class WebsocketWatchdog:  # pylint: disable=too-few-public-methods
 
     async def on_expire(self):
         """Log and act when the watchdog expires."""
-        _LOGGER.info("Watchdog expired – calling %s", self._action.__name__)
+        LOGGER.info("Watchdog expired – calling %s", self._action.__name__)
         await self._action()
 
     async def trigger(self):
         """Trigger the watchdog."""
-        _LOGGER.info("Watchdog triggered – sleeping for %s seconds", self._timeout)
+        LOGGER.info("Watchdog triggered – sleeping for %s seconds", self._timeout)
 
         if self._timer_task:
             self._timer_task.cancel()

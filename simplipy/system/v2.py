@@ -1,5 +1,4 @@
 """Define a V2 (original) SimpliSafe system."""
-import logging
 from typing import Dict
 
 from simplipy.system import (
@@ -9,8 +8,6 @@ from simplipy.system import (
     System,
     SystemStates,
 )
-
-_LOGGER = logging.getLogger(__name__)
 
 
 def create_pin_payload(pins: dict) -> Dict[str, Dict[str, Dict[str, str]]]:

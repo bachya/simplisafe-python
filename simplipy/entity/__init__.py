@@ -1,13 +1,10 @@
 """Define a base SimpliSafe entity."""
 from enum import Enum
-import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from simplipy.api import API
     from simplipy.system import System
-
-_LOGGER = logging.getLogger(__name__)
 
 
 class EntityTypes(Enum):

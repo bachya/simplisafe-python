@@ -1,10 +1,7 @@
 """Define a v3 (new) SimpliSafe sensor."""
-import logging
 from typing import Optional
 
 from simplipy.entity import EntityTypes, EntityV3
-
-_LOGGER = logging.getLogger(__name__)
 
 
 class SensorV3(EntityV3):

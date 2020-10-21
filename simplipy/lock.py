@@ -1,10 +1,8 @@
 """Define a SimpliSafe lock."""
 from enum import Enum
-import logging
 
+from simplipy.const import LOGGER
 from simplipy.entity import EntityV3
-
-_LOGGER = logging.getLogger(__name__)
 
 
 class LockStates(Enum):
@@ -72,7 +70,7 @@ class Lock(EntityV3):
         try:
             return LockStates(raw_state)
         except ValueError:
-            _LOGGER.error("Unknown raw lock state: %s", raw_state)
+            LOGGER.error("Unknown raw lock state: %s", raw_state)
             return LockStates.unknown
 
     async def _set_lock_state(self, state: LockStates) -> None:

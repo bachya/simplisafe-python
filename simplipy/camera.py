@@ -1,12 +1,11 @@
 """Define SimpliSafe cameras (SimpliCams)."""
-import logging
 from typing import TYPE_CHECKING
 from urllib.parse import urlencode
 
+from simplipy.const import LOGGER
+
 if TYPE_CHECKING:
     from simplipy.system.v3 import SystemV3
-
-_LOGGER = logging.getLogger(__name__)
 
 MEDIA_URL_BASE = "https://media.simplisafe.com/v1"
 DEFAULT_VIDEO_WIDTH = 1280
@@ -47,7 +46,7 @@ class Camera:
         try:
             return MODEL_TO_TYPE[self._camera_data["model"]]
         except KeyError:
-            _LOGGER.error("Unknown camera type: %s", self._camera_data["model"])
+            LOGGER.error("Unknown camera type: %s", self._camera_data["model"])
             return CAMERA_MODEL_UNKNOWN
 
     @property

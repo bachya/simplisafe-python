@@ -3,9 +3,9 @@ import asyncio
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
+from simplipy.const import LOGGER
 from simplipy.entity import EntityTypes
 from simplipy.entity.factory import EntityFactory
 from simplipy.errors import PinError, SimplipyError
@@ -17,8 +17,6 @@ from simplipy.util.string import convert_to_underscore
 
 if TYPE_CHECKING:
     from simplipy.api import API
-
-_LOGGER = logging.getLogger(__name__)
 
 VERSION_V2 = 2
 VERSION_V3 = 3
@@ -74,7 +72,7 @@ def coerce_state_from_raw_value(value: str) -> SystemStates:
     try:
         return SystemStates[convert_to_underscore(value)]
     except KeyError:
-        _LOGGER.error("Unknown system state: %s", value)
+        LOGGER.error("Unknown system state: %s", value)
         return SystemStates.unknown
 
 
@@ -89,7 +87,7 @@ def guard_from_missing_data(default_value: Any = None):
             try:
                 return func(system)
             except KeyError:
-                _LOGGER.warning(
+                LOGGER.warning(
                     "SimpliSafe didn't return data for property: %s", func.__name__
                 )
                 return default_value
@@ -226,7 +224,7 @@ class System:  # pylint: disable=too-many-instance-attributes
             try:
                 entity_type = EntityTypes(entity["type"])
             except ValueError:
-                _LOGGER.error("Unknown entity type: %s", entity["type"])
+                LOGGER.error("Unknown entity type: %s", entity["type"])
                 entity_type = EntityTypes.unknown
 
             instance = self._entity_factory.create(entity_type, serial)

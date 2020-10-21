@@ -2,13 +2,13 @@
 import base64
 from datetime import datetime, timedelta
 from json.decoder import JSONDecodeError
-import logging
 from typing import Dict, Optional, Type, TypeVar, Union
 from uuid import uuid4
 
 from aiohttp import ClientSession, ClientTimeout
 from aiohttp.client_exceptions import ClientError
 
+from simplipy.const import LOGGER
 from simplipy.errors import (
     EndpointUnavailable,
     InvalidCredentialsError,
@@ -18,8 +18,6 @@ from simplipy.errors import (
 from simplipy.system.v2 import SystemV2
 from simplipy.system.v3 import SystemV3
 from simplipy.websocket import Websocket
-
-_LOGGER = logging.getLogger(__name__)
 
 API_URL_HOSTNAME = "api.simplisafe.com"
 API_URL_BASE = f"https://{API_URL_HOSTNAME}/v1"
@@ -165,7 +163,7 @@ class API:  # pylint: disable=too-many-instance-attributes
 
     async def authenticate(self, payload: dict) -> None:
         """Authenticate the API object using an authentication payload."""
-        _LOGGER.debug("Authentication payload: %s", payload)
+        LOGGER.debug("Authentication payload: %s", payload)
 
         token_resp = await self.request("post", "api/token", json=payload)
 
@@ -249,7 +247,7 @@ class API:  # pylint: disable=too-many-instance-attributes
             and datetime.now() >= self._access_token_expire
             and not self._actively_refreshing
         ):
-            _LOGGER.debug(
+            LOGGER.debug(
                 "Need to refresh access token (expiration: %s)",
                 self._access_token_expire,
             )
@@ -279,7 +277,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 message = await resp.text()
                 data = {"error": message}
 
-            _LOGGER.debug("Data received from /%s: %s", endpoint, data)
+            LOGGER.debug("Data received from /%s: %s", endpoint, data)
 
             try:
                 resp.raise_for_status()
@@ -301,7 +299,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                             "Repeated 401s despite refreshing access token"
                         ) from None
                     if self._refresh_token:
-                        _LOGGER.info("401 detected; attempting refresh token")
+                        LOGGER.info("401 detected; attempting refresh token")
                         self._access_token_expire = datetime.now()
                         return await self.request(method, endpoint, **kwargs)
                     raise InvalidCredentialsError("Invalid username/password") from None
@@ -342,7 +340,7 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         for subscription in subscription_resp["subscriptions"]:
             if "version" not in subscription["location"]["system"]:
-                _LOGGER.error(
+                LOGGER.error(
                     "Skipping location with missing system data: %s",
                     subscription["location"]["sid"],
                 )

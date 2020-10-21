@@ -250,10 +250,6 @@ class System:  # pylint: disable=too-many-instance-attributes
         """Update all settings data."""
         pass
 
-    async def _update_system_data(self) -> None:
-        """Update all system data."""
-        await self._api.update_subscription_data()
-
     async def clear_notifications(self):
         """Clear all active notifications.
 
@@ -407,7 +403,7 @@ class System:  # pylint: disable=too-many-instance-attributes
         tasks = []
 
         if include_system:
-            tasks.append(self._update_system_data())
+            tasks.append(self._api.update_subscription_data())
         if include_settings:
             tasks.append(self._update_settings_data(cached))
 

@@ -30,7 +30,7 @@ class Lock(EntityV3):
 
         :rtype: ``bool``
         """
-        return self._entity_data["status"]["lockDisabled"]
+        return self._system.entity_data[self._serial]["status"]["lockDisabled"]
 
     @property
     def lock_low_battery(self) -> bool:
@@ -38,7 +38,7 @@ class Lock(EntityV3):
 
         :rtype: ``bool``
         """
-        return self._entity_data["status"]["lockLowBattery"]
+        return self._system.entity_data[self._serial]["status"]["lockLowBattery"]
 
     @property
     def pin_pad_low_battery(self) -> bool:
@@ -46,7 +46,7 @@ class Lock(EntityV3):
 
         :rtype: ``bool``
         """
-        return self._entity_data["status"]["pinPadLowBattery"]
+        return self._system.entity_data[self._serial]["status"]["pinPadLowBattery"]
 
     @property
     def pin_pad_offline(self) -> bool:
@@ -54,7 +54,7 @@ class Lock(EntityV3):
 
         :rtype: ``bool``
         """
-        return self._entity_data["status"]["pinPadOffline"]
+        return self._system.entity_data[self._serial]["status"]["pinPadOffline"]
 
     @property
     def state(self) -> LockStates:
@@ -62,10 +62,10 @@ class Lock(EntityV3):
 
         :rtype: :meth:`simplipy.lock.LockStates`
         """
-        if bool(self._entity_data["status"]["lockJamState"]):
+        if bool(self._system.entity_data[self._serial]["status"]["lockJamState"]):
             return LockStates.jammed
 
-        raw_state = self._entity_data["status"]["lockState"]
+        raw_state = self._system.entity_data[self._serial]["status"]["lockState"]
 
         try:
             return LockStates(raw_state)
@@ -81,7 +81,7 @@ class Lock(EntityV3):
             json={"state": SET_STATE_MAP[state]},
         )
 
-        self._entity_data["status"]["lockState"] = state.value
+        self._system.entity_data[self._serial]["status"]["lockState"] = state.value
 
     async def lock(self) -> None:
         """Lock the lock."""

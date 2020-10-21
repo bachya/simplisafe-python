@@ -16,7 +16,7 @@ class SensorV2(Entity):
 
         :rtype: ``int``
         """
-        return self._entity_data["sensorData"]
+        return self._system.entity_data[self._serial]["sensorData"]
 
     @property
     def error(self) -> bool:
@@ -24,7 +24,7 @@ class SensorV2(Entity):
 
         :rtype: ``bool``
         """
-        return self._entity_data["error"]
+        return self._system.entity_data[self._serial]["error"]
 
     @property
     def low_battery(self) -> bool:
@@ -32,7 +32,7 @@ class SensorV2(Entity):
 
         :rtype: ``bool``
         """
-        return self._entity_data.get("battery", "ok") != "ok"
+        return self._system.entity_data[self._serial].get("battery", "ok") != "ok"
 
     @property
     def settings(self) -> bool:
@@ -40,7 +40,7 @@ class SensorV2(Entity):
 
         :rtype: ``bool``
         """
-        return self._entity_data["setting"]
+        return self._system.entity_data[self._serial]["setting"]
 
     @property
     def trigger_instantly(self) -> bool:
@@ -48,7 +48,7 @@ class SensorV2(Entity):
 
         :rtype: ``bool``
         """
-        return self._entity_data["instant"]
+        return self._system.entity_data[self._serial]["instant"]
 
     @property
     def triggered(self) -> bool:
@@ -57,6 +57,9 @@ class SensorV2(Entity):
         :rtype: ``bool``
         """
         if self.type == EntityTypes.entry:
-            return self._entity_data.get("entryStatus", "closed") == "open"
+            return (
+                self._system.entity_data[self._serial].get("entryStatus", "closed")
+                == "open"
+            )
 
         raise SimplipyError(f"Cannot determine triggered state for sensor: {self.name}")

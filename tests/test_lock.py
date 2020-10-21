@@ -201,4 +201,4 @@ async def test_update(aresponses, v3_server):
 
             # Simulate a manual lock and an update some time later:
             await lock.update()
-            assert lock.state == LockStates.unlocked
+            assert lock.state == LockStates.locked

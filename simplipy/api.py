@@ -231,9 +231,7 @@ class API:  # pylint: disable=too-many-instance-attributes
             else:
                 system = SystemV3(self, system_id)
 
-            # Update the system, but don't include system data, since that was already
-            # fetched in this method:
-            await system.update(include_system=False)
+            await system.init()
             systems[system_id] = system
 
         return systems

@@ -35,7 +35,7 @@ def create_pin_payload(pins: dict) -> Dict[str, Dict[str, Dict[str, str]]]:
 class SystemV2(System):
     """Define a V2 (original) system."""
 
-    async def _update_entity_data_internal(self, cached: bool = True) -> None:
+    async def _update_entity_data(self, cached: bool = True) -> None:
         """Update sensors to the latest values."""
         sensor_resp = await self._api.request(
             "get",

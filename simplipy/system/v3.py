@@ -231,7 +231,9 @@ class SystemV3(System):
 
         :rtype: ``bool``
         """
-        return self.system_data["location"]["system"]["isOffline"]
+        return self._api.subscription_data[self._system_id]["location"]["system"][
+            "isOffline"
+        ]
 
     @property  # type: ignore
     @guard_from_missing_data(False)
@@ -240,7 +242,9 @@ class SystemV3(System):
 
         :rtype: ``bool``
         """
-        return self.system_data["location"]["system"]["powerOutage"]
+        return self._api.subscription_data[self._system_id]["location"]["system"][
+            "powerOutage"
+        ]
 
     @property  # type: ignore
     @guard_from_missing_data(False)
@@ -308,18 +312,21 @@ class SystemV3(System):
     def _update_camera_data(self) -> None:
         """Update all system data."""
         self.cameras = {}
-        for camera in self.system_data["location"]["system"].get("cameras", []):
+        for camera in self._api.subscription_data[self._system_id]["location"][
+            "system"
+        ].get("cameras", []):
             uuid = camera["uuid"]
             self.camera_data[uuid] = camera
             self.cameras[uuid] = Camera(self, uuid)
 
-    async def _update_entity_data_internal(self, cached: bool = True) -> None:
+    async def _update_entity_data(self, cached: bool = True) -> None:
         """Update sensors to the latest values."""
         sensor_resp = await self._api.request(
             "get",
             f"ss3/subscriptions/{self.system_id}/sensors",
             params={"forceUpdate": str(not cached).lower()},
         )
+
         self.entity_data = {
             entity["serial"]: entity for entity in sensor_resp.get("sensors", [])
         }

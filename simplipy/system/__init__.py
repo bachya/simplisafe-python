@@ -121,7 +121,6 @@ class System:  # pylint: disable=too-many-instance-attributes
         self._notifications: List[SystemNotification] = []
         self._state = SystemStates.unknown
         self.entity_data: Dict[str, dict] = {}
-        self.system_data = api.subscription_data[system_id]
 
         self.locks: Dict[str, Lock] = {}
         self.sensors: Dict[str, Union[SensorV2, SensorV3]] = {}
@@ -133,7 +132,7 @@ class System:  # pylint: disable=too-many-instance-attributes
 
         :rtype: ``str``
         """
-        return self.system_data["location"]["street1"]
+        return self._api.subscription_data[self._system_id]["location"]["street1"]
 
     @property  # type: ignore
     @guard_from_missing_data(False)
@@ -142,7 +141,9 @@ class System:  # pylint: disable=too-many-instance-attributes
 
         :rtype: ``bool``
         """
-        return self.system_data["location"]["system"]["isAlarming"]
+        return self._api.subscription_data[self._system_id]["location"]["system"][
+            "isAlarming"
+        ]
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -151,7 +152,9 @@ class System:  # pylint: disable=too-many-instance-attributes
 
         :rtype: ``str``
         """
-        return self.system_data["location"]["system"]["connType"]
+        return self._api.subscription_data[self._system_id]["location"]["system"][
+            "connType"
+        ]
 
     @property
     def notifications(self) -> List[SystemNotification]:
@@ -168,7 +171,9 @@ class System:  # pylint: disable=too-many-instance-attributes
 
         :rtype: ``str``
         """
-        return self.system_data["location"]["system"]["serial"]
+        return self._api.subscription_data[self._system_id]["location"]["system"][
+            "serial"
+        ]
 
     @property
     def state(self) -> SystemStates:
@@ -194,7 +199,9 @@ class System:  # pylint: disable=too-many-instance-attributes
 
         :rtype: ``int``
         """
-        return self.system_data["location"]["system"]["temperature"]
+        return self._api.subscription_data[self._system_id]["location"]["system"][
+            "temperature"
+        ]
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -203,22 +210,15 @@ class System:  # pylint: disable=too-many-instance-attributes
 
         :rtype: ``int``
         """
-        return self.system_data["location"]["system"]["version"]
+        return self._api.subscription_data[self._system_id]["location"]["system"][
+            "version"
+        ]
 
-    async def _set_updated_pins(self, pins: dict) -> None:
-        """Post new PINs."""
-        raise NotImplementedError()
-
-    async def _set_state(self, value: SystemStates) -> None:
-        """Raise if calling this undefined based method."""
-        raise NotImplementedError()
-
-    async def _update_entity_data(self, cached: bool = True) -> None:
-        """Get all entities related to this system."""
-        await self._update_entity_data_internal(cached)
-
-        self.locks = {}
-        self.sensors = {}
+    async def init(self) -> None:
+        """Perform some post-initialization setup."""
+        # Update the system, but don't include system data, since it will have been
+        # fetched prior to the API calling this method:
+        await self.update(include_system=False)
 
         for serial, entity in self.entity_data.items():
             try:
@@ -234,7 +234,15 @@ class System:  # pylint: disable=too-many-instance-attributes
             else:
                 self.sensors[instance.serial] = instance
 
-    async def _update_entity_data_internal(self, cached: bool = False) -> None:
+    async def _set_updated_pins(self, pins: dict) -> None:
+        """Post new PINs."""
+        raise NotImplementedError()
+
+    async def _set_state(self, value: SystemStates) -> None:
+        """Raise if calling this undefined based method."""
+        raise NotImplementedError()
+
+    async def _update_entity_data(self, cached: bool = False) -> None:
         """Update all entity data."""
         raise NotImplementedError()
 
@@ -420,11 +428,13 @@ class System:  # pylint: disable=too-many-instance-attributes
                 link=raw_message["link"],
                 link_label=raw_message["linkLabel"],
             )
-            for raw_message in self.system_data["location"]["system"].get(
-                "messages", []
-            )
+            for raw_message in self._api.subscription_data[self._system_id]["location"][
+                "system"
+            ].get("messages", [])
         ]
 
         self._state = coerce_state_from_raw_value(
-            self.system_data["location"]["system"].get("alarmState")
+            self._api.subscription_data[self._system_id]["location"]["system"].get(
+                "alarmState"
+            )
         )

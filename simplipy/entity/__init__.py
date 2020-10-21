@@ -52,7 +52,6 @@ class Entity:
     ) -> None:
         """Initialize."""
         self._api = api
-        self._entity_data = system.entity_data[serial]
         self._entity_type = entity_type
         self._serial = serial
         self._system = system
@@ -63,7 +62,7 @@ class Entity:
 
         :rtype: ``str``
         """
-        return self._entity_data["name"]
+        return self._system.entity_data[self._serial]["name"]
 
     @property
     def serial(self) -> str:
@@ -71,7 +70,7 @@ class Entity:
 
         :rtype: ``str``
         """
-        return self._entity_data["serial"]
+        return self._system.entity_data[self._serial]["serial"]
 
     @property
     def type(self) -> EntityTypes:
@@ -108,7 +107,9 @@ class EntityV3(Entity):
 
         :rtype: ``bool``
         """
-        return self._entity_data["status"].get("malfunction", False)
+        return self._system.entity_data[self._serial]["status"].get(
+            "malfunction", False
+        )
 
     @property
     def low_battery(self) -> bool:
@@ -116,7 +117,7 @@ class EntityV3(Entity):
 
         :rtype: ``bool``
         """
-        return self._entity_data["flags"]["lowBattery"]
+        return self._system.entity_data[self._serial]["flags"]["lowBattery"]
 
     @property
     def offline(self) -> bool:
@@ -124,7 +125,7 @@ class EntityV3(Entity):
 
         :rtype: ``bool``
         """
-        return self._entity_data["flags"]["offline"]
+        return self._system.entity_data[self._serial]["flags"]["offline"]
 
     @property
     def settings(self) -> dict:
@@ -134,4 +135,4 @@ class EntityV3(Entity):
 
         :rtype: ``dict``
         """
-        return self._entity_data["setting"]
+        return self._system.entity_data[self._serial]["setting"]

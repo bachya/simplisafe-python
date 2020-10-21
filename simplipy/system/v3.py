@@ -112,7 +112,6 @@ class SystemV3(System):
         self.settings_data: Dict[str, dict] = {}
 
         self.cameras: Dict[str, Camera] = {}
-        self._update_camera_data()
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -293,6 +292,17 @@ class SystemV3(System):
         """
         return self.settings_data["basestationStatus"]["wifiRssi"]
 
+    async def init(self) -> None:
+        """Perform some post-initialization setup."""
+        await super().init()
+
+        for camera in self._api.subscription_data[self._system_id]["location"][
+            "system"
+        ].get("cameras", []):
+            uuid = camera["uuid"]
+            self.camera_data[uuid] = camera
+            self.cameras[uuid] = Camera(self, uuid)
+
     async def _set_state(self, value: SystemStates) -> None:
         """Set the state of the system."""
         state_resp = await self._api.request(
@@ -308,16 +318,6 @@ class SystemV3(System):
             f"ss3/subscriptions/{self.system_id}/settings/pins",
             json=create_pin_payload(pins),
         )
-
-    def _update_camera_data(self) -> None:
-        """Update all system data."""
-        self.cameras = {}
-        for camera in self._api.subscription_data[self._system_id]["location"][
-            "system"
-        ].get("cameras", []):
-            uuid = camera["uuid"]
-            self.camera_data[uuid] = camera
-            self.cameras[uuid] = Camera(self, uuid)
 
     async def _update_entity_data(self, cached: bool = True) -> None:
         """Update sensors to the latest values."""
@@ -341,11 +341,6 @@ class SystemV3(System):
 
         if settings_resp:
             self.settings_data = settings_resp
-
-    async def _update_system_data(self) -> None:
-        """Update all system data."""
-        await super()._update_system_data()
-        self._update_camera_data()
 
     async def get_pins(self, cached: bool = True) -> Dict[str, str]:
         """Return all of the set PINs, including master and duress.

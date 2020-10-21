@@ -10,7 +10,7 @@ from simplipy.errors import PendingAuthorizationError
 
 async def main() -> None:
     """Run!"""
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     while True:
         try:
             email = input("What is your SimpliSafe email address? ")

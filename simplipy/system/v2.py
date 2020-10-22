@@ -1,12 +1,14 @@
 """Define a V2 (original) SimpliSafe system."""
 from typing import Dict
 
+from simplipy.sensor.v2 import SensorV2
 from simplipy.system import (
     CONF_DURESS_PIN,
     CONF_MASTER_PIN,
     DEFAULT_MAX_USER_PINS,
     System,
     SystemStates,
+    get_entity_type_from_data,
 )
 
 
@@ -66,6 +68,12 @@ class SystemV2(System):
 
         if state_resp["success"]:
             self._state = SystemStates[state_resp["requestedState"]]
+
+    async def generate_entities(self) -> None:
+        """Generate entity objects for this system."""
+        for serial, entity in self.entity_data.items():
+            entity_type = get_entity_type_from_data(entity)
+            self.sensors[serial] = SensorV2(self._api, self, entity_type, serial)
 
     async def get_pins(self, cached: bool = True) -> Dict[str, str]:
         """Return all of the set PINs, including master and duress.

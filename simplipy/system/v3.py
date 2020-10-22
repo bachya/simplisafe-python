@@ -4,6 +4,9 @@ from typing import TYPE_CHECKING, Dict
 import voluptuous as vol
 
 from simplipy.camera import Camera
+from simplipy.entity import EntityTypes
+from simplipy.lock import Lock
+from simplipy.sensor.v3 import SensorV3
 from simplipy.system import (
     CONF_DURESS_PIN,
     CONF_MASTER_PIN,
@@ -11,6 +14,7 @@ from simplipy.system import (
     System,
     SystemStates,
     coerce_state_from_raw_value,
+    get_entity_type_from_data,
     guard_from_missing_data,
 )
 
@@ -108,10 +112,11 @@ class SystemV3(System):
         super().__init__(api, system_id)
 
         # This will be filled in by the appropriate data update methods:
-        self.camera_data: Dict[str, dict] = {}
+        self.camera_data: Dict[str, dict] = self._generate_camera_data()
         self.settings_data: Dict[str, dict] = {}
 
         self.cameras: Dict[str, Camera] = {}
+        self.locks: Dict[str, Lock] = {}
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -292,16 +297,14 @@ class SystemV3(System):
         """
         return self.settings_data["basestationStatus"]["wifiRssi"]
 
-    async def init(self) -> None:
-        """Perform some post-initialization setup."""
-        await super().init()
-
-        for camera in self._api.subscription_data[self._system_id]["location"][
-            "system"
-        ].get("cameras", []):
-            uuid = camera["uuid"]
-            self.camera_data[uuid] = camera
-            self.cameras[uuid] = Camera(self, uuid)
+    def _generate_camera_data(self) -> Dict[str, dict]:
+        """Generate usable, hashable camera data from system data."""
+        return {
+            camera["uuid"]: camera
+            for camera in self._api.subscription_data[self._system_id]["location"][
+                "system"
+            ].get("cameras", [])
+        }
 
     async def _set_state(self, value: SystemStates) -> None:
         """Set the state of the system."""
@@ -341,6 +344,23 @@ class SystemV3(System):
 
         if settings_resp:
             self.settings_data = settings_resp
+
+    async def _update_system_data(self) -> None:
+        """Update all system data (including camera data in V3 systems)."""
+        super()._update_system_data()
+        self.camera_data = self._generate_camera_data()
+
+    async def generate_entities(self) -> None:
+        """Generate entity objects for this system."""
+        for serial, entity in self.entity_data.items():
+            entity_type = get_entity_type_from_data(entity)
+            if entity_type == EntityTypes.lock:
+                self.locks[serial] = Lock(self._api, self, entity_type, serial)
+            else:
+                self.sensors[serial] = SensorV3(self._api, self, entity_type, serial)
+
+        for uuid in self.camera_data:
+            self.cameras[uuid] = Camera(self, uuid)
 
     async def get_pins(self, cached: bool = True) -> Dict[str, str]:
         """Return all of the set PINs, including master and duress.

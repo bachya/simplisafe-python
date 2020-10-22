@@ -7,9 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from simplipy.const import LOGGER
 from simplipy.entity import EntityTypes
-from simplipy.entity.factory import EntityFactory
 from simplipy.errors import PinError, SimplipyError
-from simplipy.lock import Lock
 from simplipy.sensor.v2 import SensorV2
 from simplipy.sensor.v3 import SensorV3
 from simplipy.util.dt import utc_from_timestamp
@@ -30,6 +28,15 @@ CONF_MASTER_PIN = "master"
 DEFAULT_MAX_USER_PINS = 4
 MAX_PIN_LENGTH = 4
 RESERVED_PIN_LABELS = {CONF_DURESS_PIN, CONF_MASTER_PIN}
+
+
+def get_entity_type_from_data(entity_data: dict) -> EntityTypes:
+    """Get the entity type of a raw data payload."""
+    try:
+        return EntityTypes(entity_data["type"])
+    except ValueError:
+        LOGGER.error("Unknown entity type: %s", entity_data["type"])
+        return EntityTypes.unknown
 
 
 @dataclass(frozen=True)
@@ -114,7 +121,6 @@ class System:  # pylint: disable=too-many-instance-attributes
     def __init__(self, api: "API", system_id: int) -> None:
         """Initialize."""
         self._api = api
-        self._entity_factory = EntityFactory(api, self)
         self._system_id = system_id
 
         # These will get filled in after initial update:
@@ -122,7 +128,6 @@ class System:  # pylint: disable=too-many-instance-attributes
         self._state = SystemStates.unknown
         self.entity_data: Dict[str, dict] = {}
 
-        self.locks: Dict[str, Lock] = {}
         self.sensors: Dict[str, Union[SensorV2, SensorV3]] = {}
 
     @property  # type: ignore
@@ -214,26 +219,6 @@ class System:  # pylint: disable=too-many-instance-attributes
             "version"
         ]
 
-    async def init(self) -> None:
-        """Perform some post-initialization setup."""
-        # Update the system, but don't include system data, since it will have been
-        # fetched prior to the API calling this method:
-        await self.update(include_system=False)
-
-        for serial, entity in self.entity_data.items():
-            try:
-                entity_type = EntityTypes(entity["type"])
-            except ValueError:
-                LOGGER.error("Unknown entity type: %s", entity["type"])
-                entity_type = EntityTypes.unknown
-
-            instance = self._entity_factory.create(entity_type, serial)
-
-            if isinstance(instance, Lock):
-                self.locks[instance.serial] = instance
-            else:
-                self.sensors[instance.serial] = instance
-
     async def _set_updated_pins(self, pins: dict) -> None:
         """Post new PINs."""
         raise NotImplementedError()
@@ -250,6 +235,10 @@ class System:  # pylint: disable=too-many-instance-attributes
         """Update all settings data."""
         pass
 
+    async def _update_system_data(self) -> None:
+        """Update all system data."""
+        await self._api.update_subscription_data()
+
     async def clear_notifications(self):
         """Clear all active notifications.
 
@@ -261,6 +250,10 @@ class System:  # pylint: disable=too-many-instance-attributes
                 "delete", f"subscriptions/{self.system_id}/messages"
             )
             self._notifications = []
+
+    async def generate_entities(self) -> None:
+        """Generate entity objects for this system."""
+        raise NotImplementedError()
 
     async def get_events(
         self, from_datetime: Optional[datetime] = None, num_events: Optional[int] = None
@@ -403,7 +396,7 @@ class System:  # pylint: disable=too-many-instance-attributes
         tasks = []
 
         if include_system:
-            tasks.append(self._api.update_subscription_data())
+            tasks.append(self._update_system_data())
         if include_settings:
             tasks.append(self._update_settings_data(cached))
 

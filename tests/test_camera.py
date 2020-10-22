@@ -36,7 +36,6 @@ async def test_properties(aresponses, v3_server, v3_subscriptions_response):
 
             system = systems[TEST_SYSTEM_ID]
 
-            print(system.cameras)
             camera = system.cameras[TEST_CAMERA_ID]
             assert camera.name == "Camera"
             assert camera.serial == TEST_CAMERA_ID

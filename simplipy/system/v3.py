@@ -347,7 +347,7 @@ class SystemV3(System):
 
     async def _update_system_data(self) -> None:
         """Update all system data (including camera data in V3 systems)."""
-        super()._update_system_data()
+        await super()._update_system_data()
         self.camera_data = self._generate_camera_data()
 
     async def generate_entities(self) -> None:

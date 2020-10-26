@@ -77,6 +77,7 @@ async def test_properties(v2_server):
             systems = await simplisafe.get_systems()
             system = systems[TEST_SYSTEM_ID]
 
+            assert system.active is True
             assert not system.alarm_going_off
             assert system.address == TEST_ADDRESS
             assert system.connection_type == "wifi"

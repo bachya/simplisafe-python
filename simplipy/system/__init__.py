@@ -150,6 +150,14 @@ class System:  # pylint: disable=too-many-instance-attributes
             "isAlarming"
         ]
 
+    @property
+    def active(self) -> bool:
+        """Return whether the system is active.
+
+        :rtype: ``bool``
+        """
+        return self._api.subscription_data[self._system_id]["activated"] != 0
+
     @property  # type: ignore
     @guard_from_missing_data()
     def connection_type(self) -> str:

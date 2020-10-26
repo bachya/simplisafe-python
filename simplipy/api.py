@@ -231,6 +231,11 @@ class API:  # pylint: disable=too-many-instance-attributes
             else:
                 system = SystemV3(self, system_id)
 
+            # Skip deactivated systems:
+            if not system.active:
+                LOGGER.info("Skipping deactivated system: %s", system_id)
+                continue
+
             # Update the system, but don't include system data itself, since it will
             # already have been fetched when the API was first queried:
             await system.update(include_system=False)

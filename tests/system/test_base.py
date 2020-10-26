@@ -19,6 +19,23 @@ from tests.common import (
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "v3_subscriptions_response",
+    [load_fixture("subscriptions_deactivated_response.json")],
+)
+async def test_deactivated_system(v3_server):
+    """Test that API.get_systems doesn't return deactivated systems."""
+    async with v3_server:
+        simplisafe = await API.login_via_credentials(
+            TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID
+        )
+
+        systems = await simplisafe.get_systems()
+
+        assert len(systems) == 0
+
+
+@pytest.mark.asyncio
 async def test_get_events(aresponses, v2_server):
     """Test getting events from a system."""
     async with v2_server:

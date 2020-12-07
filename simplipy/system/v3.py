@@ -33,7 +33,7 @@ CONF_EXIT_DELAY_HOME = "exit_delay_home"
 CONF_LIGHT = "light"
 CONF_VOICE_PROMPT_VOLUME = "voice_prompt_volume"
 
-DEFAULT_LOCK_STATE_CHANGE_WINDOW = timedelta(minutes=15)
+DEFAULT_LOCK_STATE_CHANGE_WINDOW = timedelta(seconds=15)
 
 VOLUME_OFF = 0
 VOLUME_LOW = 1

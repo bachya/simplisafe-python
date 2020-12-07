@@ -1,5 +1,6 @@
 """Define tests for v3 System objects."""
 from datetime import datetime
+import logging
 
 import aiohttp
 import pytest
@@ -270,6 +271,35 @@ async def test_empty_events(aresponses, v3_server):
             # Test the events key existing, but being empty:
             with pytest.raises(SimplipyError):
                 _ = await system.get_latest_event()
+
+
+@pytest.mark.asyncio
+async def test_lock_state_update_bug(aresponses, caplog, v3_server):
+    """Test halting updates within a 15-second window from arming/disarming."""
+    caplog.set_level(logging.INFO)
+
+    async with v3_server:
+        v3_server.add(
+            "api.simplisafe.com",
+            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/state/away",
+            "post",
+            aresponses.Response(
+                text=load_fixture("v3_state_away_response.json"), status=200
+            ),
+        )
+
+        async with aiohttp.ClientSession() as session:
+            simplisafe = await API.login_via_credentials(
+                TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID, session=session
+            )
+
+            systems = await simplisafe.get_systems()
+            system = systems[TEST_SYSTEM_ID]
+
+            await system.set_away()
+            assert system.state == SystemStates.away
+            await system.update()
+            assert any("Skipping system update" in e.message for e in caplog.records)
 
 
 @pytest.mark.asyncio

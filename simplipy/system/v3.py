@@ -1,9 +1,11 @@
 """Define a V3 (new) SimpliSafe system."""
-from typing import TYPE_CHECKING, Dict
+from datetime import datetime, timedelta
+from typing import TYPE_CHECKING, Dict, Optional
 
 import voluptuous as vol
 
 from simplipy.camera import Camera
+from simplipy.const import LOGGER
 from simplipy.entity import EntityTypes
 from simplipy.lock import Lock
 from simplipy.sensor.v3 import SensorV3
@@ -30,6 +32,8 @@ CONF_EXIT_DELAY_AWAY = "exit_delay_away"
 CONF_EXIT_DELAY_HOME = "exit_delay_home"
 CONF_LIGHT = "light"
 CONF_VOICE_PROMPT_VOLUME = "voice_prompt_volume"
+
+DEFAULT_LOCK_STATE_CHANGE_WINDOW = timedelta(minutes=15)
 
 VOLUME_OFF = 0
 VOLUME_LOW = 1
@@ -104,12 +108,13 @@ def create_pin_payload(pins: dict) -> Dict[str, Dict[str, Dict[str, str]]]:
     return payload
 
 
-class SystemV3(System):
+class SystemV3(System):  # pylint: disable=too-many-public-methods
     """Define a V3 (new) system."""
 
     def __init__(self, api: "API", system_id: int) -> None:
         """Initialize."""
         super().__init__(api, system_id)
+        self._last_state_change_dt: Optional[datetime] = None
 
         # This will be filled in by the appropriate data update methods:
         self.camera_data: Dict[str, dict] = self._generate_camera_data()
@@ -314,6 +319,8 @@ class SystemV3(System):
 
         self._state = coerce_state_from_raw_value(state_resp["state"])
 
+        self._last_state_change_dt = datetime.utcnow()
+
     async def _set_updated_pins(self, pins: dict) -> None:
         """Post new PINs."""
         self.settings_data = await self._api.request(
@@ -423,3 +430,48 @@ class SystemV3(System):
 
         if settings_resp:
             self.settings_data = settings_resp
+
+    async def update(
+        self,
+        *,
+        include_system: bool = True,
+        include_settings: bool = True,
+        include_entities: bool = True,
+        cached: bool = True,
+    ) -> None:
+        """Get the latest system data.
+
+        The ``cached`` parameter determines whether the SimpliSafe Cloud uses the last
+        known values retrieved from the base station (``True``) or retrieves new data.
+
+        :param include_system: Whether system state/properties should be updated
+        :type include_system: ``bool``
+        :param include_settings: Whether system settings (like PINs) should be updated
+        :type include_settings: ``bool``
+        :param include_entities: whether sensors/locks/etc. should be updated
+        :type include_entities: ``bool``
+        :param cached: Whether to used cached data.
+        :type cached: ``bool``
+        """
+        if (
+            self.locks
+            and self._last_state_change_dt
+            and datetime.utcnow()
+            <= self._last_state_change_dt + DEFAULT_LOCK_STATE_CHANGE_WINDOW
+        ):
+            # The SimpliSafe cloud API currently has a bug wherein systems with locks
+            # will audible announce that those locks aren't responding when the system
+            # is updated within a certain window (around 15 seconds) of the system
+            # changing state. Oof. So, we refuse to update inside that window:
+            LOGGER.info(
+                "Skipping system update within %s seconds from last system arm/disarm",
+                DEFAULT_LOCK_STATE_CHANGE_WINDOW,
+            )
+            return
+
+        await super().update(
+            include_system=include_system,
+            include_settings=include_settings,
+            include_entities=include_entities,
+            cached=cached,
+        )

@@ -1,7 +1,7 @@
 Cameras
 =======
 
-:meth:`Lock <simplipy.camera.Camera>` objects correspond to SimpliSafe™ "SimpliCam"
+:meth:`Camera <simplipy.camera.Camera>` objects correspond to SimpliSafe™ "SimpliCam"
 cameras and doorbells (only available for V3 systems) and allow users to retrieve
 information on them, including URLs to view short-lived streams of the camera.
 

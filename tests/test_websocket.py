@@ -39,6 +39,7 @@ async def test_async_events(v3_server):
             simplisafe.websocket._sio.eio._trigger_event = async_mock()
             simplisafe.websocket._sio.eio.connect = async_mock()
             simplisafe.websocket._sio.eio.disconnect = async_mock()
+            simplisafe.websocket._sio.namespaces = {"/": 1}
 
             on_connect = async_mock()
             on_disconnect = async_mock()
@@ -90,6 +91,7 @@ async def test_connect_async_success(v3_server):
 
             simplisafe.websocket._sio.eio._trigger_event = async_mock()
             simplisafe.websocket._sio.eio.connect = async_mock()
+            simplisafe.websocket._sio.namespaces = {"/": 1}
 
             on_connect = async_mock()
             simplisafe.websocket.async_on_connect(on_connect)
@@ -122,6 +124,7 @@ async def test_connect_sync_success(v3_server):
 
             simplisafe.websocket._sio.eio._trigger_event = async_mock()
             simplisafe.websocket._sio.eio.connect = async_mock()
+            simplisafe.websocket._sio.namespaces = {"/": 1}
 
             on_connect = AsyncMock()
             simplisafe.websocket.on_connect(on_connect)
@@ -225,6 +228,7 @@ async def test_reconnect_on_new_access_token(aresponses, v3_server):
             simplisafe.websocket._sio.eio._trigger_event = async_mock()
             simplisafe.websocket._sio.eio.connect = async_mock()
             simplisafe.websocket._sio.eio.disconnect = async_mock()
+            simplisafe.websocket._sio.namespaces = {"/": 1}
 
             on_connect = AsyncMock()
             simplisafe.websocket.on_connect(on_connect)
@@ -262,6 +266,7 @@ async def test_sync_events(v3_server):
             simplisafe.websocket._sio.eio._trigger_event = async_mock()
             simplisafe.websocket._sio.eio.connect = async_mock()
             simplisafe.websocket._sio.eio.disconnect = async_mock()
+            simplisafe.websocket._sio.namespaces = {"/": 1}
 
             on_connect = AsyncMock()
             on_disconnect = AsyncMock()

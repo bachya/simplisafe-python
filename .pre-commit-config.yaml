@@ -63,6 +63,4 @@ repos:
     rev: v0.1.12
     hooks:
       - id: shellcheck
-        args:
-          - --format=json
         files: ^script/.+

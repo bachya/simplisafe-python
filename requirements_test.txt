@@ -1,4 +1,4 @@
-aiohttp==3.6.2
+aiohttp>=3.7.4
 aresponses==2.0.0
 asynctest==0.13.0
 pytest-aiohttp==0.3.0

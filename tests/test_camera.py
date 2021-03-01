@@ -29,7 +29,7 @@ async def test_properties(aresponses, v3_server, v3_subscriptions_response):
 
         async with aiohttp.ClientSession() as session:
             simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID, session=session
+                TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
 
             systems = await simplisafe.get_systems()
@@ -64,7 +64,7 @@ async def test_video_urls(aresponses, v3_server, v3_subscriptions_response):
 
         async with aiohttp.ClientSession() as session:
             simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID, session=session
+                TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
 
             systems = await simplisafe.get_systems()

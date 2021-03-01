@@ -133,8 +133,8 @@ The primary way of creating an API object is via the
             simplisafe = await API.login_via_credentials(
                 "<EMAIL>",
                 "<PASSWORD>",
-                client_id="<UNIQUE IDENTIFIER>",
                 session=session,
+                client_id="<UNIQUE IDENTIFIER>",
             )
 
             # ...
@@ -171,8 +171,8 @@ token) to achieve connection pooling:
             simplisafe = await API.login_via_credentials(
                 "<EMAIL>",
                 "<PASSWORD>",
-                client_id="<UNIQUE IDENTIFIER>",
                 session=session,
+                client_id="<UNIQUE IDENTIFIER>",
             )
 
             # ...

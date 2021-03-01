@@ -33,7 +33,7 @@ async def test_async_events(v3_server):
     async with v3_server:
         async with aiohttp.ClientSession() as session:
             simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID, session=session
+                TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
 
             simplisafe.websocket._sio.eio._trigger_event = async_mock()
@@ -86,7 +86,7 @@ async def test_connect_async_success(v3_server):
     async with v3_server:
         async with aiohttp.ClientSession() as session:
             simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID, session=session
+                TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
 
             simplisafe.websocket._sio.eio._trigger_event = async_mock()
@@ -119,7 +119,7 @@ async def test_connect_sync_success(v3_server):
     async with v3_server:
         async with aiohttp.ClientSession() as session:
             simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID, session=session
+                TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
 
             simplisafe.websocket._sio.eio._trigger_event = async_mock()
@@ -152,7 +152,7 @@ async def test_connect_failure(v3_server):
     async with v3_server:
         async with aiohttp.ClientSession() as session:
             simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID, session=session
+                TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
 
             simplisafe.websocket._sio.eio.connect = async_mock(
@@ -222,7 +222,7 @@ async def test_reconnect_on_new_access_token(aresponses, v3_server):
 
         async with aiohttp.ClientSession() as session:
             simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID, session=session
+                TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
 
             simplisafe.websocket._sio.eio._trigger_event = async_mock()
@@ -260,7 +260,7 @@ async def test_sync_events(v3_server):
     async with v3_server:
         async with aiohttp.ClientSession() as session:
             simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID, session=session
+                TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
 
             simplisafe.websocket._sio.eio._trigger_event = async_mock()

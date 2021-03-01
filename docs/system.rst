@@ -29,8 +29,8 @@ To get all SimpliSafe™ systems associated with an account:
             simplisafe = await simplipy.API.login_via_credentials(
                 "<EMAIL>",
                 "<PASSWORD>",
-                client_id="<UNIQUE IDENTIFIER>",
                 session=session
+                client_id="<UNIQUE IDENTIFIER>",
             )
 
             # Get a dict of systems with the system ID as the key:

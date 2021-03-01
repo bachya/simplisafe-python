@@ -323,20 +323,21 @@ class API:  # pylint: disable=too-many-instance-attributes
                     raise InvalidCredentialsError("Invalid username/password") from None
 
                 LOGGER.warning(
-                    "Error while requesting /%s: %s (%s retries remaining)",
+                    "Error while requesting /%s: %s (attempt %s of %s)",
                     endpoint,
                     err,
-                    retries,
+                    retries + 1,
+                    DEFAULT_REQUEST_RETRIES,
                 )
                 retries += 1
                 await asyncio.sleep(self._request_retry_interval)
             finally:
                 if not use_running_session:
                     await session.close()
-        else:
-            raise RequestError(
-                f"Requesting /{endpoint} failed after {retries} tries"
-            ) from None
+
+        raise RequestError(
+            f"Requesting /{endpoint} failed after {retries + 1} tries"
+        ) from None
 
     async def refresh_access_token(self, refresh_token: Optional[str]) -> None:
         """Regenerate an access token.

@@ -295,6 +295,17 @@ class API:  # pylint: disable=too-many-instance-attributes
 
                     LOGGER.debug("Data received from /%s: %s", endpoint, data)
 
+                    if isinstance(data, str):
+                        # In some cases, the SimpliSafe API will return a quoted string
+                        # in its response body (e.g., "\"node not found\""), which is
+                        # technically valid JSON. Additionally, SimpliSafe sets that
+                        # response's Content-Type header to application/json (#smh).
+                        # Together, these factors will allow a non-true-JSON  payload to
+                        # escape the try/except above. So, if we get here, we use the
+                        # string value (with quotes removed) to raise an error:
+                        message = data.replace('"', "")
+                        data = {"error": message}
+
                     resp.raise_for_status()
                     return data
             except ClientError as err:

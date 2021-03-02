@@ -32,7 +32,7 @@ async def test_401_bad_credentials(aresponses):
         "api.simplisafe.com",
         "/v1/api/token",
         "post",
-        aresponses.Response(text="Unauthorized", status=401),
+        aresponses.Response(text='"Unauthorized"', status=401),
     )
 
     async with aiohttp.ClientSession() as session:
@@ -64,13 +64,13 @@ async def test_401_refresh_token_failure(
             "api.simplisafe.com",
             f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/settings",
             "get",
-            aresponses.Response(text="Unauthorized", status=401),
+            aresponses.Response(text='"Unauthorized"', status=401),
         )
         v2_server.add(
             "api.simplisafe.com",
             "/v1/api/token",
             "post",
-            aresponses.Response(text="Unauthorized", status=401),
+            aresponses.Response(text='"Unauthorized"', status=401),
         )
 
         async with aiohttp.ClientSession() as session:
@@ -100,7 +100,7 @@ async def test_401_refresh_token_success(
             "api.simplisafe.com",
             f"/v1/users/{TEST_USER_ID}/subscriptions",
             "get",
-            aresponses.Response(text="Unauthorized", status=401),
+            aresponses.Response(text='"Unauthorized"', status=401),
         )
         v2_server.add(
             "api.simplisafe.com",

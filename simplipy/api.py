@@ -347,7 +347,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                     await session.close()
 
         raise RequestError(
-            f"Requesting /{endpoint} failed after {retries + 1} tries"
+            f"Requesting /{endpoint} failed after {retries} tries"
         ) from None
 
     async def refresh_access_token(self, refresh_token: Optional[str]) -> None:

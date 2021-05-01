@@ -1,6 +1,7 @@
 """Define a V2 (original) SimpliSafe system."""
 from typing import Dict
 
+from simplipy.const import LOGGER
 from simplipy.sensor.v2 import SensorV2
 from simplipy.system import (
     CONF_DURESS_PIN,
@@ -30,6 +31,8 @@ def create_pin_payload(pins: dict) -> Dict[str, Dict[str, Dict[str, str]]]:
             "name": "",
             "pin": "",
         }
+
+    LOGGER.debug("PIN payload: %s", payload)
 
     return payload
 

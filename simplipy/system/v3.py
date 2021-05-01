@@ -103,7 +103,9 @@ def create_pin_payload(pins: dict) -> Dict[str, Dict[str, Dict[str, str]]]:
             "pin": "",
         }
 
-    payload["users"] = user_pins
+    payload["pins"]["users"] = user_pins
+
+    LOGGER.debug("PIN payload: %s", payload)
 
     return payload
 

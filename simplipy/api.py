@@ -226,7 +226,9 @@ class API:  # pylint: disable=too-many-instance-attributes
         self.user_id = auth_check_resp["userId"]
 
         # Start the websocket:
-        await self.websocket.async_init(self._access_token, self.user_id)
+        # NOTE (2021-05-02): The SimpliSafe websocket has changed and no suitable
+        # replacement has been found; disabling for now:
+        # await self.websocket.async_init(self._access_token, self.user_id)
 
     async def get_systems(self) -> Dict[int, Union[SystemV2, SystemV3]]:
         """Get systems associated to the associated SimpliSafe account.

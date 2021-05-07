@@ -17,7 +17,6 @@ from simplipy.errors import (
 )
 from simplipy.system.v2 import SystemV2
 from simplipy.system.v3 import SystemV3
-from simplipy.websocket import Websocket
 
 API_URL_HOSTNAME = "api.simplisafe.com"
 API_URL_BASE = f"https://{API_URL_HOSTNAME}/v1"
@@ -86,7 +85,6 @@ class API:  # pylint: disable=too-many-instance-attributes
             generate_device_id(self._client_id), self._client_id
         )
         self.subscription_data: Dict[int, dict] = {}
-        self.websocket = Websocket()
 
     @property
     def access_token(self) -> Optional[str]:
@@ -224,9 +222,6 @@ class API:  # pylint: disable=too-many-instance-attributes
         # Fetch the SimpliSafe user ID:
         auth_check_resp = await self.request("get", "api/authCheck")
         self.user_id = auth_check_resp["userId"]
-
-        # Start the websocket:
-        await self.websocket.async_init(self._access_token, self.user_id)
 
     async def get_systems(self) -> Dict[int, Union[SystemV2, SystemV3]]:
         """Get systems associated to the associated SimpliSafe account.

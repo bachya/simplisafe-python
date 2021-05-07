@@ -64,16 +64,6 @@ Systems
    :members:
    :undoc-members:
 
-Websocket Communication
------------------------
-
-.. autoclass:: simplipy.websocket.Websocket
-   :members:
-
-.. autoclass:: simplipy.websocket.WebsocketEvent
-   :members:
-   :undoc-members:
-
 Errors
 ------
 

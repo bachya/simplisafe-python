@@ -302,6 +302,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                         data = {"error": message}
 
                     resp.raise_for_status()
+                    self._refresh_tried = False
                     return data
             except ClientError as err:
                 # If we get an "error" related to MFA, the response body data is

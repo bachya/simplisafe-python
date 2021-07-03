@@ -104,7 +104,7 @@ def guard_from_missing_data(default_value: Any = None):
     return decorator
 
 
-class System:  # pylint: disable=too-many-instance-attributes
+class System:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
     """Define a system.
 
     Note that this class shouldn't be instantiated directly; it will be instantiated as
@@ -298,7 +298,7 @@ class System:  # pylint: disable=too-many-instance-attributes
         try:
             return events[0]
         except IndexError:
-            raise SimplipyError("SimpliSafe cloud didn't return any events")
+            raise SimplipyError("SimpliSafe cloud didn't return any events") from None
 
     async def get_pins(self, cached: bool = True) -> Dict[str, str]:
         """Return all of the set PINs, including master and duress.
@@ -329,7 +329,7 @@ class System:  # pylint: disable=too-many-instance-attributes
         try:
             label = next((k for k, v in latest_pins.items() if pin_or_label in (k, v)))
         except StopIteration:
-            raise PinError(f"Cannot delete nonexistent PIN: {pin_or_label}")
+            raise PinError(f"Cannot delete nonexistent PIN: {pin_or_label}") from None
 
         del latest_pins[label]
 
@@ -361,7 +361,7 @@ class System:  # pylint: disable=too-many-instance-attributes
         try:
             int(pin)
         except ValueError:
-            raise PinError("PINs can only contain numbers")
+            raise PinError("PINs can only contain numbers") from None
 
         # Because SimpliSafe's API works by sending the entire payload of PINs, we
         # can't reasonably check a local cache for up-to-date PIN data; so, we fetch the

@@ -223,11 +223,9 @@ class API:  # pylint: disable=too-many-instance-attributes
                         message = await resp.text()
                         data = {"error": message}
 
-                    LOGGER.debug("Data received from /%s: %s", endpoint, data)
-
                     if isinstance(data, str):
                         # In some cases, the SimpliSafe API will return a quoted string
-                        # in its response body (e.g., "\"node not found\""), which is
+                        # in its response body (e.g., "\"Unauthorized\""), which is
                         # technically valid JSON. Additionally, SimpliSafe sets that
                         # response's Content-Type header to application/json (#smh).
                         # Together, these factors will allow a non-true-JSON  payload to
@@ -237,8 +235,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                         data = {"error": message}
 
                     resp.raise_for_status()
-                    self._refresh_tried = False
-                    return data
+                    break
             except ClientError as err:
                 # If we get an "error" related to MFA, the response body data is
                 # necessary for continuing on, so we swallow the error and return
@@ -276,10 +273,14 @@ class API:  # pylint: disable=too-many-instance-attributes
             finally:
                 if not use_running_session:
                     await session.close()
+        else:
+            raise RequestError(
+                f"Requesting /{endpoint} failed after {retries} tries"
+            ) from None
 
-        raise RequestError(
-            f"Requesting /{endpoint} failed after {retries} tries"
-        ) from None
+        LOGGER.debug("Data received from /%s: %s", endpoint, data)
+        self._refresh_tried = False
+        return data
 
     async def update_subscription_data(self) -> None:
         """Update our internal "raw data" listing of subscriptions."""

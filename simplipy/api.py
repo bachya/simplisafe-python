@@ -71,7 +71,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         """Initialize."""
         self._client_id = client_id or str(uuid4())
         self._refresh_tried: bool = False
-        self._request_retry_interval = request_retry_interval
+        self.request_retry_interval = request_retry_interval
         self._session: ClientSession = session
 
         # These will get filled in after initial authentication:
@@ -99,89 +99,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         """Return the client ID of the API."""
         return self._client_id
 
-    @property
-    def refresh_token(self) -> Optional[str]:
-        """Return the current refresh token.
-
-        :rtype: ``str``
-        """
-        return self._refresh_token
-
-    @classmethod
-    async def login_via_credentials(
-        cls: Type[ApiType],
-        email: str,
-        password: str,
-        *,
-        session: Optional[ClientSession] = None,
-        client_id: Optional[str] = None,
-        request_retry_interval: int = DEFAULT_REQUEST_RETRY_INTERVAL,
-    ) -> ApiType:
-        """Create an API object from a email address and password.
-
-        :param email: A SimpliSafe email address
-        :type email: ``str``
-        :param password: A SimpliSafe password
-        :type password: ``str``
-        :param session: An ``aiohttp`` ``ClientSession``
-        :type session: ``aiohttp.client.ClientSession``
-        :param client_id: The SimpliSafe client ID to use for this API object
-        :type client_id: ``str``
-        :param request_retry_interval: The number of seconds between request retries
-        :type client_id: ``int``
-        :rtype: :meth:`simplipy.API`
-        """
-        instance = cls(
-            session=session,
-            client_id=client_id,
-            request_retry_interval=request_retry_interval,
-        )
-        instance.email = email
-
-        await instance.authenticate(
-            {
-                "grant_type": "password",
-                "username": email,
-                "password": password,
-                "client_id": instance.client_id_string,
-                "device_id": instance.device_id_string,
-                "app_version": DEFAULT_APP_VERSION,
-                "scope": "offline_access",
-            }
-        )
-
-        return instance
-
-    @classmethod
-    async def login_via_token(
-        cls: Type[ApiType],
-        refresh_token: str,
-        *,
-        session: Optional[ClientSession] = None,
-        client_id: Optional[str] = None,
-        request_retry_interval: int = DEFAULT_REQUEST_RETRY_INTERVAL,
-    ) -> ApiType:
-        """Create an API object from a refresh token.
-
-        :param refresh_token: A SimpliSafe refresh token
-        :type refresh_token: ``str``
-        :param session: An ``aiohttp`` ``ClientSession``
-        :type session: ``aiohttp.client.ClientSession``
-        :param client_id: The SimpliSafe client ID to use for this API object
-        :type client_id: ``str``
-        :param request_retry_interval: The number of seconds between request retries
-        :type client_id: ``int``
-        :rtype: :meth:`simplipy.API`
-        """
-        instance = cls(
-            session=session,
-            client_id=client_id,
-            request_retry_interval=request_retry_interval,
-        )
-        await instance.refresh_access_token(refresh_token)
-        return instance
-
-    async def authenticate(self, payload: dict) -> None:
+    async def _authenticate(self, payload: dict) -> None:
         """Authenticate the API object using an authentication payload."""
         LOGGER.debug("Authentication payload: %s", payload)
 
@@ -222,6 +140,65 @@ class API:  # pylint: disable=too-many-instance-attributes
         # Fetch the SimpliSafe user ID:
         auth_check_resp = await self.request("get", "api/authCheck")
         self.user_id = auth_check_resp["userId"]
+
+    async def _refresh_access_token(self, refresh_token: Optional[str]) -> None:
+        """Regenerate an access token.
+
+        :param refresh_token: The refresh token to use
+        :type refresh_token: str
+        """
+        await self._authenticate(
+            {
+                "grant_type": "refresh_token",
+                "client_id": self._client_id,
+                "refresh_token": refresh_token,
+            }
+        )
+
+    @classmethod
+    async def login_via_credentials(
+        cls: Type[ApiType],
+        email: str,
+        password: str,
+        *,
+        session: Optional[ClientSession] = None,
+        client_id: Optional[str] = None,
+        request_retry_interval: int = DEFAULT_REQUEST_RETRY_INTERVAL,
+    ) -> ApiType:
+        """Create an API object from a email address and password.
+
+        :param email: A SimpliSafe email address
+        :type email: ``str``
+        :param password: A SimpliSafe password
+        :type password: ``str``
+        :param session: An ``aiohttp`` ``ClientSession``
+        :type session: ``aiohttp.client.ClientSession``
+        :param client_id: The SimpliSafe client ID to use for this API object
+        :type client_id: ``str``
+        :param request_retry_interval: The number of seconds between request retries
+        :type client_id: ``int``
+        :rtype: :meth:`simplipy.API`
+        """
+        instance = cls(
+            session=session,
+            client_id=client_id,
+            request_retry_interval=request_retry_interval,
+        )
+        instance.email = email
+
+        await instance._authenticate(
+            {
+                "grant_type": "password",
+                "username": email,
+                "password": password,
+                "client_id": instance.client_id_string,
+                "device_id": instance.device_id_string,
+                "app_version": DEFAULT_APP_VERSION,
+                "scope": "offline_access",
+            }
+        )
+
+        return instance
 
     async def get_systems(self) -> Dict[int, Union[SystemV2, SystemV3]]:
         """Get systems associated to the associated SimpliSafe account.
@@ -324,7 +301,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                     if self._refresh_token and not self._refresh_tried:
                         LOGGER.info("401 detected; attempting refresh token")
                         self._refresh_tried = True
-                        await self.refresh_access_token(self._refresh_token)
+                        await self._refresh_access_token(self._refresh_token)
 
                 if "403" in str(err):
                     raise InvalidCredentialsError("Invalid username/password") from None
@@ -337,7 +314,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                     DEFAULT_REQUEST_RETRIES,
                 )
                 retries += 1
-                await asyncio.sleep(self._request_retry_interval)
+                await asyncio.sleep(self.request_retry_interval)
             finally:
                 if not use_running_session:
                     await session.close()
@@ -345,20 +322,6 @@ class API:  # pylint: disable=too-many-instance-attributes
         raise RequestError(
             f"Requesting /{endpoint} failed after {retries} tries"
         ) from None
-
-    async def refresh_access_token(self, refresh_token: Optional[str]) -> None:
-        """Regenerate an access token.
-
-        :param refresh_token: The refresh token to use
-        :type refresh_token: str
-        """
-        await self.authenticate(
-            {
-                "grant_type": "refresh_token",
-                "client_id": self._client_id,
-                "refresh_token": refresh_token,
-            }
-        )
 
     async def update_subscription_data(self) -> None:
         """Update our internal "raw data" listing of subscriptions."""

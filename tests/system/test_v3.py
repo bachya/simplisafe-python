@@ -224,67 +224,6 @@ async def test_get_systems(
 
 
 @pytest.mark.asyncio
-async def test_get_systems_via_token(
-    aresponses, v3_server, v3_subscriptions_response, v3_settings_response
-):
-    """Test the ability to get systems attached to a v3 account when logging in via token."""
-    async with v3_server:
-        # Since this flow will call both three routes once more each (on top of
-        # what instantiation does) and aresponses deletes matches each time,
-        # we need to add additional routes:
-        v3_server.add(
-            "api.simplisafe.com",
-            "/v1/api/token",
-            "post",
-            aresponses.Response(
-                text=load_fixture("api_token_response.json"), status=200
-            ),
-        )
-        v3_server.add(
-            "api.simplisafe.com",
-            "/v1/api/authCheck",
-            "get",
-            aresponses.Response(
-                text=load_fixture("auth_check_response.json"), status=200
-            ),
-        )
-        v3_server.add(
-            "api.simplisafe.com",
-            f"/v1/users/{TEST_USER_ID}/subscriptions",
-            "get",
-            aresponses.Response(text=v3_subscriptions_response, status=200),
-        )
-        v3_server.add(
-            "api.simplisafe.com",
-            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/sensors",
-            "get",
-            aresponses.Response(
-                text=load_fixture("v3_sensors_response.json"), status=200
-            ),
-        )
-        v3_server.add(
-            "api.simplisafe.com",
-            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
-            "get",
-            aresponses.Response(text=v3_settings_response, status=200),
-        )
-
-        async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_token(
-                TEST_REFRESH_TOKEN, session=session, client_id=TEST_CLIENT_ID
-            )
-            systems = await simplisafe.get_systems()
-            assert len(systems) == 1
-
-            system = systems[TEST_SYSTEM_ID]
-
-            assert system.serial == TEST_SYSTEM_SERIAL_NO
-            assert system.system_id == TEST_SYSTEM_ID
-            assert simplisafe.access_token == TEST_ACCESS_TOKEN
-            assert len(system.sensors) == 24
-
-
-@pytest.mark.asyncio
 async def test_empty_events(aresponses, v3_server):
     """Test that an empty events structure is handled correctly."""
     async with v3_server:

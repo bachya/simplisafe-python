@@ -100,58 +100,6 @@ async def test_get_systems(aresponses, v2_server, v2_subscriptions_response):
 
 
 @pytest.mark.asyncio
-async def test_get_systems_via_token(aresponses, v2_server, v2_subscriptions_response):
-    """Test the ability to get systems attached to a v2 account."""
-    async with v2_server:
-        # Since this flow will call both three routes once more each (on top of
-        # what instantiation does) and aresponses deletes matches each time,
-        # we need to add additional routes:
-        v2_server.add(
-            "api.simplisafe.com",
-            "/v1/api/token",
-            "post",
-            aresponses.Response(
-                text=load_fixture("api_token_response.json"), status=200
-            ),
-        )
-        v2_server.add(
-            "api.simplisafe.com",
-            "/v1/api/authCheck",
-            "get",
-            aresponses.Response(
-                text=load_fixture("auth_check_response.json"), status=200
-            ),
-        )
-        v2_server.add(
-            "api.simplisafe.com",
-            f"/v1/users/{TEST_USER_ID}/subscriptions",
-            "get",
-            aresponses.Response(text=v2_subscriptions_response, status=200),
-        )
-        v2_server.add(
-            "api.simplisafe.com",
-            f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/settings",
-            "get",
-            aresponses.Response(
-                text=load_fixture("v2_settings_response.json"), status=200
-            ),
-        )
-
-        async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_token(
-                TEST_REFRESH_TOKEN, session=session, client_id=TEST_CLIENT_ID
-            )
-            systems = await simplisafe.get_systems()
-            assert len(systems) == 1
-
-            system = systems[TEST_SYSTEM_ID]
-            assert system.serial == TEST_SYSTEM_SERIAL_NO
-            assert system.system_id == TEST_SYSTEM_ID
-            assert simplisafe.access_token == TEST_ACCESS_TOKEN
-            assert len(system.sensors) == 35
-
-
-@pytest.mark.asyncio
 async def test_set_pin(aresponses, v2_server):
     """Test setting a PIN in a V2 system."""
     async with v2_server:

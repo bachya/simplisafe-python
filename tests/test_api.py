@@ -148,7 +148,7 @@ async def test_401_refresh_token_success(
             systems = await simplisafe.get_systems()
             system = systems[TEST_SYSTEM_ID]
             await system.update()
-            assert simplisafe.refresh_token == TEST_REFRESH_TOKEN
+            assert simplisafe._refresh_token == TEST_REFRESH_TOKEN
 
 
 @pytest.mark.asyncio

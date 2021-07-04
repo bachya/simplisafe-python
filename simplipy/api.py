@@ -50,8 +50,7 @@ class API:  # pylint: disable=too-many-instance-attributes
     """An API object to interact with the SimpliSafe cloud.
 
     Note that this class shouldn't be instantiated directly; instead, the
-    :meth:`simplipy.API.login_via_credentials` and :meth:`simplipy.API.login_via_token`
-    class methods should be used.
+    :meth:`simplipy.API.login_via_credentials` class method should be used.
 
     :param session: The ``aiohttp`` ``ClientSession`` session used for all HTTP requests
     :type session: ``aiohttp.client.ClientSession``

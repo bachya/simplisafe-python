@@ -144,18 +144,14 @@ The primary way of creating an API object is via the
 
 Note that the multi-factor authentication unique identifier is passed to the coroutine.
 
-You can also use the
-:meth:`API.login_via_token <simplipy.api.API.login_via_token>` coroutine, which is
-detailed in :ref:`refreshing-access-tokens`.
-
 Connection Pooling
 ------------------
 
 By default, the :meth:`API <simplipy.api.API>` object creates a new connection to
 SimpliSafe™ with each coroutine. If you are calling a large number of coroutines (or
 merely want to squeeze out every second of runtime savings possible), an
-``aiohttp ClientSession`` can be supplied when logging into the API (via credentials or
-token) to achieve connection pooling:
+``aiohttp ClientSession`` can be supplied when logging into the API to achieve
+connection pooling:
 
 .. code:: python
 

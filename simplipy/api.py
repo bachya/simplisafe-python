@@ -78,6 +78,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         )
         self._email = email
         self._password = password
+        self._reauth_tried = False
         self._refresh_tried = False
         self._request_retry_interval = request_retry_interval
         self._session: ClientSession = session
@@ -249,17 +250,22 @@ class API:  # pylint: disable=too-many-instance-attributes
                     ) from None
 
                 if "401" in str(err):
-                    if self._refresh_tried or not self._access_token:
-                        raise InvalidCredentialsError(
-                            "Invalid username/password"
-                        ) from None
-                    if self._refresh_token and not self._refresh_tried:
+                    if not self._access_token:
+                        raise InvalidCredentialsError("Invalid credentials") from err
+
+                    if not self._refresh_tried:
                         LOGGER.info("401 detected; attempting refresh token")
                         self._refresh_tried = True
                         await self._refresh_access_token(self._refresh_token)
+                    elif not self._reauth_tried:
+                        LOGGER.info("Another 401 detected; attempting full reauth")
+                        self._reauth_tried = True
+                        await self._refresh_access_token(self._refresh_token)
+                    else:
+                        raise InvalidCredentialsError("Invalid credentials") from err
 
                 if "403" in str(err):
-                    raise InvalidCredentialsError("Invalid username/password") from None
+                    raise InvalidCredentialsError("Unauthorized") from None
 
                 LOGGER.warning(
                     "Error while requesting /%s: %s (attempt %s of %s)",
@@ -279,7 +285,10 @@ class API:  # pylint: disable=too-many-instance-attributes
             ) from None
 
         LOGGER.debug("Data received from /%s: %s", endpoint, data)
+
+        self._reauth_tried = False
         self._refresh_tried = False
+
         return data
 
     async def update_subscription_data(self) -> None:

@@ -90,6 +90,12 @@ async def test_no_state_change_on_failure(aresponses, v3_server):
             "post",
             aresponses.Response(text="Unauthorized", status=401),
         )
+        v3_server.add(
+            "api.simplisafe.com",
+            "/v1/api/token",
+            "post",
+            aresponses.Response(text="Unauthorized", status=401),
+        )
 
         async with aiohttp.ClientSession() as session:
             simplisafe = await get_api(

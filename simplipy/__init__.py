@@ -1,2 +1,2 @@
 """Define module-level imports."""
-from .api import API  # noqa
+from .api import get_api  # noqa

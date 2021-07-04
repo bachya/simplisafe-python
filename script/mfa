@@ -4,7 +4,7 @@ import asyncio
 import logging
 import sys
 
-from simplipy import API
+from simplipy import get_api
 from simplipy.errors import PendingAuthorizationError
 
 
@@ -17,7 +17,7 @@ async def main() -> None:
             password = input("What is your SimpliSafe email password? ")
             client_id = input("(optional) What is your SimpliSafe client ID? ")
 
-            await API.login_via_credentials(
+            await get_api(
                 email, password, client_id=client_id or None
             )
         except PendingAuthorizationError as err:

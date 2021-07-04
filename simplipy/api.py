@@ -2,7 +2,7 @@
 import asyncio
 import base64
 from json.decoder import JSONDecodeError
-from typing import Dict, Optional, Type, TypeVar, Union
+from typing import Dict, Optional, Union
 from uuid import uuid4
 
 from aiohttp import ClientSession, ClientTimeout
@@ -37,9 +37,6 @@ DEVICE_ID_TEMPLATE = (
 )
 
 
-ApiType = TypeVar("ApiType", bound="API")
-
-
 def generate_device_id(client_id: str) -> str:
     """Generate a random 10-character ID to use as the SimpliSafe device ID."""
     seed = base64.b64encode(client_id.encode()).decode()[:10]
@@ -50,8 +47,12 @@ class API:  # pylint: disable=too-many-instance-attributes
     """An API object to interact with the SimpliSafe cloud.
 
     Note that this class shouldn't be instantiated directly; instead, the
-    :meth:`simplipy.API.login_via_credentials` class method should be used.
+    :meth:`simplipy.api.login` method should be used.
 
+    :param email: A SimpliSafe email address
+    :type email: ``str``
+    :param password: A SimpliSafe password
+    :type password: ``str``
     :param session: The ``aiohttp`` ``ClientSession`` session used for all HTTP requests
     :type session: ``aiohttp.client.ClientSession``
     :param client_id: The SimpliSafe client ID to use for this API object
@@ -62,6 +63,8 @@ class API:  # pylint: disable=too-many-instance-attributes
 
     def __init__(
         self,
+        email: str,
+        password: str,
         *,
         session: Optional[ClientSession] = None,
         client_id: Optional[str] = None,
@@ -69,34 +72,21 @@ class API:  # pylint: disable=too-many-instance-attributes
     ) -> None:
         """Initialize."""
         self._client_id = client_id or str(uuid4())
-        self._refresh_tried: bool = False
-        self.request_retry_interval = request_retry_interval
+        self._client_id_string = CLIENT_ID_TEMPLATE.format(self._client_id)
+        self._device_id_string = DEVICE_ID_TEMPLATE.format(
+            generate_device_id(self._client_id), self._client_id
+        )
+        self._email = email
+        self._password = password
+        self._refresh_tried = False
+        self._request_retry_interval = request_retry_interval
         self._session: ClientSession = session
 
         # These will get filled in after initial authentication:
         self._access_token: Optional[str] = None
         self._refresh_token: Optional[str] = None
-        self.email: Optional[str] = None
-        self.user_id: Optional[int] = None
-
-        self.client_id_string = CLIENT_ID_TEMPLATE.format(self._client_id)
-        self.device_id_string = DEVICE_ID_TEMPLATE.format(
-            generate_device_id(self._client_id), self._client_id
-        )
         self.subscription_data: Dict[int, dict] = {}
-
-    @property
-    def access_token(self) -> Optional[str]:
-        """Return the current access token.
-
-        :rtype: ``str``
-        """
-        return self._access_token
-
-    @property
-    def client_id(self) -> str:
-        """Return the client ID of the API."""
-        return self._client_id
+        self.user_id: Optional[int] = None
 
     async def _authenticate(self, payload: dict) -> None:
         """Authenticate the API object using an authentication payload."""
@@ -110,7 +100,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 "api/mfa/challenge",
                 json={
                     "challenge_type": "oob",
-                    "client_id": self.client_id_string,
+                    "client_id": self._client_id_string,
                     "mfa_token": token_resp["mfa_token"],
                 },
             )
@@ -119,7 +109,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 "post",
                 "api/token",
                 json={
-                    "client_id": self.client_id_string,
+                    "client_id": self._client_id_string,
                     "grant_type": API_URL_MFA_OOB,
                     "mfa_token": token_resp["mfa_token"],
                     "oob_code": mfa_challenge_response["oob_code"],
@@ -154,50 +144,19 @@ class API:  # pylint: disable=too-many-instance-attributes
             }
         )
 
-    @classmethod
-    async def login_via_credentials(
-        cls: Type[ApiType],
-        email: str,
-        password: str,
-        *,
-        session: Optional[ClientSession] = None,
-        client_id: Optional[str] = None,
-        request_retry_interval: int = DEFAULT_REQUEST_RETRY_INTERVAL,
-    ) -> ApiType:
-        """Create an API object from a email address and password.
-
-        :param email: A SimpliSafe email address
-        :type email: ``str``
-        :param password: A SimpliSafe password
-        :type password: ``str``
-        :param session: An ``aiohttp`` ``ClientSession``
-        :type session: ``aiohttp.client.ClientSession``
-        :param client_id: The SimpliSafe client ID to use for this API object
-        :type client_id: ``str``
-        :param request_retry_interval: The number of seconds between request retries
-        :type client_id: ``int``
-        :rtype: :meth:`simplipy.API`
-        """
-        instance = cls(
-            session=session,
-            client_id=client_id,
-            request_retry_interval=request_retry_interval,
-        )
-        instance.email = email
-
-        await instance._authenticate(
+    async def login(self) -> None:
+        """Authenticate the API object (making it ready for requests)."""
+        await self._authenticate(
             {
                 "grant_type": "password",
-                "username": email,
-                "password": password,
-                "client_id": instance.client_id_string,
-                "device_id": instance.device_id_string,
+                "username": self._email,
+                "password": self._password,
+                "client_id": self._client_id_string,
+                "device_id": self._device_id_string,
                 "app_version": DEFAULT_APP_VERSION,
                 "scope": "offline_access",
             }
         )
-
-        return instance
 
     async def get_systems(self) -> Dict[int, Union[SystemV2, SystemV3]]:
         """Get systems associated to the associated SimpliSafe account.
@@ -313,7 +272,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                     DEFAULT_REQUEST_RETRIES,
                 )
                 retries += 1
-                await asyncio.sleep(self.request_retry_interval)
+                await asyncio.sleep(self._request_retry_interval)
             finally:
                 if not use_running_session:
                     await session.close()
@@ -337,3 +296,36 @@ class API:  # pylint: disable=too-many-instance-attributes
                 continue
 
             self.subscription_data[subscription["sid"]] = subscription
+
+
+async def get_api(
+    email: str,
+    password: str,
+    *,
+    session: Optional[ClientSession] = None,
+    client_id: Optional[str] = None,
+    request_retry_interval: int = DEFAULT_REQUEST_RETRY_INTERVAL,
+) -> API:
+    """Return an authenticated API object.
+
+    :param email: A SimpliSafe email address
+    :type email: ``str``
+    :param password: A SimpliSafe password
+    :type password: ``str``
+    :param session: An ``aiohttp`` ``ClientSession``
+    :type session: ``aiohttp.client.ClientSession``
+    :param client_id: The SimpliSafe client ID to use for this API object
+    :type client_id: ``str``
+    :param request_retry_interval: The number of seconds between request retries
+    :type client_id: ``int``
+    :rtype: :meth:`simplipy.API`
+    """
+    api = API(
+        email,
+        password,
+        session=session,
+        client_id=client_id,
+        request_retry_interval=request_retry_interval,
+    )
+    await api.login()
+    return api

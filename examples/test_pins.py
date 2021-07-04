@@ -4,7 +4,7 @@ import logging
 
 from aiohttp import ClientSession
 
-from simplipy import API
+from simplipy import get_api
 from simplipy.errors import SimplipyError
 
 _LOGGER = logging.getLogger()
@@ -20,7 +20,7 @@ async def main() -> None:
         logging.basicConfig(level=logging.DEBUG)
 
         try:
-            simplisafe = await API.login_via_credentials(
+            simplisafe = await get_api(
                 SIMPLISAFE_EMAIL,
                 SIMPLISAFE_PASSWORD,
                 client_id=SIMPLISAFE_CLIENT_ID,

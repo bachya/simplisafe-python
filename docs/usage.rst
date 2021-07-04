@@ -41,7 +41,7 @@ Accessing the API
 -----------------
 
 The usual way to create an API object is via the
-:meth:`API.login_via_credentials <simplipy.api.API.login_via_credentials>` coroutine. In
+:meth:`get_api <simplipy.api.get_api>` coroutine. In
 order to use it effectively, you must first walk through SimpliSafe™'s multi-factor
 authentication flow.
 
@@ -117,7 +117,7 @@ Creating an API Object
 **********************
 
 The primary way of creating an API object is via the
-:meth:`API.login_via_credentials <simplipy.api.API.login_via_credentials>` coroutine:
+:meth:`get_api <simplipy.api.get_api>` coroutine:
 
 .. code:: python
 
@@ -130,7 +130,7 @@ The primary way of creating an API object is via the
     async def main() -> None:
         """Create the aiohttp session and run."""
         async with ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
+            simplisafe = await simplipy.get_api(
                 "<EMAIL>",
                 "<PASSWORD>",
                 session=session,
@@ -164,7 +164,7 @@ connection pooling:
     async def main() -> None:
         """Create the aiohttp session and run."""
         async with ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
+            simplisafe = await simplipy.get_api(
                 "<EMAIL>",
                 "<PASSWORD>",
                 session=session,

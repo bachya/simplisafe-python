@@ -2,7 +2,7 @@
 import aiohttp
 import pytest
 
-from simplipy import API
+from simplipy import get_api
 from simplipy.system import SystemStates
 
 from tests.common import (
@@ -31,7 +31,7 @@ async def test_get_pins(aresponses, v2_server):
         )
 
         async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
+            simplisafe = await get_api(
                 TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
 
@@ -85,7 +85,7 @@ async def test_get_systems(aresponses, v2_server, v2_subscriptions_response):
         )
 
         async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
+            simplisafe = await get_api(
                 TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
 
@@ -95,7 +95,7 @@ async def test_get_systems(aresponses, v2_server, v2_subscriptions_response):
             system = systems[TEST_SYSTEM_ID]
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.system_id == TEST_SYSTEM_ID
-            assert simplisafe.access_token == TEST_ACCESS_TOKEN
+            assert simplisafe._access_token == TEST_ACCESS_TOKEN
             assert len(system.sensors) == 35
 
 
@@ -133,7 +133,7 @@ async def test_set_pin(aresponses, v2_server):
         )
 
         async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
+            simplisafe = await get_api(
                 TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
 
@@ -189,7 +189,7 @@ async def test_set_states(aresponses, v2_server):
         )
 
         async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
+            simplisafe = await get_api(
                 TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
 
@@ -229,7 +229,7 @@ async def test_update_system_data(aresponses, v2_server, v2_subscriptions_respon
         )
 
         async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
+            simplisafe = await get_api(
                 TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
 
@@ -240,5 +240,5 @@ async def test_update_system_data(aresponses, v2_server, v2_subscriptions_respon
 
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.system_id == TEST_SYSTEM_ID
-            assert simplisafe.access_token == TEST_ACCESS_TOKEN
+            assert simplisafe._access_token == TEST_ACCESS_TOKEN
             assert len(system.sensors) == 35

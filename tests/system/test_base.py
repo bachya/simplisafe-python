@@ -4,7 +4,7 @@ from datetime import datetime
 import aiohttp
 import pytest
 
-from simplipy import API
+from simplipy import get_api
 from simplipy.system import SystemStates
 
 from tests.common import (
@@ -26,9 +26,7 @@ from tests.common import (
 async def test_deactivated_system(v3_server):
     """Test that API.get_systems doesn't return deactivated systems."""
     async with v3_server:
-        simplisafe = await API.login_via_credentials(
-            TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID
-        )
+        simplisafe = await get_api(TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID)
 
         systems = await simplisafe.get_systems()
 
@@ -47,7 +45,7 @@ async def test_get_events(aresponses, v2_server):
         )
 
         async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
+            simplisafe = await get_api(
                 TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
 
@@ -70,9 +68,7 @@ async def test_get_events_no_explicit_session(aresponses, v2_server):
             aresponses.Response(text=load_fixture("events_response.json"), status=200),
         )
 
-        simplisafe = await API.login_via_credentials(
-            TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID
-        )
+        simplisafe = await get_api(TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID)
 
         systems = await simplisafe.get_systems()
         system = systems[TEST_SYSTEM_ID]
@@ -87,7 +83,7 @@ async def test_properties(v2_server):
     """Test that base system properties are created properly."""
     async with v2_server:
         async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
+            simplisafe = await get_api(
                 TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
 
@@ -110,7 +106,7 @@ async def test_unknown_sensor_type(caplog, v2_server):
     """Test whether a message is logged upon finding an unknown sensor type."""
     async with v2_server:
         async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
+            simplisafe = await get_api(
                 TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
 

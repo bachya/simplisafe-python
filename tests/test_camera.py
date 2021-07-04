@@ -2,7 +2,7 @@
 import aiohttp
 import pytest
 
-from simplipy import API
+from simplipy import get_api
 
 from .common import (
     TEST_CAMERA_ID,
@@ -28,7 +28,7 @@ async def test_properties(aresponses, v3_server, v3_subscriptions_response):
         )
 
         async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
+            simplisafe = await get_api(
                 TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
 
@@ -63,7 +63,7 @@ async def test_video_urls(aresponses, v3_server, v3_subscriptions_response):
         )
 
         async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
+            simplisafe = await get_api(
                 TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
 

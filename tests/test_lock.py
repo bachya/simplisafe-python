@@ -2,7 +2,7 @@
 import aiohttp
 import pytest
 
-from simplipy import API
+from simplipy import get_api
 from simplipy.errors import InvalidCredentialsError
 from simplipy.lock import LockStates
 
@@ -41,7 +41,7 @@ async def test_lock_unlock(aresponses, v3_server):
         )
 
         async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
+            simplisafe = await get_api(
                 TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
 
@@ -63,7 +63,7 @@ async def test_jammed(v3_server):
     """Test that a jammed lock shows the correct state."""
     async with v3_server:
         async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
+            simplisafe = await get_api(
                 TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
 
@@ -92,7 +92,7 @@ async def test_no_state_change_on_failure(aresponses, v3_server):
         )
 
         async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
+            simplisafe = await get_api(
                 TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
 
@@ -112,7 +112,7 @@ async def test_properties(v3_server):
     """Test that lock properties are created properly."""
     async with v3_server:
         async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
+            simplisafe = await get_api(
                 TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
 
@@ -135,7 +135,7 @@ async def test_unknown_state(caplog, v3_server):
     """Test handling a generic error during update."""
     async with v3_server:
         async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
+            simplisafe = await get_api(
                 TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
 
@@ -186,7 +186,7 @@ async def test_update(aresponses, v3_server):
         )
 
         async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
+            simplisafe = await get_api(
                 TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
 

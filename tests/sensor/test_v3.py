@@ -2,7 +2,7 @@
 import aiohttp
 import pytest
 
-from simplipy import API
+from simplipy import get_api
 from simplipy.entity import EntityTypes
 from simplipy.errors import SimplipyError
 
@@ -14,7 +14,7 @@ async def test_properties_base(v2_server):
     """Test that base sensor properties are created properly."""
     async with v2_server:
         async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
+            simplisafe = await get_api(
                 TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID, session=session
             )
 
@@ -32,7 +32,7 @@ async def test_properties_v2(v2_server):
     """Test that v2 sensor properties are created properly."""
     async with v2_server:
         async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
+            simplisafe = await get_api(
                 TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID, session=session
             )
 
@@ -64,7 +64,7 @@ async def test_properties_v3(v3_server):
     """Test that v3 sensor properties are created properly."""
     async with v3_server:
         async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
+            simplisafe = await get_api(
                 TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID, session=session
             )
 
@@ -96,7 +96,7 @@ async def test_unknown_sensor_type(caplog, v2_server):
     """Test that a message is logged when unknown sensors types are found."""
     async with v2_server:
         async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
+            simplisafe = await get_api(
                 TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID, session=session
             )
 

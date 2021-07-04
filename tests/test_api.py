@@ -6,7 +6,7 @@ import aiohttp
 from aresponses import ResponsesMockServer
 import pytest
 
-from simplipy import API
+from simplipy import get_api
 from simplipy.errors import (
     InvalidCredentialsError,
     PendingAuthorizationError,
@@ -37,7 +37,7 @@ async def test_401_bad_credentials(aresponses):
 
     async with aiohttp.ClientSession() as session:
         with pytest.raises(InvalidCredentialsError):
-            await API.login_via_credentials(
+            await get_api(
                 TEST_EMAIL,
                 TEST_PASSWORD,
                 session=session,
@@ -75,7 +75,7 @@ async def test_401_refresh_token_failure(
 
         async with aiohttp.ClientSession() as session:
             with pytest.raises(InvalidCredentialsError):
-                simplisafe = await API.login_via_credentials(
+                simplisafe = await get_api(
                     TEST_EMAIL,
                     TEST_PASSWORD,
                     session=session,
@@ -134,7 +134,7 @@ async def test_401_refresh_token_success(
         )
 
         async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
+            simplisafe = await get_api(
                 TEST_EMAIL,
                 TEST_PASSWORD,
                 session=session,
@@ -143,7 +143,7 @@ async def test_401_refresh_token_success(
                 # hang for a long time:
                 request_retry_interval=0,
             )
-            assert simplisafe.client_id == TEST_CLIENT_ID
+            assert simplisafe._client_id == TEST_CLIENT_ID
 
             systems = await simplisafe.get_systems()
             system = systems[TEST_SYSTEM_ID]
@@ -163,7 +163,7 @@ async def test_403_bad_credentials(aresponses):
 
     async with aiohttp.ClientSession() as session:
         with pytest.raises(InvalidCredentialsError):
-            await API.login_via_credentials(
+            await get_api(
                 TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
 
@@ -180,7 +180,7 @@ async def test_bad_request(aresponses, v2_server):
         )
 
         async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
+            simplisafe = await get_api(
                 TEST_EMAIL,
                 TEST_PASSWORD,
                 session=session,
@@ -232,7 +232,7 @@ async def test_expired_token_refresh(aresponses, v2_server):
         )
 
         async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
+            simplisafe = await get_api(
                 TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
 
@@ -270,6 +270,4 @@ async def test_mfa(aresponses):
 
     async with aiohttp.ClientSession() as session:
         with pytest.raises(PendingAuthorizationError):
-            await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, session=session, client_id=None
-            )
+            await get_api(TEST_EMAIL, TEST_PASSWORD, session=session, client_id=None)

@@ -57,8 +57,10 @@ class API:  # pylint: disable=too-many-instance-attributes
     :type session: ``aiohttp.client.ClientSession``
     :param client_id: The SimpliSafe client ID to use for this API object
     :type client_id: ``str``
-    :param request_retry_interval: The number of seconds between request retries
-    :type client_id: ``int``
+    :param request_retries: The default number of request retries to use
+    :type request_retries: ``str``
+    :param request_retry_interval: The default retry delay
+    :type request_retry_interval: ``str``
     """
 
     def __init__(
@@ -68,11 +70,14 @@ class API:  # pylint: disable=too-many-instance-attributes
         *,
         session: Optional[ClientSession] = None,
         client_id: Optional[str] = None,
+        request_retries: int = DEFAULT_REQUEST_RETRIES,
         request_retry_interval: int = DEFAULT_REQUEST_RETRY_INTERVAL,
     ) -> None:
         """Initialize."""
         self._client_id = client_id or str(uuid4())
         self._client_id_string = CLIENT_ID_TEMPLATE.format(self._client_id)
+        self._request_retries = request_retries
+        self._request_retry_interval = request_retry_interval
         self._device_id_string = DEVICE_ID_TEMPLATE.format(
             generate_device_id(self._client_id), self._client_id
         )
@@ -80,7 +85,6 @@ class API:  # pylint: disable=too-many-instance-attributes
         self._password = password
         self._reauth_tried = False
         self._refresh_tried = False
-        self._request_retry_interval = request_retry_interval
         self._session: ClientSession = session
 
         # These will get filled in after initial authentication:
@@ -193,10 +197,17 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         return systems
 
-    async def request(  # pylint: disable=too-many-branches
+    async def request(  # pylint: disable=too-many-branches,too-many-statements
         self, method: str, endpoint: str, **kwargs
     ) -> dict:
-        """Make an API request."""
+        """Make an API request.
+
+        :param method: The HTTP method to use
+        :type method: ``str``
+        :param endpoint: The relative SimpliSafe API endpoint to hit
+        :type endpoint: ``str``
+        :rtype: ``dict``
+        """
         kwargs.setdefault("headers", {})
         if self._access_token:
             kwargs["headers"]["Authorization"] = f"Bearer {self._access_token}"
@@ -213,7 +224,7 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         data = {}
         retries = 0
-        while retries < DEFAULT_REQUEST_RETRIES:
+        while retries < self._request_retries:
             try:
                 async with session.request(
                     method, f"{API_URL_BASE}/{endpoint}", **kwargs
@@ -257,12 +268,15 @@ class API:  # pylint: disable=too-many-instance-attributes
                         LOGGER.info("401 detected; attempting refresh token")
                         self._refresh_tried = True
                         await self._refresh_access_token(self._refresh_token)
-                    elif not self._reauth_tried:
+                        continue
+
+                    if not self._reauth_tried:
                         LOGGER.info("Another 401 detected; attempting full reauth")
                         self._reauth_tried = True
-                        await self._refresh_access_token(self._refresh_token)
-                    else:
-                        raise InvalidCredentialsError("Invalid credentials") from err
+                        await self.login()
+                        continue
+
+                    raise InvalidCredentialsError("Invalid credentials") from err
 
                 if "403" in str(err):
                     raise InvalidCredentialsError("Unauthorized") from None
@@ -272,7 +286,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                     endpoint,
                     err,
                     retries + 1,
-                    DEFAULT_REQUEST_RETRIES,
+                    self._request_retries,
                 )
                 retries += 1
                 await asyncio.sleep(self._request_retry_interval)
@@ -314,7 +328,6 @@ async def get_api(
     *,
     session: Optional[ClientSession] = None,
     client_id: Optional[str] = None,
-    request_retry_interval: int = DEFAULT_REQUEST_RETRY_INTERVAL,
 ) -> API:
     """Return an authenticated API object.
 
@@ -326,16 +339,8 @@ async def get_api(
     :type session: ``aiohttp.client.ClientSession``
     :param client_id: The SimpliSafe client ID to use for this API object
     :type client_id: ``str``
-    :param request_retry_interval: The number of seconds between request retries
-    :type client_id: ``int``
     :rtype: :meth:`simplipy.API`
     """
-    api = API(
-        email,
-        password,
-        session=session,
-        client_id=client_id,
-        request_retry_interval=request_retry_interval,
-    )
+    api = API(email, password, session=session, client_id=client_id)
     await api.login()
     return api

@@ -94,72 +94,69 @@ async def test_401_total_failure(aresponses, v2_server, v2_subscriptions_respons
                 await system.update()
 
 
-# @pytest.mark.asyncio
-# async def test_401_reauth_success(aresponses, v2_server, v2_subscriptions_response):
-#     """Test that a successful reauthentication carries out the original request."""
-#     async with v2_server:
-#         v2_server.add(
-#             "api.simplisafe.com",
-#             f"/v1/users/{TEST_USER_ID}/subscriptions",
-#             "get",
-#             aresponses.Response(text='"Unauthorized"', status=401),
-#         )
-#         v2_server.add(
-#             "api.simplisafe.com",
-#             "/v1/api/token",
-#             "post",
-#             aresponses.Response(text='"Unauthorized"', status=401),
-#         )
-#         v2_server.add(
-#             "api.simplisafe.com",
-#             "/v1/api/token",
-#             "post",
-#             aresponses.Response(
-#                 text=load_fixture("api_token_response.json"), status=200
-#             ),
-#         )
-#         v2_server.add(
-#             "api.simplisafe.com",
-#             "/v1/api/authCheck",
-#             "get",
-#             aresponses.Response(
-#                 text=load_fixture("auth_check_response.json"), status=200
-#             ),
-#         )
-#         v2_server.add(
-#             "api.simplisafe.com",
-#             f"/v1/users/{TEST_USER_ID}/subscriptions",
-#             "get",
-#             aresponses.Response(
-#                 text=v2_subscriptions_response,
-#                 status=200,
-#             ),
-#         )
-#         v2_server.add(
-#             "api.simplisafe.com",
-#             f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/settings",
-#             "get",
-#             aresponses.Response(
-#                 text=load_fixture("v2_settings_response.json"), status=200
-#             ),
-#         )
+@pytest.mark.asyncio
+async def test_401_reauth_success(aresponses, v2_server, v2_subscriptions_response):
+    """Test that a successful reauthentication carries out the original request."""
+    async with v2_server:
+        v2_server.add(
+            "api.simplisafe.com",
+            f"/v1/users/{TEST_USER_ID}/subscriptions",
+            "get",
+            aresponses.Response(text='"Unauthorized"', status=401),
+        )
+        v2_server.add(
+            "api.simplisafe.com",
+            "/v1/api/token",
+            "post",
+            aresponses.Response(text='"Unauthorized"', status=401),
+        )
+        v2_server.add(
+            "api.simplisafe.com",
+            "/v1/api/token",
+            "post",
+            aresponses.Response(
+                text=load_fixture("api_token_response.json"), status=200
+            ),
+        )
+        v2_server.add(
+            "api.simplisafe.com",
+            "/v1/api/authCheck",
+            "get",
+            aresponses.Response(
+                text=load_fixture("auth_check_response.json"), status=200
+            ),
+        )
+        v2_server.add(
+            "api.simplisafe.com",
+            f"/v1/users/{TEST_USER_ID}/subscriptions",
+            "get",
+            aresponses.Response(text=v2_subscriptions_response, status=200,),
+        )
+        v2_server.add(
+            "api.simplisafe.com",
+            f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/settings",
+            "get",
+            aresponses.Response(
+                text=load_fixture("v2_settings_response.json"), status=200
+            ),
+        )
 
-#         async with aiohttp.ClientSession() as session:
-#             simplisafe = await get_api(
-#                 TEST_EMAIL,
-#                 TEST_PASSWORD,
-#                 session=session,
-#                 client_id=TEST_CLIENT_ID,
-#                 # We pass a small retry interval pair to ensure this test doesn't
-#                 # hang for a long time:
-#                 request_retry_interval=0,
-#             )
-#             assert simplisafe._client_id == TEST_CLIENT_ID
+        async with aiohttp.ClientSession() as session:
+            simplisafe = await get_api(
+                TEST_EMAIL,
+                TEST_PASSWORD,
+                session=session,
+                client_id=TEST_CLIENT_ID,
+                # We pass a small retry interval pair to ensure this test doesn't
+                # hang for a long time:
+                request_retry_interval=0,
+            )
+            assert simplisafe._client_id == TEST_CLIENT_ID
 
-#             systems = await simplisafe.get_systems()
-#             system = systems[TEST_SYSTEM_ID]
-#             await system.update()
-#             assert simplisafe._refresh_token == TEST_REFRESH_TOKEN
+            systems = await simplisafe.get_systems()
+            system = systems[TEST_SYSTEM_ID]
+            await system.update()
+            assert simplisafe._refresh_token == TEST_REFRESH_TOKEN
 
 
 @pytest.mark.asyncio

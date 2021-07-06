@@ -149,7 +149,9 @@ class API:  # pylint: disable=too-many-instance-attributes
             }
         )
 
-    async def _single_request(self, method: str, endpoint: str, **kwargs) -> dict:
+    async def _single_request(  # pylint: disable=too-many-statements,too-many-branches
+        self, method: str, endpoint: str, **kwargs
+    ) -> dict:
         """Make a single API request."""
         kwargs.setdefault("headers", {})
         if self._access_token:

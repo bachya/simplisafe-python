@@ -76,8 +76,6 @@ class API:  # pylint: disable=too-many-instance-attributes
         """Initialize."""
         self._client_id = client_id or str(uuid4())
         self._client_id_string = CLIENT_ID_TEMPLATE.format(self._client_id)
-        self._request_retries = request_retries
-        self._request_retry_interval = request_retry_interval
         self._device_id_string = DEVICE_ID_TEMPLATE.format(
             generate_device_id(self._client_id), self._client_id
         )
@@ -85,6 +83,8 @@ class API:  # pylint: disable=too-many-instance-attributes
         self._password = password
         self._reauth_tried = False
         self._refresh_tried = False
+        self._request_retries = request_retries
+        self._request_retry_interval = request_retry_interval
         self._session: ClientSession = session
 
         # These will get filled in after initial authentication:
@@ -97,10 +97,10 @@ class API:  # pylint: disable=too-many-instance-attributes
         """Authenticate the API object using an authentication payload."""
         LOGGER.debug("Authentication payload: %s", payload)
 
-        token_resp = await self.request("post", "api/token", json=payload)
+        token_resp = await self._single_request("post", "api/token", json=payload)
 
         if "mfa_token" in token_resp:
-            mfa_challenge_response = await self.request(
+            mfa_challenge_response = await self._single_request(
                 "post",
                 "api/mfa/challenge",
                 json={
@@ -110,7 +110,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 },
             )
 
-            await self.request(
+            await self._single_request(
                 "post",
                 "api/token",
                 json={
@@ -132,7 +132,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         self._refresh_token = token_resp["refresh_token"]
 
         # Fetch the SimpliSafe user ID:
-        auth_check_resp = await self.request("get", "api/authCheck")
+        auth_check_resp = await self._single_request("get", "api/authCheck")
         self.user_id = auth_check_resp["userId"]
 
     async def _refresh_access_token(self, refresh_token: Optional[str]) -> None:
@@ -148,6 +148,87 @@ class API:  # pylint: disable=too-many-instance-attributes
                 "refresh_token": refresh_token,
             }
         )
+
+    async def _single_request(self, method: str, endpoint: str, **kwargs) -> dict:
+        """Make a single API request."""
+        kwargs.setdefault("headers", {})
+        if self._access_token:
+            kwargs["headers"]["Authorization"] = f"Bearer {self._access_token}"
+        kwargs["headers"]["Content-Type"] = "application/json; charset=utf-8"
+        kwargs["headers"]["Host"] = API_URL_HOSTNAME
+        kwargs["headers"]["User-Agent"] = DEFAULT_USER_AGENT
+
+        use_running_session = self._session and not self._session.closed
+
+        if use_running_session:
+            session = self._session
+        else:
+            session = ClientSession(timeout=ClientTimeout(total=DEFAULT_TIMEOUT))
+
+        data = {}
+        try:
+            async with session.request(
+                method, f"{API_URL_BASE}/{endpoint}", **kwargs
+            ) as resp:
+                try:
+                    data = await resp.json(content_type=None)
+                except JSONDecodeError:
+                    message = await resp.text()
+                    data = {"error": message}
+
+                if isinstance(data, str):
+                    # In some cases, the SimpliSafe API will return a quoted string
+                    # in its response body (e.g., "\"Unauthorized\""), which is
+                    # technically valid JSON. Additionally, SimpliSafe sets that
+                    # response's Content-Type header to application/json (#smh).
+                    # Together, these factors will allow a non-true-JSON  payload to
+                    # escape the try/except above. So, if we get here, we use the
+                    # string value (with quotes removed) to raise an error:
+                    message = data.replace('"', "")
+                    data = {"error": message}
+
+                resp.raise_for_status()
+        except ClientError as err:
+            # If we get an "error" related to MFA, the response body data is
+            # necessary for continuing on, so we swallow the error and return
+            # that data:
+            if data.get("error") == "mfa_required":
+                return data
+
+            if data.get("type") == "NoRemoteManagement":
+                raise EndpointUnavailable(
+                    f"Endpoint unavailable in plan: {endpoint}"
+                ) from None
+
+            if "401" in str(err):
+                if not self._access_token:
+                    raise InvalidCredentialsError("Invalid credentials") from err
+
+                if not self._refresh_tried:
+                    LOGGER.info("401 detected; attempting refresh token")
+                    self._refresh_tried = True
+                    await self._refresh_access_token(self._refresh_token)
+                elif not self._reauth_tried:
+                    LOGGER.info("Another 401 detected; attempting full reauth")
+                    self._reauth_tried = True
+                    await self.login()
+                else:
+                    raise InvalidCredentialsError("Invalid credentials") from err
+
+            if "403" in str(err):
+                raise InvalidCredentialsError("Unauthorized") from None
+
+            raise err
+        finally:
+            if not use_running_session:
+                await session.close()
+
+        LOGGER.debug("Data received from /%s: %s", endpoint, data)
+
+        self._refresh_tried = False
+        self._reauth_tried = False
+
+        return data
 
     async def login(self) -> None:
         """Authenticate the API object (making it ready for requests)."""
@@ -197,10 +278,8 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         return systems
 
-    async def request(  # pylint: disable=too-many-branches,too-many-statements
-        self, method: str, endpoint: str, **kwargs
-    ) -> dict:
-        """Make an API request.
+    async def request(self, method: str, endpoint: str, **kwargs) -> dict:
+        """Make an API request (with retry logic).
 
         :param method: The HTTP method to use
         :type method: ``str``
@@ -208,79 +287,12 @@ class API:  # pylint: disable=too-many-instance-attributes
         :type endpoint: ``str``
         :rtype: ``dict``
         """
-        kwargs.setdefault("headers", {})
-        if self._access_token:
-            kwargs["headers"]["Authorization"] = f"Bearer {self._access_token}"
-        kwargs["headers"]["Content-Type"] = "application/json; charset=utf-8"
-        kwargs["headers"]["Host"] = API_URL_HOSTNAME
-        kwargs["headers"]["User-Agent"] = DEFAULT_USER_AGENT
-
-        use_running_session = self._session and not self._session.closed
-
-        if use_running_session:
-            session = self._session
-        else:
-            session = ClientSession(timeout=ClientTimeout(total=DEFAULT_TIMEOUT))
-
-        data = {}
         retries = 0
         while retries < self._request_retries:
             try:
-                async with session.request(
-                    method, f"{API_URL_BASE}/{endpoint}", **kwargs
-                ) as resp:
-                    try:
-                        data = await resp.json(content_type=None)
-                    except JSONDecodeError:
-                        message = await resp.text()
-                        data = {"error": message}
-
-                    if isinstance(data, str):
-                        # In some cases, the SimpliSafe API will return a quoted string
-                        # in its response body (e.g., "\"Unauthorized\""), which is
-                        # technically valid JSON. Additionally, SimpliSafe sets that
-                        # response's Content-Type header to application/json (#smh).
-                        # Together, these factors will allow a non-true-JSON  payload to
-                        # escape the try/except above. So, if we get here, we use the
-                        # string value (with quotes removed) to raise an error:
-                        message = data.replace('"', "")
-                        data = {"error": message}
-
-                    resp.raise_for_status()
-                    break
+                data = await self._single_request(method, endpoint, **kwargs)
+                break
             except ClientError as err:
-                # If we get an "error" related to MFA, the response body data is
-                # necessary for continuing on, so we swallow the error and return
-                # that data:
-                if data.get("error") == "mfa_required":
-                    return data
-
-                if data.get("type") == "NoRemoteManagement":
-                    raise EndpointUnavailable(
-                        f"Endpoint unavailable in plan: {endpoint}"
-                    ) from None
-
-                if "401" in str(err):
-                    if not self._access_token:
-                        raise InvalidCredentialsError("Invalid credentials") from err
-
-                    if not self._refresh_tried:
-                        LOGGER.info("401 detected; attempting refresh token")
-                        self._refresh_tried = True
-                        await self._refresh_access_token(self._refresh_token)
-                        continue
-
-                    if not self._reauth_tried:
-                        LOGGER.info("Another 401 detected; attempting full reauth")
-                        self._reauth_tried = True
-                        await self.login()
-                        continue
-
-                    raise InvalidCredentialsError("Invalid credentials") from err
-
-                if "403" in str(err):
-                    raise InvalidCredentialsError("Unauthorized") from None
-
                 LOGGER.warning(
                     "Error while requesting /%s: %s (attempt %s of %s)",
                     endpoint,
@@ -290,18 +302,10 @@ class API:  # pylint: disable=too-many-instance-attributes
                 )
                 retries += 1
                 await asyncio.sleep(self._request_retry_interval)
-            finally:
-                if not use_running_session:
-                    await session.close()
         else:
             raise RequestError(
                 f"Requesting /{endpoint} failed after {retries} tries"
             ) from None
-
-        LOGGER.debug("Data received from /%s: %s", endpoint, data)
-
-        self._reauth_tried = False
-        self._refresh_tried = False
 
         return data
 
@@ -328,6 +332,8 @@ async def get_api(
     *,
     session: Optional[ClientSession] = None,
     client_id: Optional[str] = None,
+    request_retries: int = DEFAULT_REQUEST_RETRIES,
+    request_retry_interval: int = DEFAULT_REQUEST_RETRY_INTERVAL,
 ) -> API:
     """Return an authenticated API object.
 
@@ -339,8 +345,19 @@ async def get_api(
     :type session: ``aiohttp.client.ClientSession``
     :param client_id: The SimpliSafe client ID to use for this API object
     :type client_id: ``str``
+    :param request_retries: The default number of request retries to use
+    :type request_retries: ``str``
+    :param request_retry_interval: The default retry delay
+    :type request_retry_interval: ``str``
     :rtype: :meth:`simplipy.API`
     """
-    api = API(email, password, session=session, client_id=client_id)
+    api = API(
+        email,
+        password,
+        session=session,
+        client_id=client_id,
+        request_retries=request_retries,
+        request_retry_interval=request_retry_interval,
+    )
     await api.login()
     return api

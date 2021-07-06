@@ -27,16 +27,7 @@ async def main() -> None:
                 session=session,
             )
             systems = await simplisafe.get_systems()
-            for system_id, system in systems.items():
-                _LOGGER.info("System ID: %s", system_id)
-                _LOGGER.info("Version: %s", system.version)
-                _LOGGER.info("User ID: %s", simplisafe.user_id)
-                _LOGGER.info("Access Token: %s", simplisafe.access_token)
-                _LOGGER.info("Refresh Token: %s", simplisafe.refresh_token)
-
-                events = await system.get_events()
-                _LOGGER.info("Number of Events: %s", len(events))
-
+            for system in systems.values():
                 for serial, sensor in system.sensors.items():
                     _LOGGER.info(
                         "Sensor %s: (name: %s, type: %s, triggered: %s)",

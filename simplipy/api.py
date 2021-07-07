@@ -210,12 +210,15 @@ class API:  # pylint: disable=too-many-instance-attributes
                     LOGGER.info("401 detected; attempting refresh token")
                     self._refresh_tried = True
                     await self._refresh_access_token(self._refresh_token)
-                elif not self._reauth_tried:
+                    return await self._single_request(method, endpoint, **kwargs)
+
+                if not self._reauth_tried:
                     LOGGER.info("Another 401 detected; attempting full reauth")
                     self._reauth_tried = True
                     await self.login()
-                else:
-                    raise InvalidCredentialsError("Invalid credentials") from err
+                    return await self._single_request(method, endpoint, **kwargs)
+
+                raise InvalidCredentialsError("Invalid credentials") from err
 
             if "403" in str(err):
                 raise InvalidCredentialsError("Unauthorized") from None

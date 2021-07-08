@@ -9,7 +9,7 @@ API Reference
 API
 ---
 
-.. autoclass:: API
+.. automodule:: simplipy.api
    :members:
 
 Entities

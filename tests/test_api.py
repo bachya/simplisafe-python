@@ -89,7 +89,7 @@ async def test_401_reauth_success(
     """Test that a successful reauthentication carries out the original request."""
     import logging
 
-    caplog.set_level(logging.INFO)
+    caplog.set_level(logging.DEBUG)
 
     async with v2_server:
         v2_server.add(

@@ -5,7 +5,7 @@ import json
 import aresponses
 import pytest
 
-from tests.common import TEST_SUBSCRIPTION_ID, TEST_USER_ID, load_fixture
+from tests.common import load_fixture
 
 
 @pytest.fixture()
@@ -26,7 +26,7 @@ def v2_subscriptions_response(subscriptions_fixture_filename):
 
 
 @pytest.fixture()
-def v2_server(v2_subscriptions_response):
+def v2_server():
     """Return a ready-to-query mocked v2 server."""
     server = aresponses.ResponsesMockServer()
     server.add(
@@ -63,7 +63,7 @@ def v3_subscriptions_response(request, subscriptions_fixture_filename):
 
 
 @pytest.fixture()
-def v3_server(v3_settings_response, v3_subscriptions_response):
+def v3_server():
     """Return a ready-to-query mocked v2 server."""
     server = aresponses.ResponsesMockServer()
     server.add(

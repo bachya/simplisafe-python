@@ -21,7 +21,6 @@ from tests.common import (
     TEST_CLIENT_ID,
     TEST_EMAIL,
     TEST_PASSWORD,
-    TEST_REFRESH_TOKEN,
     TEST_SUBSCRIPTION_ID,
     TEST_SYSTEM_ID,
     TEST_SYSTEM_SERIAL_NO,
@@ -51,13 +50,7 @@ async def test_409_during_arming(aresponses, v3_server):
 
         async with aiohttp.ClientSession() as session:
             simplisafe = await get_api(
-                TEST_EMAIL,
-                TEST_PASSWORD,
-                session=session,
-                client_id=TEST_CLIENT_ID,
-                # We pass a small retry interval pair to ensure this test doesn't
-                # hang for a long time:
-                request_retry_interval=0,
+                TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
 
             systems = await simplisafe.get_systems()
@@ -945,13 +938,7 @@ async def test_update_error(
 
         async with aiohttp.ClientSession() as session:
             simplisafe = await get_api(
-                TEST_EMAIL,
-                TEST_PASSWORD,
-                session=session,
-                client_id=TEST_CLIENT_ID,
-                # We pass a small retry interval pair to ensure this test doesn't
-                # hang for a long time:
-                request_retry_interval=0,
+                TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
 
             systems = await simplisafe.get_systems()

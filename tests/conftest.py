@@ -41,18 +41,6 @@ def v2_server(v2_subscriptions_response):
         "get",
         aresponses.Response(text=load_fixture("auth_check_response.json"), status=200),
     )
-    server.add(
-        "api.simplisafe.com",
-        f"/v1/users/{TEST_USER_ID}/subscriptions",
-        "get",
-        aresponses.Response(text=v2_subscriptions_response, status=200),
-    )
-    server.add(
-        "api.simplisafe.com",
-        f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/settings",
-        "get",
-        aresponses.Response(text=load_fixture("v2_settings_response.json"), status=200),
-    )
 
     return server
 
@@ -89,24 +77,6 @@ def v3_server(v3_settings_response, v3_subscriptions_response):
         "/v1/api/authCheck",
         "get",
         aresponses.Response(text=load_fixture("auth_check_response.json"), status=200),
-    )
-    server.add(
-        "api.simplisafe.com",
-        f"/v1/users/{TEST_USER_ID}/subscriptions",
-        "get",
-        aresponses.Response(text=v3_subscriptions_response, status=200),
-    )
-    server.add(
-        "api.simplisafe.com",
-        f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/sensors",
-        "get",
-        aresponses.Response(text=load_fixture("v3_sensors_response.json"), status=200),
-    )
-    server.add(
-        "api.simplisafe.com",
-        f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
-        "get",
-        aresponses.Response(text=v3_settings_response, status=200),
     )
 
     return server

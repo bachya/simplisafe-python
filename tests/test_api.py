@@ -1,9 +1,10 @@
 """Define tests for the System object."""
 # pylint: disable=protected-access
 from datetime import datetime, timedelta
+import json
 
 import aiohttp
-from aresponses import ResponsesMockServer
+from aioresponses import aioresponses
 import pytest
 
 from simplipy import get_api
@@ -25,126 +26,117 @@ from .common import (
 )
 
 
-@pytest.mark.asyncio
-async def test_401_bad_credentials(aresponses):
+async def test_401_bad_credentials():
     """Test that an InvalidCredentialsError is raised with a 401 upon login."""
-    aresponses.add(
-        "api.simplisafe.com",
-        "/v1/api/token",
-        "post",
-        aresponses.Response(text='"Unauthorized"', status=401),
-    )
-
-    async with aiohttp.ClientSession() as session:
-        with pytest.raises(InvalidCredentialsError):
-            await get_api(
-                TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
-            )
-
-
-@pytest.mark.asyncio
-async def test_401_total_failure(aresponses, v2_server, v2_subscriptions_response):
-    """Test that an error is raised when refresh token and reauth both fail."""
-    async with v2_server:
-        v2_server.add(
-            "api.simplisafe.com",
-            f"/v1/users/{TEST_USER_ID}/subscriptions",
-            "get",
-            aresponses.Response(text=v2_subscriptions_response, status=200),
-        )
-        v2_server.add(
-            "api.simplisafe.com",
-            f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/settings",
-            "get",
-            aresponses.Response(text='"Unauthorized"', status=401),
-        )
-        v2_server.add(
-            "api.simplisafe.com",
-            "/v1/api/token",
-            "post",
-            aresponses.Response(text='"Unauthorized"', status=401),
-        )
-        v2_server.add(
-            "api.simplisafe.com",
-            "/v1/api/token",
-            "post",
-            aresponses.Response(text='"Unauthorized"', status=401),
+    with aioresponses() as mock:
+        mock.post(
+            "https://api.simplisafe.com/v1/api/token", status=401, body="Unauthorized"
         )
 
         async with aiohttp.ClientSession() as session:
             with pytest.raises(InvalidCredentialsError):
-                simplisafe = await get_api(
+                await get_api(
                     TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
                 )
 
-                systems = await simplisafe.get_systems()
-                system = systems[TEST_SYSTEM_ID]
-                await system.update()
 
+async def test_401_total_failure(server, v2_subscriptions_response):
+    """Test that an error is raised when refresh token and reauth both fail."""
+    server.get(
+        f"https://api.simplisafe.com/v1/users/{TEST_USER_ID}/subscriptions",
+        status=200,
+        body=v2_subscriptions_response,
+    )
+    server.get(
+        f"https://api.simplisafe.com/v1/users/{TEST_SUBSCRIPTION_ID}/subscriptions?activeOnly=true",
+        status=401,
+        body="Unauthorized",
+    )
+    server.post(
+        "https://api.simplisafe.com/v1/api/token", status=401, body="Unauthorized"
+    )
+    server.post(
+        "https://api.simplisafe.com/v1/api/token", status=401, body="Unauthorized"
+    )
 
-@pytest.mark.asyncio
-async def test_401_reauth_success(
-    aresponses, caplog, v2_server, v2_subscriptions_response
-):
-    """Test that a successful reauthentication carries out the original request."""
-    import logging
-
-    caplog.set_level(logging.DEBUG)
-
-    async with v2_server:
-        v2_server.add(
-            "api.simplisafe.com",
-            f"/v1/users/{TEST_USER_ID}/subscriptions",
-            "get",
-            aresponses.Response(text='"Unauthorized"', status=401),
-        )
-        v2_server.add(
-            "api.simplisafe.com",
-            "/v1/api/token",
-            "post",
-            aresponses.Response(text='"Unauthorized"', status=401),
-        )
-        v2_server.add(
-            "api.simplisafe.com",
-            "/v1/api/token",
-            "post",
-            aresponses.Response(
-                text=load_fixture("api_token_response.json"), status=200
-            ),
-        )
-        v2_server.add(
-            "api.simplisafe.com",
-            "/v1/api/authCheck",
-            "get",
-            aresponses.Response(
-                text=load_fixture("auth_check_response.json"), status=200
-            ),
-        )
-        v2_server.add(
-            "api.simplisafe.com",
-            f"/v1/users/{TEST_USER_ID}/subscriptions",
-            "get",
-            aresponses.Response(text=v2_subscriptions_response, status=200,),
-        )
-        v2_server.add(
-            "api.simplisafe.com",
-            f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/settings",
-            "get",
-            aresponses.Response(
-                text=load_fixture("v2_settings_response.json"), status=200
-            ),
-        )
-
-        async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession() as session:
+        with pytest.raises(InvalidCredentialsError):
             simplisafe = await get_api(
                 TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
             )
-            assert simplisafe._client_id == TEST_CLIENT_ID
 
             systems = await simplisafe.get_systems()
             system = systems[TEST_SYSTEM_ID]
             await system.update()
-            assert simplisafe._refresh_token == TEST_REFRESH_TOKEN
+
+
+async def test_401_reauth_success(server, v2_subscriptions_response):
+    """Test that a successful reauthentication carries out the original request."""
+    server.get(
+        f"https://api.simplisafe.com/v1/users/{TEST_SUBSCRIPTION_ID}/subscriptions?activeOnly=true",
+        status=401,
+        body="Unauthorized",
+    )
+    server.post(
+        "https://api.simplisafe.com/v1/api/token", status=401, body="Unauthorized"
+    )
+    server.post(
+        "https://api.simplisafe.com/v1/api/token",
+        status=200,
+        payload=json.loads(load_fixture("api_token_response.json")),
+    )
+    server.get(
+        "https://api.simplisafe.com/v1/api/authCheck",
+        status=200,
+        payload=json.loads(load_fixture("auth_check_response.json")),
+    )
+    server.get(
+        f"https://api.simplisafe.com/v1/users/{TEST_SUBSCRIPTION_ID}/subscriptions?activeOnly=true",
+        status=200,
+        payload=v2_subscriptions_response,
+    )
+    server.get(
+        (
+            f"https://api.simplisafe.com/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/settings?"
+            "cached=true&settingsType=all"
+        ),
+        status=200,
+        payload=json.loads(load_fixture("v2_settings_response.json")),
+    )
+    server.post(
+        "https://api.simplisafe.com/v1/api/token",
+        status=200,
+        payload=json.loads(load_fixture("api_token_response.json")),
+    )
+    server.get(
+        "https://api.simplisafe.com/v1/api/authCheck",
+        status=200,
+        payload=json.loads(load_fixture("auth_check_response.json")),
+    )
+    server.get(
+        f"https://api.simplisafe.com/v1/users/{TEST_SUBSCRIPTION_ID}/subscriptions?activeOnly=true",
+        status=200,
+        payload=v2_subscriptions_response,
+    )
+    server.get(
+        (
+            f"https://api.simplisafe.com/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/settings?"
+            "cached=true&settingsType=all"
+        ),
+        status=200,
+        payload=json.loads(load_fixture("v2_settings_response.json")),
+    )
+
+    async with aiohttp.ClientSession() as session:
+        simplisafe = await get_api(
+            TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
+        )
+        assert simplisafe._client_id == TEST_CLIENT_ID
+
+        systems = await simplisafe.get_systems()
+        system = systems[TEST_SYSTEM_ID]
+        await system.update()
+        assert simplisafe._refresh_token == TEST_REFRESH_TOKEN
 
 
 # @pytest.mark.asyncio

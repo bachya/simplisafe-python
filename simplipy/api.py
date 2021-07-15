@@ -108,10 +108,10 @@ class API:  # pylint: disable=too-many-instance-attributes
         """Authenticate the API object using an authentication payload."""
         LOGGER.debug("Authentication payload: %s", payload)
 
-        token_resp = await self.request("post", "api/token", json=payload)
+        token_resp = await self._request("post", "api/token", json=payload)
 
         if "mfa_token" in token_resp:
-            mfa_challenge_response = await self.request(
+            mfa_challenge_response = await self._request(
                 "post",
                 "api/mfa/challenge",
                 json={
@@ -121,7 +121,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 },
             )
 
-            await self.request(
+            await self._request(
                 "post",
                 "api/token",
                 json={
@@ -143,7 +143,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         self._refresh_token = token_resp["refresh_token"]
 
         # Fetch the SimpliSafe user ID:
-        auth_check_resp = await self.request("get", "api/authCheck")
+        auth_check_resp = await self._request("get", "api/authCheck")
         self.user_id = auth_check_resp["userId"]
 
     async def _refresh_access_token(self, refresh_token: Optional[str]) -> None:
@@ -225,22 +225,20 @@ class API:  # pylint: disable=too-many-instance-attributes
                 ) from None
 
             if "401" in str(err):
-                if not self._access_token:
+                if not self._access_token or (
+                    self._refresh_tried and self._reauth_tried
+                ):
                     raise InvalidCredentialsError("Invalid credentials") from err
 
                 if not self._refresh_tried:
                     LOGGER.info("401 detected; attempting refresh token")
                     self._refresh_tried = True
                     await self._refresh_access_token(self._refresh_token)
-                    return await self._request(method, endpoint, **kwargs)
-
-                if not self._reauth_tried:
+                elif not self._reauth_tried:
                     LOGGER.info("Another 401 detected; attempting full reauth")
                     self._reauth_tried = True
                     await self.login()
-                    return await self._request(method, endpoint, **kwargs)
-
-                raise InvalidCredentialsError("Invalid credentials") from err
+                return await self._request(method, endpoint, **kwargs)
 
             if "403" in str(err):
                 raise InvalidCredentialsError("Unauthorized") from None

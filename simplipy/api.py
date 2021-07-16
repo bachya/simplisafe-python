@@ -6,16 +6,12 @@ from uuid import uuid4
 
 from aiohttp import ClientSession, ClientTimeout
 from aiohttp.client_exceptions import ClientError
-from tenacity import (
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    stop_after_delay,
-)
+import backoff
 
 from simplipy.const import LOGGER
 from simplipy.errors import (
-    EndpointUnavailable,
+    CredentialsExpiredError,
+    EndpointUnavailableError,
     InvalidCredentialsError,
     PendingAuthorizationError,
     RequestError,
@@ -29,7 +25,7 @@ API_URL_MFA_OOB = "http://simplisafe.com/oauth/grant-type/mfa-oob"
 
 DEFAULT_APP_VERSION = "1.62.0"
 DEFAULT_REQUEST_RETRIES = 3
-DEFAULT_REQUEST_RETRY_INTERVAL = 0
+DEFAULT_REQUEST_RETRY_INTERVAL = 3
 DEFAULT_TIMEOUT = 10
 DEFAULT_USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/605.1.15 "
@@ -86,17 +82,23 @@ class API:  # pylint: disable=too-many-instance-attributes
         )
         self._email = email
         self._password = password
-        self._reauth_tried = False
-        self._refresh_tried = False
         self._session: ClientSession = session
 
-        self.request = retry(
-            retry=retry_if_exception_type(RequestError),
-            stop=(
-                stop_after_attempt(request_retries)
-                | stop_after_delay(request_retry_interval)
-            ),
-        )(self._request)
+        # Implement a public version of the request method that has appropriate retry,
+        # backoff, and when appropriate, reauthentication logic:
+        self.request = backoff.on_exception(
+            backoff.expo,
+            RequestError,
+            base=request_retry_interval,
+            max_tries=request_retries,
+        )(
+            backoff.on_exception(
+                backoff.constant,
+                CredentialsExpiredError,
+                interval=request_retry_interval,
+                on_backoff=self._handle_credentials_expired,
+            )(self._request)
+        )
 
         # These will get filled in after initial authentication:
         self._access_token: Optional[str] = None
@@ -146,7 +148,21 @@ class API:  # pylint: disable=too-many-instance-attributes
         auth_check_resp = await self._request("get", "api/authCheck")
         self.user_id = auth_check_resp["userId"]
 
-    async def _refresh_access_token(self, refresh_token: Optional[str]) -> None:
+    async def _handle_credentials_expired(self, _: dict) -> None:
+        """Handle a CredentialsExpiredError."""
+        LOGGER.info("401 detected; attempting refresh token")
+
+        try:
+            await self._refresh_access_token()
+        except CredentialsExpiredError:
+            LOGGER.info("Another 401 detected; attempting full reauth")
+
+            try:
+                await self.login()
+            except CredentialsExpiredError as err:
+                raise InvalidCredentialsError("Refresh and reauth failed") from err
+
+    async def _refresh_access_token(self) -> None:
         """Regenerate an access token.
 
         :param refresh_token: The refresh token to use
@@ -156,7 +172,7 @@ class API:  # pylint: disable=too-many-instance-attributes
             {
                 "grant_type": "refresh_token",
                 "client_id": self._client_id,
-                "refresh_token": refresh_token,
+                "refresh_token": self._refresh_token,
             }
         )
 
@@ -220,28 +236,17 @@ class API:  # pylint: disable=too-many-instance-attributes
                 return data
 
             if data.get("type") == "NoRemoteManagement":
-                raise EndpointUnavailable(
+                raise EndpointUnavailableError(
                     f"Endpoint unavailable in plan: {endpoint}"
-                ) from None
+                ) from err
 
             if "401" in str(err):
-                if not self._access_token or (
-                    self._refresh_tried and self._reauth_tried
-                ):
-                    raise InvalidCredentialsError("Invalid credentials") from err
-
-                if not self._refresh_tried:
-                    LOGGER.info("401 detected; attempting refresh token")
-                    self._refresh_tried = True
-                    await self._refresh_access_token(self._refresh_token)
-                elif not self._reauth_tried:
-                    LOGGER.info("Another 401 detected; attempting full reauth")
-                    self._reauth_tried = True
-                    await self.login()
-                return await self._request(method, endpoint, **kwargs)
+                if not self._access_token:
+                    raise InvalidCredentialsError("Invalid username/password") from err
+                raise CredentialsExpiredError(err) from err
 
             if "403" in str(err):
-                raise InvalidCredentialsError("Unauthorized") from None
+                raise InvalidCredentialsError("Unauthorized") from err
 
             raise RequestError(err) from err
         finally:
@@ -249,9 +254,6 @@ class API:  # pylint: disable=too-many-instance-attributes
                 await session.close()
 
         LOGGER.debug("Data received from /%s: %s", endpoint, data)
-
-        self._refresh_tried = False
-        self._reauth_tried = False
 
         return data
 
@@ -338,7 +340,7 @@ async def get_api(
     :param session: An ``aiohttp`` ``ClientSession``
     :type session: ``aiohttp.client.ClientSession``
     :param client_id: The SimpliSafe client ID to use for this API object
-    :type client_id: ``str`h
+    :type client_id: ``str``
     :param request_retries: The default number of request retries to use
     :type request_retries: ``str``
     :param request_retry_interval: The default retry delay

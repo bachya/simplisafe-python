@@ -322,6 +322,7 @@ class System:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         # can't reasonably check a local cache for up-to-date PIN data; so, we fetch the
         # latest each time:
         latest_pins = await self.get_pins(cached=False)
+        print(latest_pins)
 
         if pin_or_label in RESERVED_PIN_LABELS:
             raise PinError(f"Refusing to delete reserved PIN: {pin_or_label}")

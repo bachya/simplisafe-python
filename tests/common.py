@@ -1,6 +1,5 @@
 """Define common test utilities."""
 import os
-from unittest.mock import MagicMock
 
 TEST_ACCESS_TOKEN = "abcde12345"
 TEST_ACCOUNT_ID = 12345
@@ -18,17 +17,6 @@ TEST_SUBSCRIPTION_ID = 12345
 TEST_SYSTEM_ID = 12345
 TEST_SYSTEM_SERIAL_NO = "1234ABCD"
 TEST_USER_ID = 12345
-
-
-def async_mock(*args, **kwargs):
-    """Return a mock asynchronous function."""
-    mock = MagicMock(*args, **kwargs)
-
-    async def mock_coro(*args, **kwargs):
-        return mock(*args, **kwargs)
-
-    mock_coro.mock = mock
-    return mock_coro
 
 
 def load_fixture(filename):

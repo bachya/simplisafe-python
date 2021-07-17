@@ -451,7 +451,7 @@
                 "enotify": true,
                 "sensorStatus": 0,
                 "sensorData": 0,
-                "name": "Downstairs CO",
+                "name": "Downstairs Thingy",
                 "error": false,
                 "battery": "ok"
             },

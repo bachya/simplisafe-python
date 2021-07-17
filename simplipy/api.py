@@ -87,9 +87,9 @@ class API:  # pylint: disable=too-many-instance-attributes
         # Implement a public version of the request method that has appropriate retry,
         # backoff, and when appropriate, reauthentication logic:
         self.request = backoff.on_exception(
-            backoff.expo,
+            backoff.constant,
             RequestError,
-            base=request_retry_interval,
+            interval=request_retry_interval,
             max_tries=request_retries,
         )(
             backoff.on_exception(

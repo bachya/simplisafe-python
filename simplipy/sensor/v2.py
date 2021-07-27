@@ -1,4 +1,6 @@
 """Define a v2 (old) SimpliSafe sensor."""
+from typing import cast
+
 from simplipy.entity import Entity, EntityTypes
 from simplipy.errors import SimplipyError
 
@@ -16,7 +18,7 @@ class SensorV2(Entity):
 
         :rtype: ``int``
         """
-        return self._system.entity_data[self._serial]["sensorData"]
+        return cast(int, self._system.entity_data[self._serial]["sensorData"])
 
     @property
     def error(self) -> bool:
@@ -24,7 +26,7 @@ class SensorV2(Entity):
 
         :rtype: ``bool``
         """
-        return self._system.entity_data[self._serial]["error"]
+        return cast(bool, self._system.entity_data[self._serial]["error"])
 
     @property
     def low_battery(self) -> bool:
@@ -32,7 +34,9 @@ class SensorV2(Entity):
 
         :rtype: ``bool``
         """
-        return self._system.entity_data[self._serial].get("battery", "ok") != "ok"
+        return cast(
+            bool, self._system.entity_data[self._serial].get("battery", "ok") != "ok"
+        )
 
     @property
     def settings(self) -> bool:
@@ -40,7 +44,7 @@ class SensorV2(Entity):
 
         :rtype: ``bool``
         """
-        return self._system.entity_data[self._serial]["setting"]
+        return cast(bool, self._system.entity_data[self._serial]["setting"])
 
     @property
     def trigger_instantly(self) -> bool:
@@ -48,7 +52,7 @@ class SensorV2(Entity):
 
         :rtype: ``bool``
         """
-        return self._system.entity_data[self._serial]["instant"]
+        return cast(bool, self._system.entity_data[self._serial]["instant"])
 
     @property
     def triggered(self) -> bool:
@@ -57,9 +61,10 @@ class SensorV2(Entity):
         :rtype: ``bool``
         """
         if self.type == EntityTypes.entry:
-            return (
+            return cast(
+                bool,
                 self._system.entity_data[self._serial].get("entryStatus", "closed")
-                == "open"
+                == "open",
             )
 
         raise SimplipyError(f"Cannot determine triggered state for sensor: {self.name}")

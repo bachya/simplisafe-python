@@ -1,6 +1,6 @@
 """Define a V3 (new) SimpliSafe system."""
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Dict, Optional, cast
 
 import voluptuous as vol
 
@@ -132,9 +132,12 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         :rtype: ``int``
         """
-        return self.settings_data["settings"]["normal"][
-            SYSTEM_PROPERTIES_VALUE_MAP["alarm_duration"]
-        ]
+        return cast(
+            int,
+            self.settings_data["settings"]["normal"][
+                SYSTEM_PROPERTIES_VALUE_MAP["alarm_duration"]
+            ],
+        )
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -156,7 +159,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         :rtype: ``int``
         """
-        return self.settings_data["basestationStatus"]["backupBattery"]
+        return cast(int, self.settings_data["basestationStatus"]["backupBattery"])
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -178,9 +181,12 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         :rtype: ``int``
         """
-        return self.settings_data["settings"]["normal"][
-            SYSTEM_PROPERTIES_VALUE_MAP["entry_delay_away"]
-        ]
+        return cast(
+            int,
+            self.settings_data["settings"]["normal"][
+                SYSTEM_PROPERTIES_VALUE_MAP["entry_delay_away"]
+            ],
+        )
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -189,9 +195,12 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         :rtype: ``int``
         """
-        return self.settings_data["settings"]["normal"][
-            SYSTEM_PROPERTIES_VALUE_MAP["entry_delay_home"]
-        ]
+        return cast(
+            int,
+            self.settings_data["settings"]["normal"][
+                SYSTEM_PROPERTIES_VALUE_MAP["entry_delay_home"]
+            ],
+        )
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -200,9 +209,12 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         :rtype: ``int``
         """
-        return self.settings_data["settings"]["normal"][
-            SYSTEM_PROPERTIES_VALUE_MAP["exit_delay_away"]
-        ]
+        return cast(
+            int,
+            self.settings_data["settings"]["normal"][
+                SYSTEM_PROPERTIES_VALUE_MAP["exit_delay_away"]
+            ],
+        )
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -211,9 +223,12 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         :rtype: ``int``
         """
-        return self.settings_data["settings"]["normal"][
-            SYSTEM_PROPERTIES_VALUE_MAP["exit_delay_home"]
-        ]
+        return cast(
+            int,
+            self.settings_data["settings"]["normal"][
+                SYSTEM_PROPERTIES_VALUE_MAP["exit_delay_home"]
+            ],
+        )
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -222,7 +237,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         :rtype: ``int``
         """
-        return self.settings_data["basestationStatus"]["gsmRssi"]
+        return cast(int, self.settings_data["basestationStatus"]["gsmRssi"])
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -231,9 +246,12 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         :rtype: ``bool``
         """
-        return self.settings_data["settings"]["normal"][
-            SYSTEM_PROPERTIES_VALUE_MAP["light"]
-        ]
+        return cast(
+            bool,
+            self.settings_data["settings"]["normal"][
+                SYSTEM_PROPERTIES_VALUE_MAP["light"]
+            ],
+        )
 
     @property  # type: ignore
     @guard_from_missing_data(True)
@@ -242,9 +260,12 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         :rtype: ``bool``
         """
-        return self._api.subscription_data[self._system_id]["location"]["system"][
-            "isOffline"
-        ]
+        return cast(
+            bool,
+            self._api.subscription_data[self._system_id]["location"]["system"][
+                "isOffline"
+            ],
+        )
 
     @property  # type: ignore
     @guard_from_missing_data(False)
@@ -253,9 +274,12 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         :rtype: ``bool``
         """
-        return self._api.subscription_data[self._system_id]["location"]["system"][
-            "powerOutage"
-        ]
+        return cast(
+            bool,
+            self._api.subscription_data[self._system_id]["location"]["system"][
+                "powerOutage"
+            ],
+        )
 
     @property  # type: ignore
     @guard_from_missing_data(False)
@@ -264,7 +288,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         :rtype: ``bool``
         """
-        return self.settings_data["basestationStatus"]["rfJamming"]
+        return cast(bool, self.settings_data["basestationStatus"]["rfJamming"])
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -273,9 +297,12 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         :rtype: ``int``
         """
-        return self.settings_data["settings"]["normal"][
-            SYSTEM_PROPERTIES_VALUE_MAP["voice_prompt_volume"]
-        ]
+        return cast(
+            int,
+            self.settings_data["settings"]["normal"][
+                SYSTEM_PROPERTIES_VALUE_MAP["voice_prompt_volume"]
+            ],
+        )
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -284,7 +311,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         :rtype: ``int``
         """
-        return self.settings_data["basestationStatus"]["wallPower"]
+        return cast(int, self.settings_data["basestationStatus"]["wallPower"])
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -293,7 +320,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         :rtype: ``str``
         """
-        return self.settings_data["settings"]["normal"]["wifiSSID"]
+        return cast(str, self.settings_data["settings"]["normal"]["wifiSSID"])
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -302,7 +329,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         :rtype: ``int``
         """
-        return self.settings_data["basestationStatus"]["wifiRssi"]
+        return cast(int, self.settings_data["basestationStatus"]["wifiRssi"])
 
     def _generate_camera_data(self) -> Dict[str, dict]:
         """Generate usable, hashable camera data from system data."""

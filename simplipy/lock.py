@@ -1,5 +1,6 @@
 """Define a SimpliSafe lock."""
 from enum import Enum
+from typing import cast
 
 from simplipy.const import LOGGER
 from simplipy.entity import EntityV3
@@ -30,7 +31,9 @@ class Lock(EntityV3):
 
         :rtype: ``bool``
         """
-        return self._system.entity_data[self._serial]["status"]["lockDisabled"]
+        return cast(
+            bool, self._system.entity_data[self._serial]["status"]["lockDisabled"]
+        )
 
     @property
     def lock_low_battery(self) -> bool:
@@ -38,7 +41,9 @@ class Lock(EntityV3):
 
         :rtype: ``bool``
         """
-        return self._system.entity_data[self._serial]["status"]["lockLowBattery"]
+        return cast(
+            bool, self._system.entity_data[self._serial]["status"]["lockLowBattery"]
+        )
 
     @property
     def pin_pad_low_battery(self) -> bool:
@@ -46,7 +51,9 @@ class Lock(EntityV3):
 
         :rtype: ``bool``
         """
-        return self._system.entity_data[self._serial]["status"]["pinPadLowBattery"]
+        return cast(
+            bool, self._system.entity_data[self._serial]["status"]["pinPadLowBattery"]
+        )
 
     @property
     def pin_pad_offline(self) -> bool:
@@ -54,7 +61,9 @@ class Lock(EntityV3):
 
         :rtype: ``bool``
         """
-        return self._system.entity_data[self._serial]["status"]["pinPadOffline"]
+        return cast(
+            bool, self._system.entity_data[self._serial]["status"]["pinPadOffline"]
+        )
 
     @property
     def state(self) -> LockStates:

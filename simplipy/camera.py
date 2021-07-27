@@ -1,5 +1,5 @@
 """Define SimpliSafe cameras (SimpliCams)."""
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, cast
 from urllib.parse import urlencode
 
 from simplipy.const import LOGGER
@@ -30,12 +30,14 @@ class Camera:
         self._uuid = uuid
 
     @property
-    def camera_settings(self) -> dict:
+    def camera_settings(self) -> Dict[str, Any]:
         """Return the camera settings.
 
         :rtype: ``dict``
         """
-        return self._system.camera_data[self._uuid]["cameraSettings"]
+        return cast(
+            Dict[str, Any], self._system.camera_data[self._uuid]["cameraSettings"]
+        )
 
     @property
     def camera_type(self) -> str:
@@ -57,7 +59,9 @@ class Camera:
 
         :rtype: ``str``
         """
-        return self._system.camera_data[self._uuid]["cameraSettings"]["cameraName"]
+        return cast(
+            str, self._system.camera_data[self._uuid]["cameraSettings"]["cameraName"]
+        )
 
     @property
     def serial(self) -> str:
@@ -73,9 +77,12 @@ class Camera:
 
         :rtype: ``bool``
         """
-        return (
-            self._system.camera_data[self._uuid]["cameraSettings"]["shutterAway"]
-            == "open"
+        return cast(
+            bool,
+            (
+                self._system.camera_data[self._uuid]["cameraSettings"]["shutterAway"]
+                == "open"
+            ),
         )
 
     @property
@@ -84,9 +91,12 @@ class Camera:
 
         :rtype: ``bool``
         """
-        return (
-            self._system.camera_data[self._uuid]["cameraSettings"]["shutterHome"]
-            == "open"
+        return cast(
+            bool,
+            (
+                self._system.camera_data[self._uuid]["cameraSettings"]["shutterHome"]
+                == "open"
+            ),
         )
 
     @property
@@ -95,9 +105,12 @@ class Camera:
 
         :rtype: ``bool``
         """
-        return (
-            self._system.camera_data[self._uuid]["cameraSettings"]["shutterOff"]
-            == "open"
+        return cast(
+            bool,
+            (
+                self._system.camera_data[self._uuid]["cameraSettings"]["shutterOff"]
+                == "open"
+            ),
         )
 
     @property
@@ -106,7 +119,7 @@ class Camera:
 
         :rtype: ``str``
         """
-        return self._system.camera_data[self._uuid]["status"]
+        return cast(str, self._system.camera_data[self._uuid]["status"])
 
     @property
     def subscription_enabled(self) -> bool:
@@ -114,13 +127,15 @@ class Camera:
 
         :rtype: ``bool``
         """
-        return self._system.camera_data[self._uuid]["subscription"]["enabled"]
+        return cast(
+            bool, self._system.camera_data[self._uuid]["subscription"]["enabled"]
+        )
 
     def video_url(
         self,
         width: int = DEFAULT_VIDEO_WIDTH,
         audio_encoding: str = DEFAULT_AUDIO_ENCODING,
-        **kwargs,
+        **kwargs: Dict[str, Any],
     ) -> str:
         """Return the camera video URL.
 

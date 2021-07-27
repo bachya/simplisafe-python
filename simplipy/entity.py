@@ -1,6 +1,6 @@
 """Define a base SimpliSafe entity."""
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, cast
 
 if TYPE_CHECKING:
     from simplipy.api import API
@@ -62,7 +62,7 @@ class Entity:
 
         :rtype: ``str``
         """
-        return self._system.entity_data[self._serial]["name"]
+        return cast(str, self._system.entity_data[self._serial]["name"])
 
     @property
     def serial(self) -> str:
@@ -70,7 +70,7 @@ class Entity:
 
         :rtype: ``str``
         """
-        return self._system.entity_data[self._serial]["serial"]
+        return cast(str, self._system.entity_data[self._serial]["serial"])
 
     @property
     def type(self) -> EntityTypes:
@@ -107,8 +107,9 @@ class EntityV3(Entity):
 
         :rtype: ``bool``
         """
-        return self._system.entity_data[self._serial]["status"].get(
-            "malfunction", False
+        return cast(
+            bool,
+            self._system.entity_data[self._serial]["status"].get("malfunction", False),
         )
 
     @property
@@ -117,7 +118,7 @@ class EntityV3(Entity):
 
         :rtype: ``bool``
         """
-        return self._system.entity_data[self._serial]["flags"]["lowBattery"]
+        return cast(bool, self._system.entity_data[self._serial]["flags"]["lowBattery"])
 
     @property
     def offline(self) -> bool:
@@ -125,14 +126,14 @@ class EntityV3(Entity):
 
         :rtype: ``bool``
         """
-        return self._system.entity_data[self._serial]["flags"]["offline"]
+        return cast(bool, self._system.entity_data[self._serial]["flags"]["offline"])
 
     @property
-    def settings(self) -> dict:
+    def settings(self) -> Dict[str, Any]:
         """Return the entity's settings.
 
         Note that these can change based on what entity type the entity is.
 
         :rtype: ``dict``
         """
-        return self._system.entity_data[self._serial]["setting"]
+        return cast(Dict[str, Any], self._system.entity_data[self._serial]["setting"])

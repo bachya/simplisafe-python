@@ -1,5 +1,5 @@
 """Define a v3 (new) SimpliSafe sensor."""
-from typing import Optional
+from typing import Optional, cast
 
 from simplipy.entity import EntityTypes, EntityV3
 
@@ -17,8 +17,11 @@ class SensorV3(EntityV3):
 
         :rtype: ``bool``
         """
-        return self._system.entity_data[self._serial]["setting"].get(
-            "instantTrigger", False
+        return cast(
+            bool,
+            self._system.entity_data[self._serial]["setting"].get(
+                "instantTrigger", False
+            ),
         )
 
     @property
@@ -36,8 +39,11 @@ class SensorV3(EntityV3):
             EntityTypes.smoke,
             EntityTypes.temperature,
         ):
-            return self._system.entity_data[self._serial]["status"].get(
-                "triggered", False
+            return cast(
+                bool,
+                self._system.entity_data[self._serial]["status"].get(
+                    "triggered", False
+                ),
             )
 
         return False
@@ -53,4 +59,6 @@ class SensorV3(EntityV3):
         if self.type != EntityTypes.temperature:
             raise AttributeError("Non-temperature sensor cannot have a temperature")
 
-        return self._system.entity_data[self._serial]["status"]["temperature"]
+        return cast(
+            int, self._system.entity_data[self._serial]["status"]["temperature"]
+        )

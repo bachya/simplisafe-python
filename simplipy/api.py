@@ -1,7 +1,7 @@
 """Define a SimpliSafe account."""
 import base64
 from json.decoder import JSONDecodeError
-from typing import Dict, Optional, Union
+from typing import Any, Dict, Optional, Union
 from uuid import uuid4
 
 from aiohttp import ClientSession, ClientTimeout
@@ -82,7 +82,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         )
         self._email = email
         self._password = password
-        self._session: ClientSession = session
+        self._session: Optional[ClientSession] = session
 
         # Implement a public version of the request method that has appropriate retry,
         # backoff, and when appropriate, reauthentication logic:
@@ -106,7 +106,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         self.subscription_data: Dict[int, dict] = {}
         self.user_id: Optional[int] = None
 
-    async def _authenticate(self, payload: dict) -> None:
+    async def _authenticate(self, payload: Dict[str, Any]) -> None:
         """Authenticate the API object using an authentication payload."""
         LOGGER.debug("Authentication payload: %s", payload)
 
@@ -148,7 +148,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         auth_check_resp = await self._request("get", "api/authCheck")
         self.user_id = auth_check_resp["userId"]
 
-    async def _handle_credentials_expired(self, _: dict) -> None:
+    async def _handle_credentials_expired(self, _: Dict[str, Any]) -> None:
         """Handle a CredentialsExpiredError."""
         LOGGER.info("401 detected; attempting refresh token")
 
@@ -177,8 +177,8 @@ class API:  # pylint: disable=too-many-instance-attributes
         )
 
     async def _request(  # pylint: disable=too-many-branches
-        self, method: str, endpoint: str, **kwargs
-    ) -> dict:
+        self, method: str, endpoint: str, **kwargs: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Execute an API request.
 
         :param method: The HTTP method to use
@@ -191,7 +191,6 @@ class API:  # pylint: disable=too-many-instance-attributes
         :type request_retry_interval: ``int``
         :rtype: ``dict``
         """
-        data = {}
         kwargs.setdefault("headers", {})
         if self._access_token:
             kwargs["headers"]["Authorization"] = f"Bearer {self._access_token}"
@@ -206,6 +205,9 @@ class API:  # pylint: disable=too-many-instance-attributes
         else:
             session = ClientSession(timeout=ClientTimeout(total=DEFAULT_TIMEOUT))
 
+        assert session
+
+        data: Union[Dict[str, Any], str] = {}
         try:
             async with session.request(
                 method, f"{API_URL_BASE}/{endpoint}", **kwargs
@@ -229,6 +231,8 @@ class API:  # pylint: disable=too-many-instance-attributes
 
                 resp.raise_for_status()
         except ClientError as err:
+            assert isinstance(data, dict)
+
             # If we get an "error" related to MFA, the response body data is
             # necessary for continuing on, so we swallow the error and return
             # that data:

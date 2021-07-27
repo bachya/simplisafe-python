@@ -3,7 +3,7 @@ import asyncio
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union, cast
 
 from simplipy.const import LOGGER
 from simplipy.entity import EntityTypes
@@ -30,7 +30,7 @@ MAX_PIN_LENGTH = 4
 RESERVED_PIN_LABELS = {CONF_DURESS_PIN, CONF_MASTER_PIN}
 
 
-def get_entity_type_from_data(entity_data: dict) -> EntityTypes:
+def get_entity_type_from_data(entity_data: Dict[str, Any]) -> EntityTypes:
     """Get the entity type of a raw data payload."""
     try:
         return EntityTypes(entity_data["type"])
@@ -47,14 +47,14 @@ class SystemNotification:
     text: str
     category: str
     code: str
-    timestamp: datetime
+    timestamp: float
 
     link: Optional[str] = None
     link_label: Optional[str] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Run post-init initialization."""
-        object.__setattr__(self, "timestamp", utc_from_timestamp(self.timestamp))
+        object.__setattr__(self, "received_dt", utc_from_timestamp(self.timestamp))
 
 
 class SystemStates(Enum):
@@ -83,13 +83,13 @@ def coerce_state_from_raw_value(value: str) -> SystemStates:
         return SystemStates.unknown
 
 
-def guard_from_missing_data(default_value: Any = None):
+def guard_from_missing_data(default_value: Any = None) -> Callable:
     """Guard a missing property by returning a set value."""
 
-    def decorator(func):
+    def decorator(func: Callable) -> Callable:
         """Decorate."""
 
-        def wrapper(system):
+        def wrapper(system: "System") -> Any:
             """Call the function and handle any issue."""
             try:
                 return func(system)
@@ -126,7 +126,7 @@ class System:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         # These will get filled in after initial update:
         self._notifications: List[SystemNotification] = []
         self._state = SystemStates.unknown
-        self.entity_data: Dict[str, dict] = {}
+        self.entity_data: Dict[str, Dict[str, Any]] = {}
 
         self.sensors: Dict[str, Union[SensorV2, SensorV3]] = {}
 
@@ -137,7 +137,9 @@ class System:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         :rtype: ``str``
         """
-        return self._api.subscription_data[self._system_id]["location"]["street1"]
+        return cast(
+            str, self._api.subscription_data[self._system_id]["location"]["street1"]
+        )
 
     @property  # type: ignore
     @guard_from_missing_data(False)
@@ -146,9 +148,12 @@ class System:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         :rtype: ``bool``
         """
-        return self._api.subscription_data[self._system_id]["location"]["system"][
-            "isAlarming"
-        ]
+        return cast(
+            bool,
+            self._api.subscription_data[self._system_id]["location"]["system"][
+                "isAlarming"
+            ],
+        )
 
     @property
     def active(self) -> bool:
@@ -156,7 +161,9 @@ class System:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         :rtype: ``bool``
         """
-        return self._api.subscription_data[self._system_id]["activated"] != 0
+        return cast(
+            bool, self._api.subscription_data[self._system_id]["activated"] != 0
+        )
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -165,9 +172,12 @@ class System:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         :rtype: ``str``
         """
-        return self._api.subscription_data[self._system_id]["location"]["system"][
-            "connType"
-        ]
+        return cast(
+            str,
+            self._api.subscription_data[self._system_id]["location"]["system"][
+                "connType"
+            ],
+        )
 
     @property
     def notifications(self) -> List[SystemNotification]:
@@ -184,9 +194,12 @@ class System:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         :rtype: ``str``
         """
-        return self._api.subscription_data[self._system_id]["location"]["system"][
-            "serial"
-        ]
+        return cast(
+            str,
+            self._api.subscription_data[self._system_id]["location"]["system"][
+                "serial"
+            ],
+        )
 
     @property
     def state(self) -> SystemStates:
@@ -212,9 +225,12 @@ class System:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         :rtype: ``int``
         """
-        return self._api.subscription_data[self._system_id]["location"]["system"][
-            "temperature"
-        ]
+        return cast(
+            int,
+            self._api.subscription_data[self._system_id]["location"]["system"][
+                "temperature"
+            ],
+        )
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -223,11 +239,14 @@ class System:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         :rtype: ``int``
         """
-        return self._api.subscription_data[self._system_id]["location"]["system"][
-            "version"
-        ]
+        return cast(
+            int,
+            self._api.subscription_data[self._system_id]["location"]["system"][
+                "version"
+            ],
+        )
 
-    async def _set_updated_pins(self, pins: dict) -> None:
+    async def _set_updated_pins(self, pins: Dict[str, Any]) -> None:
         """Post new PINs."""
         raise NotImplementedError()
 
@@ -247,7 +266,7 @@ class System:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Update all system data."""
         await self._api.update_subscription_data()
 
-    async def clear_notifications(self):
+    async def clear_notifications(self) -> None:
         """Clear all active notifications.
 
         This will remove the notifications from SimpliSafe's cloud, meaning they will no
@@ -265,7 +284,7 @@ class System:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     async def get_events(
         self, from_datetime: Optional[datetime] = None, num_events: Optional[int] = None
-    ) -> list:
+    ) -> List[Dict[str, Any]]:
         """Get events recorded by the base station.
 
         If no parameters are provided, this will return the most recent 50 events.
@@ -286,7 +305,7 @@ class System:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             "get", f"subscriptions/{self.system_id}/events", params=params
         )
 
-        return events_resp.get("events", [])
+        return cast(List[Dict[str, Any]], events_resp.get("events", []))
 
     async def get_latest_event(self) -> dict:
         """Get the most recent system event.

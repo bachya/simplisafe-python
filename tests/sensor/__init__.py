@@ -8,7 +8,6 @@ from simplipy.entity import EntityTypes
 from tests.common import TEST_EMAIL, TEST_PASSWORD, TEST_SYSTEM_ID
 
 
-@pytest.mark.asyncio
 async def test_properties_base(v2_server):
     """Test that base sensor properties are created properly."""
     async with v2_server:

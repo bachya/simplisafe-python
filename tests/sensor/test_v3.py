@@ -8,7 +8,6 @@ from simplipy import get_api
 from tests.common import TEST_CLIENT_ID, TEST_EMAIL, TEST_PASSWORD, TEST_SYSTEM_ID
 
 
-@pytest.mark.asyncio
 async def test_properties_v3(v3_server):
     """Test that v3 sensor properties are created properly."""
     async with aiohttp.ClientSession() as session:

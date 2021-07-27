@@ -733,7 +733,7 @@ async def test_system_notifications(v3_server, v3_subscriptions_response):
         assert notification1.text == "Power Outage - Backup battery in use."
         assert notification1.category == "error"
         assert notification1.code == "2000"
-        assert notification1.timestamp == datetime(
+        assert notification1.received_dt == datetime(
             2020, 2, 16, 3, 20, 28, tzinfo=pytz.UTC
         )
         assert notification1.link == "http://link.to.info"

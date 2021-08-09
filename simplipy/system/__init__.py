@@ -234,13 +234,13 @@ class System:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     @property  # type: ignore
     @guard_from_missing_data()
-    def version(self) -> int:
+    def version(self) -> str:
         """Return the system version.
 
-        :rtype: ``int``
+        :rtype: ``str``
         """
         return cast(
-            int,
+            str,
             self._api.subscription_data[self._system_id]["location"]["system"][
                 "version"
             ],

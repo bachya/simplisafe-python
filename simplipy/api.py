@@ -80,6 +80,12 @@ class API:  # pylint: disable=too-many-instance-attributes
         self._password = password
         self._session: Optional[ClientSession] = session
 
+        # These will get filled in after initial authentication:
+        self._access_token: Optional[str] = None
+        self._refresh_token: Optional[str] = None
+        self.subscription_data: Dict[int, dict] = {}
+        self.user_id: Optional[int] = None
+
         # Implement a version of the request coroutine, but with backoff/retry logic:
         self.request = backoff.on_exception(
             backoff.expo,
@@ -89,12 +95,6 @@ class API:  # pylint: disable=too-many-instance-attributes
             on_backoff=self._handle_on_backoff,
             on_giveup=self._handle_on_giveup,
         )(self._request)
-
-        # These will get filled in after initial authentication:
-        self._access_token: Optional[str] = None
-        self._refresh_token: Optional[str] = None
-        self.subscription_data: Dict[int, dict] = {}
-        self.user_id: Optional[int] = None
 
     async def _handle_on_backoff(self, _: Dict[str, Any]) -> None:
         """Handle a backoff retry."""

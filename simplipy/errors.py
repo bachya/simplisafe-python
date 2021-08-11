@@ -7,12 +7,6 @@ class SimplipyError(Exception):
     pass
 
 
-class CredentialsExpiredError(SimplipyError):
-    """An error related to credentials (access or refresh tokens) having expired."""
-
-    pass
-
-
 class EndpointUnavailableError(SimplipyError):
     """An error related to accessing an endpoint that isn't available in the plan."""
 

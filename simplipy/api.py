@@ -1,6 +1,6 @@
 """Define a SimpliSafe account."""
 import base64
-from json.decoder import JSONDecodeError
+import sys
 from typing import Any, Dict, Optional, Union
 from uuid import uuid4
 
@@ -10,7 +10,6 @@ import backoff
 
 from simplipy.const import LOGGER
 from simplipy.errors import (
-    CredentialsExpiredError,
     EndpointUnavailableError,
     InvalidCredentialsError,
     PendingAuthorizationError,
@@ -82,23 +81,20 @@ class API:  # pylint: disable=too-many-instance-attributes
         )
         self._email = email
         self._password = password
+        self._refresh_token_tried = False
         self._session: Optional[ClientSession] = session
 
-        # Implement a public version of the request method that has appropriate retry,
-        # backoff, and when appropriate, reauthentication logic:
+        # Implement a version of the request coroutine, but with backoff/retry logic:
         self.request = backoff.on_exception(
             backoff.constant,
-            RequestError,
+            ClientError,
+            giveup=self._should_giveup_immediately,
             interval=request_retry_interval,
+            logger=LOGGER,
             max_tries=request_retries,
-        )(
-            backoff.on_exception(
-                backoff.constant,
-                CredentialsExpiredError,
-                interval=request_retry_interval,
-                on_backoff=self._handle_credentials_expired,
-            )(self._request)
-        )
+            on_backoff=self._handle_on_backoff,
+            on_giveup=self._handle_on_giveup,
+        )(self._request)
 
         # These will get filled in after initial authentication:
         self._access_token: Optional[str] = None
@@ -148,19 +144,36 @@ class API:  # pylint: disable=too-many-instance-attributes
         auth_check_resp = await self._request("get", "api/authCheck")
         self.user_id = auth_check_resp["userId"]
 
-    async def _handle_credentials_expired(self, _: Dict[str, Any]) -> None:
-        """Handle a CredentialsExpiredError."""
-        LOGGER.info("401 detected; attempting refresh token")
+    async def _handle_on_backoff(self, _: Dict[str, Any]) -> None:
+        """Handle a backoff retry."""
+        err_info = sys.exc_info()
+        err = err_info[1].with_traceback(err_info[2])  # type: ignore
 
-        try:
-            await self._refresh_access_token()
-        except CredentialsExpiredError:
+        if "401" not in str(err):
+            return
+
+        if not self._refresh_token_tried:
+            LOGGER.info("401 detected; attempting refresh token")
+            try:
+                await self._refresh_access_token()
+            except ClientError:
+                LOGGER.warning("Refreshing access token failed")
+            self._refresh_token_tried = True
+        else:
             LOGGER.info("Another 401 detected; attempting full reauth")
-
             try:
                 await self.login()
-            except CredentialsExpiredError as err:
-                raise InvalidCredentialsError("Refresh and reauth failed") from err
+            except ClientError:
+                LOGGER.warning("Re-authentication failed")
+
+    async def _handle_on_giveup(self, _: Dict[str, Any]) -> None:
+        """Handle a give up after retries are exhausted."""
+        err_info = sys.exc_info()
+        err = err_info[1].with_traceback(err_info[2])  # type: ignore
+
+        if "401" in str(err):
+            raise InvalidCredentialsError("Refresh and reauth failed") from err
+        raise RequestError(err) from err
 
     async def _refresh_access_token(self) -> None:
         """Regenerate an access token.
@@ -176,7 +189,7 @@ class API:  # pylint: disable=too-many-instance-attributes
             }
         )
 
-    async def _request(  # pylint: disable=too-many-branches
+    async def _request(
         self, method: str, endpoint: str, **kwargs: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Execute an API request.
@@ -185,10 +198,6 @@ class API:  # pylint: disable=too-many-instance-attributes
         :type method: ``str``
         :param endpoint: The relative SimpliSafe API endpoint to hit
         :type endpoint: ``str``
-        :param request_retries: The default number of request retries to use
-        :type request_retries: ``int``
-        :param request_retry_interval: The default retry delay
-        :type request_retry_interval: ``int``
         :rtype: ``dict``
         """
         kwargs.setdefault("headers", {})
@@ -207,59 +216,38 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         assert session
 
-        data: Union[Dict[str, Any], str] = {}
-        try:
-            async with session.request(
-                method, f"{API_URL_BASE}/{endpoint}", **kwargs
-            ) as resp:
-                try:
-                    data = await resp.json(content_type=None)
-                except JSONDecodeError:
-                    message = await resp.text()
-                    data = {"error": message}
+        async with session.request(
+            method, f"{API_URL_BASE}/{endpoint}", **kwargs
+        ) as resp:
+            data = await resp.json()
 
-                if isinstance(data, str):
-                    # In some cases, the SimpliSafe API will return a quoted string
-                    # in its response body (e.g., "\"Unauthorized\""), which is
-                    # technically valid JSON. Additionally, SimpliSafe sets that
-                    # response's Content-Type header to application/json (#smh).
-                    # Together, these factors will allow a non-true-JSON  payload to
-                    # escape the try/except above. So, if we get here, we use the
-                    # string value (with quotes removed) to raise an error:
-                    message = data.replace('"', "")
-                    data = {"error": message}
+            LOGGER.debug("Data received from /%s: %s", endpoint, data)
 
-                resp.raise_for_status()
-        except ClientError as err:
-            assert isinstance(data, dict)
-
-            # If we get an "error" related to MFA, the response body data is
-            # necessary for continuing on, so we swallow the error and return
-            # that data:
             if data.get("error") == "mfa_required":
+                # If we get an "error" related to MFA, the response body data is
+                # necessary for continuing on, so we swallow the error and return
+                # that data:
                 return data
-
             if data.get("type") == "NoRemoteManagement":
                 raise EndpointUnavailableError(
                     f"Endpoint unavailable in plan: {endpoint}"
-                ) from err
+                ) from None
 
-            if "401" in str(err):
-                if not self._access_token:
-                    raise InvalidCredentialsError("Invalid username/password") from err
-                raise CredentialsExpiredError(err) from err
+            resp.raise_for_status()
 
-            if "403" in str(err):
-                raise InvalidCredentialsError("Unauthorized") from err
-
-            raise RequestError(err) from err
-        finally:
-            if not use_running_session:
-                await session.close()
-
-        LOGGER.debug("Data received from /%s: %s", endpoint, data)
+        if not use_running_session:
+            await session.close()
 
         return data
+
+    def _should_giveup_immediately(self, err: BaseException) -> bool:
+        """Return whether an exception represents an unauthorized error."""
+        if isinstance(err, ClientError):
+            if "401" in str(err) and not self._access_token:
+                return True
+            if "403" in str(err):
+                return True
+        return False
 
     async def login(self) -> None:
         """Authenticate the API object (making it ready for requests)."""

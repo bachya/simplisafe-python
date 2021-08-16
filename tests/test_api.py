@@ -32,7 +32,11 @@ async def test_401_bad_credentials():
         async with aiohttp.ClientSession() as session:
             with pytest.raises(InvalidCredentialsError):
                 await get_api(
-                    TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
+                    TEST_EMAIL,
+                    TEST_PASSWORD,
+                    session=session,
+                    client_id=TEST_CLIENT_ID,
+                    request_retries=1,
                 )
 
 
@@ -53,10 +57,13 @@ async def test_401_total_failure(server):
     async with aiohttp.ClientSession() as session:
         with pytest.raises(InvalidCredentialsError):
             simplisafe = await get_api(
-                TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
+                TEST_EMAIL,
+                TEST_PASSWORD,
+                session=session,
+                client_id=TEST_CLIENT_ID,
+                request_retries=1,
             )
-
-            _ = await simplisafe.get_systems()
+            await simplisafe.get_systems()
 
 
 async def test_401_reauth_success(server, v2_subscriptions_response):
@@ -95,16 +102,10 @@ async def test_401_reauth_success(server, v2_subscriptions_response):
 
     async with aiohttp.ClientSession() as session:
         simplisafe = await get_api(
-            TEST_EMAIL,
-            TEST_PASSWORD,
-            session=session,
-            client_id=TEST_CLIENT_ID,
-            # We set a zero retry interval so that this test doesn't lag:
-            request_retry_interval=0,
+            TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID,
         )
         assert simplisafe._client_id == TEST_CLIENT_ID
-
-        _ = await simplisafe.get_systems()
+        await simplisafe.get_systems()
 
 
 async def test_401_refresh_token_success(server, v2_subscriptions_response):
@@ -140,16 +141,10 @@ async def test_401_refresh_token_success(server, v2_subscriptions_response):
 
     async with aiohttp.ClientSession() as session:
         simplisafe = await get_api(
-            TEST_EMAIL,
-            TEST_PASSWORD,
-            session=session,
-            client_id=TEST_CLIENT_ID,
-            # We set a zero retry interval so that this test doesn't lag:
-            request_retry_interval=0,
+            TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID,
         )
         assert simplisafe._client_id == TEST_CLIENT_ID
-
-        _ = await simplisafe.get_systems()
+        await simplisafe.get_systems()
 
 
 async def test_403_bad_credentials():
@@ -162,7 +157,11 @@ async def test_403_bad_credentials():
         async with aiohttp.ClientSession() as session:
             with pytest.raises(InvalidCredentialsError):
                 await get_api(
-                    TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
+                    TEST_EMAIL,
+                    TEST_PASSWORD,
+                    session=session,
+                    client_id=TEST_CLIENT_ID,
+                    request_retries=1,
                 )
 
 
@@ -209,6 +208,11 @@ async def test_request_error_failed_retry(server):
         status=409,
         payload="Conflict",
     )
+    server.get(
+        f"https://api.simplisafe.com/v1/users/{TEST_SUBSCRIPTION_ID}/subscriptions?activeOnly=true",
+        status=409,
+        payload="Conflict",
+    )
 
     async with aiohttp.ClientSession() as session:
         simplisafe = await get_api(
@@ -216,21 +220,23 @@ async def test_request_error_failed_retry(server):
             TEST_PASSWORD,
             session=session,
             client_id=TEST_CLIENT_ID,
-            # We set a zero retry interval so that this test doesn't lag:
-            request_retry_interval=0,
+            request_retries=1,
         )
-        assert simplisafe._client_id == TEST_CLIENT_ID
-
         with pytest.raises(RequestError):
-            _ = await simplisafe.get_systems()
+            await simplisafe.get_systems()
 
 
 async def test_request_error_successful_retry(server, v2_subscriptions_response):
     """Test that a RequestError can be successfully retried."""
     server.get(
         f"https://api.simplisafe.com/v1/users/{TEST_SUBSCRIPTION_ID}/subscriptions?activeOnly=true",
-        status=409,
-        payload="Conflict",
+        status=401,
+        payload="Unauthorized",
+    )
+    server.post(
+        "https://api.simplisafe.com/v1/api/token",
+        status=200,
+        body=load_fixture("api_token_response.json"),
     )
     server.get(
         f"https://api.simplisafe.com/v1/users/{TEST_SUBSCRIPTION_ID}/subscriptions?activeOnly=true",
@@ -248,13 +254,6 @@ async def test_request_error_successful_retry(server, v2_subscriptions_response)
 
     async with aiohttp.ClientSession() as session:
         simplisafe = await get_api(
-            TEST_EMAIL,
-            TEST_PASSWORD,
-            session=session,
-            client_id=TEST_CLIENT_ID,
-            # We set a zero retry interval so that this test doesn't lag:
-            request_retry_interval=0,
+            TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID,
         )
-        assert simplisafe._client_id == TEST_CLIENT_ID
-
-        _ = await simplisafe.get_systems()
+        await simplisafe.get_systems()

@@ -847,12 +847,7 @@ async def test_update_error(v3_server, v3_subscriptions_response, v3_settings_re
 
     async with aiohttp.ClientSession() as session:
         simplisafe = await get_api(
-            TEST_EMAIL,
-            TEST_PASSWORD,
-            session=session,
-            client_id=TEST_CLIENT_ID,
-            # We set a zero retry interval so that this test doesn't lag:
-            request_retry_interval=0,
+            TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID,
         )
 
         systems = await simplisafe.get_systems()

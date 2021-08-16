@@ -23,8 +23,8 @@ async def test_properties(v3_server, v3_subscriptions_response):
             TEST_PASSWORD,
             session=session,
             client_id=TEST_CLIENT_ID,
-            # We set a zero retry interval so that this test doesn't lag:
-            request_retry_interval=0,
+            # Set so that our tests don't take too long:
+            request_retries=0,
         )
 
         systems = await simplisafe.get_systems()

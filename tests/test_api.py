@@ -102,7 +102,10 @@ async def test_401_reauth_success(server, v2_subscriptions_response):
 
     async with aiohttp.ClientSession() as session:
         simplisafe = await get_api(
-            TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID,
+            TEST_EMAIL,
+            TEST_PASSWORD,
+            session=session,
+            client_id=TEST_CLIENT_ID,
         )
         assert simplisafe._client_id == TEST_CLIENT_ID
         await simplisafe.get_systems()
@@ -141,7 +144,10 @@ async def test_401_refresh_token_success(server, v2_subscriptions_response):
 
     async with aiohttp.ClientSession() as session:
         simplisafe = await get_api(
-            TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID,
+            TEST_EMAIL,
+            TEST_PASSWORD,
+            session=session,
+            client_id=TEST_CLIENT_ID,
         )
         assert simplisafe._client_id == TEST_CLIENT_ID
         await simplisafe.get_systems()
@@ -254,6 +260,9 @@ async def test_request_error_successful_retry(server, v2_subscriptions_response)
 
     async with aiohttp.ClientSession() as session:
         simplisafe = await get_api(
-            TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID,
+            TEST_EMAIL,
+            TEST_PASSWORD,
+            session=session,
+            client_id=TEST_CLIENT_ID,
         )
         await simplisafe.get_systems()

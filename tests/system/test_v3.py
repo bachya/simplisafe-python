@@ -31,7 +31,9 @@ from tests.common import (
 
 
 @pytest.mark.parametrize(
-    "v3_subscriptions_response", ["subscriptions_alarm_state_response"], indirect=True,
+    "v3_subscriptions_response",
+    ["subscriptions_alarm_state_response"],
+    indirect=True,
 )
 async def test_alarm_state(v3_server):
     """Test handling of a triggered alarm."""
@@ -243,7 +245,8 @@ async def test_missing_events(v3_server):
 
 
 @pytest.mark.parametrize(
-    "subscriptions_fixture_filename", ["subscriptions_missing_system_response.json"],
+    "subscriptions_fixture_filename",
+    ["subscriptions_missing_system_response.json"],
 )
 async def test_missing_system_info_initial(caplog, v3_server):
     """Test that missing system data on system load is handled correctly."""
@@ -847,7 +850,10 @@ async def test_update_error(v3_server, v3_subscriptions_response, v3_settings_re
 
     async with aiohttp.ClientSession() as session:
         simplisafe = await get_api(
-            TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID,
+            TEST_EMAIL,
+            TEST_PASSWORD,
+            session=session,
+            client_id=TEST_CLIENT_ID,
         )
 
         systems = await simplisafe.get_systems()

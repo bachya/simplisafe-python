@@ -59,7 +59,15 @@ def v2_subscriptions_response(subscriptions_fixture_filename):
 
 
 @pytest.fixture()
-def v3_server(server, v3_settings_response, v3_subscriptions_response):
+def v3_sensors_response():
+    """Define a fixture that returns V3 sensor data."""
+    return json.loads(load_fixture("v3_sensors_response.json"))
+
+
+@pytest.fixture()
+def v3_server(
+    server, v3_sensors_response, v3_settings_response, v3_subscriptions_response
+):
     """Define a v3 server."""
     server.get(
         f"https://api.simplisafe.com/v1/users/{TEST_USER_ID}/subscriptions?activeOnly=true",
@@ -80,7 +88,7 @@ def v3_server(server, v3_settings_response, v3_subscriptions_response):
             "/sensors?forceUpdate=false"
         ),
         status=200,
-        body=load_fixture("v3_sensors_response.json"),
+        body=json.dumps(v3_sensors_response),
     )
     return server
 

@@ -191,12 +191,12 @@ class API:  # pylint: disable=too-many-instance-attributes
 
             LOGGER.debug("Data received from /%s: %s", endpoint, data)
 
-            if data.get("error") == "mfa_required":
+            if data and data.get("error") == "mfa_required":
                 # If we get an "error" related to MFA, the response body data is
                 # necessary for continuing on, so we swallow the error and return
                 # that data:
                 return data
-            if data.get("type") == "NoRemoteManagement":
+            if data and data.get("type") == "NoRemoteManagement":
                 raise EndpointUnavailableError(
                     f"Endpoint unavailable in plan: {endpoint}"
                 ) from None

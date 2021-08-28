@@ -15,9 +15,6 @@ class LockStates(Enum):
     unknown = 99
 
 
-STATE_MAP = {1: LockStates.locked, 2: LockStates.unlocked}
-
-
 class Lock(EntityV3):
     """A lock that works with V3 systems.
 

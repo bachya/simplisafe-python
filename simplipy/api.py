@@ -178,6 +178,10 @@ class API:  # pylint: disable=too-many-instance-attributes
                 message = await resp.text()
                 data = {"error": message}
 
+            if not data:
+                # Some API calls, lock locking/unlocking a lock, won't return anything
+                # at all, in that case, we just return an empty payload:
+                data = {}
             if isinstance(data, str):
                 # In some cases, the SimpliSafe API will return a quoted string
                 # in its response body (e.g., "\"Unauthorized\""), which is

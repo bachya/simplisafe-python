@@ -178,10 +178,6 @@ class API:  # pylint: disable=too-many-instance-attributes
                 message = await resp.text()
                 data = {"error": message}
 
-            if not data:
-                # Some API calls, lock locking/unlocking a lock, won't return anything
-                # at all, in that case, we just return an empty payload:
-                data = {}
             if isinstance(data, str):
                 # In some cases, the SimpliSafe API will return a quoted string
                 # in its response body (e.g., "\"Unauthorized\""), which is
@@ -195,12 +191,12 @@ class API:  # pylint: disable=too-many-instance-attributes
 
             LOGGER.debug("Data received from /%s: %s", endpoint, data)
 
-            if data.get("error") == "mfa_required":
+            if data and data.get("error") == "mfa_required":
                 # If we get an "error" related to MFA, the response body data is
                 # necessary for continuing on, so we swallow the error and return
                 # that data:
                 return data
-            if data.get("type") == "NoRemoteManagement":
+            if data and data.get("type") == "NoRemoteManagement":
                 raise EndpointUnavailableError(
                     f"Endpoint unavailable in plan: {endpoint}"
                 ) from None

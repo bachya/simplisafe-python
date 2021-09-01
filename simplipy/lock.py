@@ -15,9 +15,6 @@ class LockStates(Enum):
     unknown = 99
 
 
-SET_STATE_MAP = {LockStates.locked: "lock", LockStates.unlocked: "unlock"}
-
-
 class Lock(EntityV3):
     """A lock that works with V3 systems.
 
@@ -74,28 +71,34 @@ class Lock(EntityV3):
         if bool(self._system.entity_data[self._serial]["status"]["lockJamState"]):
             return LockStates.jammed
 
-        raw_state = self._system.entity_data[self._serial]["status"]["lockState"]
+        if self._system.entity_data[self._serial]["status"]["lockState"] == 1:
+            return LockStates.locked
 
-        try:
-            return LockStates(raw_state)
-        except ValueError:
-            LOGGER.error("Unknown raw lock state: %s", raw_state)
-            return LockStates.unknown
+        if self._system.entity_data[self._serial]["status"]["lockState"] == 2:
+            return LockStates.unlocked
 
-    async def _set_lock_state(self, state: LockStates) -> None:
-        """Set the lock state."""
-        await self._api.request(
-            "post",
-            f"doorlock/{self._system.system_id}/{self.serial}/state",
-            json={"state": SET_STATE_MAP[state]},
+        LOGGER.error(
+            "Unknown raw lock state: %s",
+            self._system.entity_data[self._serial]["status"]["lockState"],
         )
-
-        self._system.entity_data[self._serial]["status"]["lockState"] = state.value
+        return LockStates.unknown
 
     async def lock(self) -> None:
         """Lock the lock."""
-        await self._set_lock_state(LockStates.locked)
+        await self._api.request(
+            "post",
+            f"doorlock/{self._system.system_id}/{self.serial}/state",
+            json={"state": "lock"},
+        )
+
+        self._system.entity_data[self._serial]["status"]["lockState"] = 1
 
     async def unlock(self) -> None:
         """Unlock the lock."""
-        await self._set_lock_state(LockStates.unlocked)
+        await self._api.request(
+            "post",
+            f"doorlock/{self._system.system_id}/{self.serial}/state",
+            json={"state": "unlock"},
+        )
+
+        self._system.entity_data[self._serial]["status"]["lockState"] = 2

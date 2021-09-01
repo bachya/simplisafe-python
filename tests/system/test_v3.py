@@ -31,7 +31,9 @@ from tests.common import (
 
 
 @pytest.mark.parametrize(
-    "v3_subscriptions_response", ["subscriptions_alarm_state_response"], indirect=True,
+    "v3_subscriptions_response",
+    ["subscriptions_alarm_state_response"],
+    indirect=True,
 )
 async def test_alarm_state(v3_server):
     """Test handling of a triggered alarm."""
@@ -243,7 +245,8 @@ async def test_missing_events(v3_server):
 
 
 @pytest.mark.parametrize(
-    "subscriptions_fixture_filename", ["subscriptions_missing_system_response.json"],
+    "subscriptions_fixture_filename",
+    ["subscriptions_missing_system_response.json"],
 )
 async def test_missing_system_info_initial(caplog, v3_server):
     """Test that missing system data on system load is handled correctly."""
@@ -851,8 +854,6 @@ async def test_update_error(v3_server, v3_subscriptions_response, v3_settings_re
             TEST_PASSWORD,
             session=session,
             client_id=TEST_CLIENT_ID,
-            # We set a zero retry interval so that this test doesn't lag:
-            request_retry_interval=0,
         )
 
         systems = await simplisafe.get_systems()

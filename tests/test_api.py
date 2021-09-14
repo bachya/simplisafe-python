@@ -209,16 +209,6 @@ async def test_request_error_failed_retry(server):
         status=409,
         payload="Conflict",
     )
-    server.get(
-        f"https://api.simplisafe.com/v1/users/{TEST_SUBSCRIPTION_ID}/subscriptions?activeOnly=true",
-        status=409,
-        payload="Conflict",
-    )
-    server.get(
-        f"https://api.simplisafe.com/v1/users/{TEST_SUBSCRIPTION_ID}/subscriptions?activeOnly=true",
-        status=409,
-        payload="Conflict",
-    )
 
     async with aiohttp.ClientSession() as session:
         simplisafe = await get_api(

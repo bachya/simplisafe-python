@@ -15,7 +15,8 @@ from .common import (
 )
 
 
-async def test_properties(v3_server, v3_subscriptions_response):
+@pytest.mark.asyncio
+async def test_properties(aresponses, v3_server):
     """Test that camera properties are created properly."""
     async with aiohttp.ClientSession() as session:
         simplisafe = await get_api(
@@ -24,7 +25,7 @@ async def test_properties(v3_server, v3_subscriptions_response):
             session=session,
             client_id=TEST_CLIENT_ID,
             # Set so that our tests don't take too long:
-            request_retries=0,
+            request_retries=1,
         )
 
         systems = await simplisafe.get_systems()
@@ -45,8 +46,11 @@ async def test_properties(v3_server, v3_subscriptions_response):
         error_camera = system.cameras[TEST_CAMERA_ID_2]
         assert error_camera.camera_type == "unknown"
 
+    aresponses.assert_plan_strictly_followed()
 
-async def test_video_urls(v3_server, v3_subscriptions_response):
+
+@pytest.mark.asyncio
+async def test_video_urls(aresponses, v3_server):
     """Test that camera video URL is configured properly."""
     async with aiohttp.ClientSession() as session:
         simplisafe = await get_api(
@@ -55,9 +59,7 @@ async def test_video_urls(v3_server, v3_subscriptions_response):
 
         systems = await simplisafe.get_systems()
         system = systems[TEST_SYSTEM_ID]
-
         camera = system.cameras[TEST_CAMERA_ID]
-
         assert (
             camera.video_url()
             == f"https://media.simplisafe.com/v1/{TEST_CAMERA_ID}/flv?x=1280&audioEncoding=AAC"
@@ -78,3 +80,5 @@ async def test_video_urls(v3_server, v3_subscriptions_response):
             f"https://media.simplisafe.com/v1/{TEST_CAMERA_ID}/flv"
             "?x=1280&audioEncoding=AAC&additional_param=1"
         )
+
+    aresponses.assert_plan_strictly_followed()

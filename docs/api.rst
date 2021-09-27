@@ -12,36 +12,36 @@ API
 .. automodule:: simplipy.api
    :members:
 
-Entities
+Devices
 --------
 
-.. autoclass:: simplipy.entity.Entity
+.. autoclass:: simplipy.device.Device
    :members:
 
-.. autoclass:: simplipy.entity.EntityTypes
+.. autoclass:: simplipy.device.DeviceTypes
    :members:
    :undoc-members:
 
-.. autoclass:: simplipy.entity.EntityV3
+.. autoclass:: simplipy.device.DeviceV3
    :members:
 
 Lock
 ----
 
-.. autoclass:: simplipy.lock.Lock
+.. autoclass:: simplipy.device.lock.Lock
    :members:
 
-.. autoclass:: simplipy.lock.LockStates
+.. autoclass:: simplipy.device.lock.LockStates
    :members:
    :undoc-members:
 
 Sensors
 -------
 
-.. autoclass:: simplipy.sensor.v2.SensorV2
+.. autoclass:: simplipy.device.sensor.v2.SensorV2
    :members:
 
-.. autoclass:: simplipy.sensor.v3.SensorV3
+.. autoclass:: simplipy.device.sensor.v3.SensorV3
    :members:
 
 Systems

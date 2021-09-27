@@ -9,7 +9,8 @@ from simplipy.errors import SimplipyError
 from tests.common import TEST_CLIENT_ID, TEST_EMAIL, TEST_PASSWORD, TEST_SYSTEM_ID
 
 
-async def test_properties_v2(v2_server):
+@pytest.mark.asyncio
+async def test_properties_v2(aresponses, v2_server):
     """Test that v2 sensor properties are created properly."""
     async with aiohttp.ClientSession() as session:
         simplisafe = await get_api(
@@ -18,7 +19,6 @@ async def test_properties_v2(v2_server):
 
         systems = await simplisafe.get_systems()
         system = systems[TEST_SYSTEM_ID]
-
         keypad = system.sensors["195"]
         assert keypad.data == 0
         assert not keypad.error
@@ -37,3 +37,5 @@ async def test_properties_v2(v2_server):
         assert entry_sensor.settings == 1
         assert not entry_sensor.trigger_instantly
         assert not entry_sensor.triggered
+
+    aresponses.assert_plan_strictly_followed()

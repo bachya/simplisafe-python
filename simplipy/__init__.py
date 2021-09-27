@@ -1,2 +1,2 @@
-"""Define module-level imports."""
-from .api import get_api  # noqa
+"""Define the simplipy package."""
+from simplipy.api import get_api  # noqa

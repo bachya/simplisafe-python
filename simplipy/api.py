@@ -1,4 +1,4 @@
-"""Define a SimpliSafe account."""
+"""Define functionality for interacting with the SimpliSafe API."""
 import base64
 from json.decoder import JSONDecodeError
 import sys
@@ -83,7 +83,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         # These will get filled in after initial authentication:
         self._access_token: Optional[str] = None
         self._refresh_token: Optional[str] = None
-        self.subscription_data: Dict[int, dict] = {}
+        self.subscription_data: Dict[int, Any] = {}
         self.user_id: Optional[int] = None
 
         # Implement a version of the request coroutine, but with backoff/retry logic:
@@ -168,7 +168,7 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         assert session
 
-        data: Dict[str, Any] = {}
+        data: Union[Dict[str, Any], str] = {}
         async with session.request(
             method, f"{API_URL_BASE}/{endpoint}", **kwargs
         ) as resp:
@@ -268,52 +268,49 @@ class API:  # pylint: disable=too-many-instance-attributes
     async def get_systems(self) -> Dict[int, Union[SystemV2, SystemV3]]:
         """Get systems associated to the associated SimpliSafe account.
 
-        In the dict that is returned, the keys are the system ID and the values are
-        actual ``System`` objects.
+        In the dict that is returned, the keys are the subscription ID and the values
+        are actual ``System`` objects.
 
         :rtype: ``Dict[int, simplipy.system.System]``
         """
+        systems: Dict[int, Union[SystemV2, SystemV3]] = {}
+
         await self.update_subscription_data()
 
-        systems = {}
-
-        for system_id, subscription in self.subscription_data.items():
-            version = subscription["location"]["system"]["version"]
-
-            system: Union[SystemV2, SystemV3]
-            if version == 2:
-                system = SystemV2(self, system_id)
-            else:
-                system = SystemV3(self, system_id)
-
-            # Skip deactivated systems:
-            if not system.active:
-                LOGGER.info("Skipping deactivated system: %s", system_id)
+        for sid, subscription in self.subscription_data.items():
+            if not subscription["activated"] != 0:
+                LOGGER.info("Skipping inactive subscription: %s", sid)
                 continue
 
-            # Update the system, but don't include system data itself, since it will
-            # already have been fetched when the API was first queried:
-            await system.update(include_system=False)
-            await system.generate_entities()
-            systems[system_id] = system
+            # if "system" not in subscription["location"]:
+            if not subscription["location"].get("system"):
+                LOGGER.error("Skipping subscription with missing system data: %s", sid)
+                continue
+
+            system: Union[SystemV2, SystemV3]
+            version = subscription["location"]["system"]["version"]
+            if version == 2:
+                system = SystemV2(self, sid)
+            else:
+                system = SystemV3(self, sid)
+
+            # Update the system, but don't include subscription data itself, since it
+            # will already have been fetched when the API was first queried:
+            await system.update(include_subscription=False)
+            system.generate_device_objects()
+            systems[sid] = system
 
         return systems
 
     async def update_subscription_data(self) -> None:
-        """Update our internal "raw data" listing of subscriptions."""
+        """Get the latest subscription data."""
         subscription_resp = await self.request(
             "get", f"users/{self.user_id}/subscriptions", params={"activeOnly": "true"}
         )
-
-        for subscription in subscription_resp["subscriptions"]:
-            if "version" not in subscription["location"]["system"]:
-                LOGGER.error(
-                    "Skipping location with missing system data: %s",
-                    subscription["location"]["sid"],
-                )
-                continue
-
-            self.subscription_data[subscription["sid"]] = subscription
+        self.subscription_data = {
+            subscription["sid"]: subscription
+            for subscription in subscription_resp["subscriptions"]
+        }
 
 
 async def get_api(

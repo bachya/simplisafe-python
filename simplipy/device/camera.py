@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any, Dict, cast
 from urllib.parse import urlencode
 
 from simplipy.const import LOGGER
+from simplipy.device import DeviceV3
 
 if TYPE_CHECKING:
     from simplipy.system.v3 import SystemV3
@@ -24,13 +25,10 @@ MODEL_TO_TYPE = {
 }
 
 
-class Camera:
+class Camera(DeviceV3):
     """Define a SimpliCam."""
 
-    def __init__(self, system: "SystemV3", uuid: str) -> None:
-        """Initialize."""
-        self._system = system
-        self._uuid = uuid
+    _system: "SystemV3"
 
     @property
     def camera_settings(self) -> Dict[str, Any]:
@@ -39,7 +37,7 @@ class Camera:
         :rtype: ``dict``
         """
         return cast(
-            Dict[str, Any], self._system.camera_data[self._uuid]["cameraSettings"]
+            Dict[str, Any], self._system.camera_data[self._serial]["cameraSettings"]
         )
 
     @property
@@ -49,30 +47,31 @@ class Camera:
         :rtype: ``str``
         """
         try:
-            return MODEL_TO_TYPE[self._system.camera_data[self._uuid]["model"]]
+            return MODEL_TO_TYPE[self._system.camera_data[self._serial]["model"]]
         except KeyError:
             LOGGER.error(
-                "Unknown camera type: %s", self._system.camera_data[self._uuid]["model"]
+                "Unknown camera type: %s",
+                self._system.camera_data[self._serial]["model"],
             )
             return CAMERA_MODEL_UNKNOWN
 
     @property
     def name(self) -> str:
-        """Return the entity name.
+        """Return the camera name.
 
         :rtype: ``str``
         """
         return cast(
-            str, self._system.camera_data[self._uuid]["cameraSettings"]["cameraName"]
+            str, self._system.camera_data[self._serial]["cameraSettings"]["cameraName"]
         )
 
     @property
     def serial(self) -> str:
-        """Return the entity's serial number.
+        """Return the camera's serial number.
 
         :rtype: ``str``
         """
-        return self._uuid
+        return self._serial
 
     @property
     def shutter_open_when_away(self) -> bool:
@@ -80,13 +79,8 @@ class Camera:
 
         :rtype: ``bool``
         """
-        return cast(
-            bool,
-            (
-                self._system.camera_data[self._uuid]["cameraSettings"]["shutterAway"]
-                == "open"
-            ),
-        )
+        val = self._system.camera_data[self._serial]["cameraSettings"]["shutterAway"]
+        return cast(bool, val == "open")
 
     @property
     def shutter_open_when_home(self) -> bool:
@@ -94,13 +88,8 @@ class Camera:
 
         :rtype: ``bool``
         """
-        return cast(
-            bool,
-            (
-                self._system.camera_data[self._uuid]["cameraSettings"]["shutterHome"]
-                == "open"
-            ),
-        )
+        val = self._system.camera_data[self._serial]["cameraSettings"]["shutterHome"]
+        return cast(bool, val == "open")
 
     @property
     def shutter_open_when_off(self) -> bool:
@@ -108,13 +97,8 @@ class Camera:
 
         :rtype: ``bool``
         """
-        return cast(
-            bool,
-            (
-                self._system.camera_data[self._uuid]["cameraSettings"]["shutterOff"]
-                == "open"
-            ),
-        )
+        val = self._system.camera_data[self._serial]["cameraSettings"]["shutterOff"]
+        return cast(bool, val == "open")
 
     @property
     def status(self) -> str:
@@ -122,7 +106,7 @@ class Camera:
 
         :rtype: ``str``
         """
-        return cast(str, self._system.camera_data[self._uuid]["status"])
+        return cast(str, self._system.camera_data[self._serial]["status"])
 
     @property
     def subscription_enabled(self) -> bool:
@@ -131,7 +115,7 @@ class Camera:
         :rtype: ``bool``
         """
         return cast(
-            bool, self._system.camera_data[self._uuid]["subscription"]["enabled"]
+            bool, self._system.camera_data[self._serial]["subscription"]["enabled"]
         )
 
     def video_url(

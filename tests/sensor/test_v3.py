@@ -8,7 +8,8 @@ from simplipy import get_api
 from tests.common import TEST_CLIENT_ID, TEST_EMAIL, TEST_PASSWORD, TEST_SYSTEM_ID
 
 
-async def test_properties_v3(v3_server):
+@pytest.mark.asyncio
+async def test_properties_v3(aresponses, v3_server):
     """Test that v3 sensor properties are created properly."""
     async with aiohttp.ClientSession() as session:
         simplisafe = await get_api(
@@ -36,3 +37,5 @@ async def test_properties_v3(v3_server):
         # non-temperature sensor throws an error:
         with pytest.raises(AttributeError):
             assert siren.temperature == 42
+
+    aresponses.assert_plan_strictly_followed()

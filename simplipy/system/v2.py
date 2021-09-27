@@ -2,14 +2,15 @@
 from typing import Dict
 
 from simplipy.const import LOGGER
-from simplipy.sensor.v2 import SensorV2
+from simplipy.device.sensor.v2 import SensorV2
 from simplipy.system import (
     CONF_DURESS_PIN,
     CONF_MASTER_PIN,
     DEFAULT_MAX_USER_PINS,
     System,
     SystemStates,
-    get_entity_type_from_data,
+    coerce_state_from_raw_value,
+    get_device_type_from_data,
 )
 
 
@@ -40,27 +41,6 @@ def create_pin_payload(pins: dict) -> Dict[str, Dict[str, Dict[str, str]]]:
 class SystemV2(System):
     """Define a V2 (original) system."""
 
-    async def _update_entity_data(self, cached: bool = True) -> None:
-        """Update sensors to the latest values."""
-        sensor_resp = await self._api.request(
-            "get",
-            f"subscriptions/{self.system_id}/settings",
-            params={"settingsType": "all", "cached": str(cached).lower()},
-        )
-
-        for entity in sensor_resp.get("settings", {}).get("sensors", []):
-            if not entity:
-                continue
-            self.entity_data[entity["serial"]] = entity
-
-    async def _set_updated_pins(self, pins: dict) -> None:
-        """Post new PINs."""
-        await self._api.request(
-            "post",
-            f"subscriptions/{self.system_id}/pins",
-            json=create_pin_payload(pins),
-        )
-
     async def _set_state(self, value: SystemStates) -> None:
         """Set the state of the system."""
         state_resp = await self._api.request(
@@ -70,13 +50,38 @@ class SystemV2(System):
         )
 
         if state_resp["success"]:
-            self._state = SystemStates[state_resp["requestedState"]]
+            self._state = coerce_state_from_raw_value(state_resp["requestedState"])
 
-    async def generate_entities(self) -> None:
-        """Generate entity objects for this system."""
-        for serial, entity in self.entity_data.items():
-            entity_type = get_entity_type_from_data(entity)
-            self.sensors[serial] = SensorV2(self._api, self, entity_type, serial)
+    async def _set_updated_pins(self, pins: dict) -> None:
+        """Post new PINs."""
+        await self._api.request(
+            "post",
+            f"subscriptions/{self.system_id}/pins",
+            json=create_pin_payload(pins),
+        )
+
+    async def _update_device_data(self, cached: bool = True) -> None:
+        """Update sensors to the latest values."""
+        sensor_resp = await self._api.request(
+            "get",
+            f"subscriptions/{self.system_id}/settings",
+            params={"settingsType": "all", "cached": str(cached).lower()},
+        )
+
+        for sensor in sensor_resp.get("settings", {}).get("sensors", []):
+            if not sensor:
+                continue
+            self.sensor_data[sensor["serial"]] = sensor
+
+    async def _update_settings_data(self, cached: bool = True) -> None:
+        """Update all settings data."""
+        pass
+
+    def generate_device_objects(self) -> None:
+        """Generate device objects for this system."""
+        for serial, data in self.sensor_data.items():
+            sensor_type = get_device_type_from_data(data)
+            self.sensors[serial] = SensorV2(self, sensor_type, serial)
 
     async def get_pins(self, cached: bool = True) -> Dict[str, str]:
         """Return all of the set PINs, including master and duress.

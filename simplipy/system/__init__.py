@@ -6,10 +6,10 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union, cast
 
 from simplipy.const import LOGGER
-from simplipy.entity import EntityTypes
+from simplipy.device import DeviceTypes
+from simplipy.device.sensor.v2 import SensorV2
+from simplipy.device.sensor.v3 import SensorV3
 from simplipy.errors import PinError, SimplipyError
-from simplipy.sensor.v2 import SensorV2
-from simplipy.sensor.v3 import SensorV3
 from simplipy.util.dt import utc_from_timestamp
 from simplipy.util.string import convert_to_underscore
 
@@ -28,15 +28,6 @@ CONF_MASTER_PIN = "master"
 DEFAULT_MAX_USER_PINS = 4
 MAX_PIN_LENGTH = 4
 RESERVED_PIN_LABELS = {CONF_DURESS_PIN, CONF_MASTER_PIN}
-
-
-def get_entity_type_from_data(entity_data: Dict[str, Any]) -> EntityTypes:
-    """Get the entity type of a raw data payload."""
-    try:
-        return EntityTypes(entity_data["type"])
-    except ValueError:
-        LOGGER.error("Unknown entity type: %s", entity_data["type"])
-        return EntityTypes.unknown
 
 
 @dataclass(frozen=True)
@@ -79,8 +70,17 @@ def coerce_state_from_raw_value(value: str) -> SystemStates:
     try:
         return SystemStates[convert_to_underscore(value)]
     except KeyError:
-        LOGGER.error("Unknown system state: %s", value)
+        LOGGER.error("Unknown raw system state: %s", value)
         return SystemStates.unknown
+
+
+def get_device_type_from_data(device_data: Dict[str, Any]) -> DeviceTypes:
+    """Get the device type of a raw data payload."""
+    try:
+        return DeviceTypes(device_data["type"])
+    except ValueError:
+        LOGGER.error("Unknown device type: %s", device_data["type"])
+        return DeviceTypes.unknown
 
 
 def guard_from_missing_data(default_value: Any = None) -> Callable:
@@ -104,30 +104,27 @@ def guard_from_missing_data(default_value: Any = None) -> Callable:
     return decorator
 
 
-class System:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
+class System:
     """Define a system.
 
     Note that this class shouldn't be instantiated directly; it will be instantiated as
     appropriate via :meth:`simplipy.API.get_systems`.
 
-    :param request: A method to make authenticated API requests.
-    :type request: ``Callable[..., Coroutine]``
-    :param get_subscription_data: A method to get the latest subscription data
-    :type get_subscription_data: ``Callable[..., Coroutine]``
-    :param location_info: A raw data dict representing the system's state and properties.
-    :type location_info: ``dict``
+    :param api: A :meth:`simplipy.API` object
+    :type api: :meth:`simplipy.API`
+    :param sid: A subscription ID
+    :type sid: ``int``
     """
 
-    def __init__(self, api: "API", system_id: int) -> None:
+    def __init__(self, api: "API", sid: int) -> None:
         """Initialize."""
         self._api = api
-        self._system_id = system_id
+        self._sid = sid
 
         # These will get filled in after initial update:
         self._notifications: List[SystemNotification] = []
         self._state = SystemStates.unknown
-        self.entity_data: Dict[str, Dict[str, Any]] = {}
-
+        self.sensor_data: Dict[str, Dict[str, Any]] = {}
         self.sensors: Dict[str, Union[SensorV2, SensorV3]] = {}
 
     @property  # type: ignore
@@ -137,9 +134,7 @@ class System:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         :rtype: ``str``
         """
-        return cast(
-            str, self._api.subscription_data[self._system_id]["location"]["street1"]
-        )
+        return cast(str, self._api.subscription_data[self._sid]["location"]["street1"])
 
     @property  # type: ignore
     @guard_from_missing_data(False)
@@ -150,19 +145,7 @@ class System:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return cast(
             bool,
-            self._api.subscription_data[self._system_id]["location"]["system"][
-                "isAlarming"
-            ],
-        )
-
-    @property
-    def active(self) -> bool:
-        """Return whether the system is active.
-
-        :rtype: ``bool``
-        """
-        return cast(
-            bool, self._api.subscription_data[self._system_id]["activated"] != 0
+            self._api.subscription_data[self._sid]["location"]["system"]["isAlarming"],
         )
 
     @property  # type: ignore
@@ -174,9 +157,7 @@ class System:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return cast(
             str,
-            self._api.subscription_data[self._system_id]["location"]["system"][
-                "connType"
-            ],
+            self._api.subscription_data[self._sid]["location"]["system"]["connType"],
         )
 
     @property
@@ -196,9 +177,7 @@ class System:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return cast(
             str,
-            self._api.subscription_data[self._system_id]["location"]["system"][
-                "serial"
-            ],
+            self._api.subscription_data[self._sid]["location"]["system"]["serial"],
         )
 
     @property
@@ -216,7 +195,7 @@ class System:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         :rtype: ``int``
         """
-        return self._system_id
+        return self._sid
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -227,9 +206,7 @@ class System:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return cast(
             int,
-            self._api.subscription_data[self._system_id]["location"]["system"][
-                "temperature"
-            ],
+            self._api.subscription_data[self._sid]["location"]["system"]["temperature"],
         )
 
     @property  # type: ignore
@@ -241,29 +218,27 @@ class System:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return cast(
             int,
-            self._api.subscription_data[self._system_id]["location"]["system"][
-                "version"
-            ],
+            self._api.subscription_data[self._sid]["location"]["system"]["version"],
         )
-
-    async def _set_updated_pins(self, pins: Dict[str, Any]) -> None:
-        """Post new PINs."""
-        raise NotImplementedError()
 
     async def _set_state(self, value: SystemStates) -> None:
         """Raise if calling this undefined based method."""
         raise NotImplementedError()
 
-    async def _update_entity_data(self, cached: bool = False) -> None:
-        """Update all entity data."""
+    async def _set_updated_pins(self, pins: Dict[str, Any]) -> None:
+        """Post new PINs."""
+        raise NotImplementedError()
+
+    async def _update_device_data(self, cached: bool = False) -> None:
+        """Update all device data."""
         raise NotImplementedError()
 
     async def _update_settings_data(self, cached: bool = True) -> None:
         """Update all settings data."""
-        pass
+        raise NotImplementedError()
 
-    async def _update_system_data(self) -> None:
-        """Update all system data."""
+    async def _update_subscription_data(self) -> None:
+        """Update subscription data."""
         await self._api.update_subscription_data()
 
     async def clear_notifications(self) -> None:
@@ -278,8 +253,8 @@ class System:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             )
             self._notifications = []
 
-    async def generate_entities(self) -> None:
-        """Generate entity objects for this system."""
+    def generate_device_objects(self) -> None:
+        """Generate device objects for this system."""
         raise NotImplementedError()
 
     async def get_events(
@@ -317,7 +292,7 @@ class System:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         try:
             return events[0]
         except IndexError:
-            raise SimplipyError("SimpliSafe cloud didn't return any events") from None
+            raise SimplipyError("SimpliSafe didn't return any events") from None
 
     async def get_pins(self, cached: bool = True) -> Dict[str, str]:
         """Return all of the set PINs, including master and duress.
@@ -401,9 +376,9 @@ class System:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     async def update(
         self,
         *,
-        include_system: bool = True,
+        include_subscription: bool = True,
         include_settings: bool = True,
-        include_entities: bool = True,
+        include_devices: bool = True,
         cached: bool = True,
     ) -> None:
         """Get the latest system data.
@@ -411,29 +386,25 @@ class System:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         The ``cached`` parameter determines whether the SimpliSafe Cloud uses the last
         known values retrieved from the base station (``True``) or retrieves new data.
 
-        :param include_system: Whether system state/properties should be updated
-        :type include_system: ``bool``
+        :param include_subscription: Whether system state/properties should be updated
+        :type include_subscription: ``bool``
         :param include_settings: Whether system settings (like PINs) should be updated
         :type include_settings: ``bool``
-        :param include_entities: whether sensors/locks/etc. should be updated
-        :type include_entities: ``bool``
+        :param include_devices: whether sensors/locks/etc. should be updated
+        :type include_devices: ``bool``
         :param cached: Whether to used cached data.
         :type cached: ``bool``
         """
-        tasks = []
-
-        if include_system:
-            tasks.append(self._update_system_data())
+        update_tasks = []
+        if include_subscription:
+            update_tasks.append(self._update_subscription_data())
         if include_settings:
-            tasks.append(self._update_settings_data(cached))
+            update_tasks.append(self._update_settings_data(cached))
+        if include_devices:
+            update_tasks.append(self._update_device_data(cached))
+        await asyncio.gather(*update_tasks)
 
-        await asyncio.gather(*tasks)
-
-        # We await entity updates after the task pool since including it can cause
-        # HTTP 409s if that update occurs out of sequence:
-        if include_entities:
-            await self._update_entity_data(cached)
-
+        # Create notifications:
         self._notifications = [
             SystemNotification(
                 raw_message["id"],
@@ -444,13 +415,14 @@ class System:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 link=raw_message["link"],
                 link_label=raw_message["linkLabel"],
             )
-            for raw_message in self._api.subscription_data[self._system_id]["location"][
+            for raw_message in self._api.subscription_data[self._sid]["location"][
                 "system"
             ].get("messages", [])
         ]
 
+        # Set the current state:
         self._state = coerce_state_from_raw_value(
-            self._api.subscription_data[self._system_id]["location"]["system"].get(
+            self._api.subscription_data[self._sid]["location"]["system"].get(
                 "alarmState"
             )
         )

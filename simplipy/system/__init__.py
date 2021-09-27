@@ -5,7 +5,7 @@ import asyncio
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, cast
 
 from simplipy.const import LOGGER
 from simplipy.device import DeviceTypes
@@ -282,7 +282,7 @@ class System:
             "get", f"subscriptions/{self.system_id}/events", params=params
         )
 
-        return cast(list[dict[str, Any]], events_resp.get("events", []))
+        return cast(List[Dict[str, Any]], events_resp.get("events", []))
 
     async def get_latest_event(self) -> dict:
         """Get the most recent system event.

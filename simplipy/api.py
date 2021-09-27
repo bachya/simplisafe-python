@@ -1,8 +1,10 @@
 """Define functionality for interacting with the SimpliSafe API."""
+from __future__ import annotations
+
 import base64
 from json.decoder import JSONDecodeError
 import sys
-from typing import Any, Dict, Optional, Union
+from typing import Any
 from uuid import uuid4
 
 from aiohttp import ClientSession, ClientTimeout
@@ -66,8 +68,8 @@ class API:  # pylint: disable=too-many-instance-attributes
         email: str,
         password: str,
         *,
-        session: Optional[ClientSession] = None,
-        client_id: Optional[str] = None,
+        session: ClientSession | None = None,
+        client_id: str | None = None,
         request_retries: int = DEFAULT_REQUEST_RETRIES,
     ) -> None:
         """Initialize."""
@@ -78,13 +80,13 @@ class API:  # pylint: disable=too-many-instance-attributes
         )
         self._email = email
         self._password = password
-        self._session: Optional[ClientSession] = session
+        self._session: ClientSession | None = session
 
         # These will get filled in after initial authentication:
-        self._access_token: Optional[str] = None
-        self._refresh_token: Optional[str] = None
-        self.subscription_data: Dict[int, Any] = {}
-        self.user_id: Optional[int] = None
+        self._access_token: str | None = None
+        self._refresh_token: str | None = None
+        self.subscription_data: dict[int, Any] = {}
+        self.user_id: int | None = None
 
         # Implement a version of the request coroutine, but with backoff/retry logic:
         self.request = backoff.on_exception(
@@ -96,7 +98,7 @@ class API:  # pylint: disable=too-many-instance-attributes
             on_giveup=self._handle_on_giveup,
         )(self._request)
 
-    async def _handle_on_backoff(self, _: Dict[str, Any]) -> None:
+    async def _handle_on_backoff(self, _: dict[str, Any]) -> None:
         """Handle a backoff retry."""
         err_info = sys.exc_info()
         err = err_info[1].with_traceback(err_info[2])  # type: ignore
@@ -105,7 +107,7 @@ class API:  # pylint: disable=too-many-instance-attributes
             LOGGER.info("401 detected; attempting refresh token")
             await self._refresh_access_token()
 
-    async def _handle_on_giveup(self, _: Dict[str, Any]) -> None:
+    async def _handle_on_giveup(self, _: dict[str, Any]) -> None:
         """Handle a give up after retries are exhausted."""
         err_info = sys.exc_info()
         err = err_info[1].with_traceback(err_info[2])  # type: ignore
@@ -142,8 +144,8 @@ class API:  # pylint: disable=too-many-instance-attributes
         self._refresh_token = token_resp["refresh_token"]
 
     async def _request(
-        self, method: str, endpoint: str, **kwargs: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, method: str, endpoint: str, **kwargs: Any
+    ) -> dict[str, Any]:
         """Execute an API request.
 
         :param method: The HTTP method to use
@@ -168,7 +170,7 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         assert session
 
-        data: Union[Dict[str, Any], str] = {}
+        data: dict[str, Any] | str = {}
         async with session.request(
             method, f"{API_URL_BASE}/{endpoint}", **kwargs
         ) as resp:
@@ -265,7 +267,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         auth_check_resp = await self._request("get", "api/authCheck")
         self.user_id = auth_check_resp["userId"]
 
-    async def get_systems(self) -> Dict[int, Union[SystemV2, SystemV3]]:
+    async def get_systems(self) -> dict[int, SystemV2 | SystemV3]:
         """Get systems associated to the associated SimpliSafe account.
 
         In the dict that is returned, the keys are the subscription ID and the values
@@ -273,7 +275,7 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         :rtype: ``Dict[int, simplipy.system.System]``
         """
-        systems: Dict[int, Union[SystemV2, SystemV3]] = {}
+        systems: dict[int, SystemV2 | SystemV3] = {}
 
         await self.update_subscription_data()
 
@@ -287,7 +289,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 LOGGER.error("Skipping subscription with missing system data: %s", sid)
                 continue
 
-            system: Union[SystemV2, SystemV3]
+            system: SystemV2 | SystemV3
             version = subscription["location"]["system"]["version"]
             if version == 2:
                 system = SystemV2(self, sid)
@@ -317,8 +319,8 @@ async def get_api(
     email: str,
     password: str,
     *,
-    session: Optional[ClientSession] = None,
-    client_id: Optional[str] = None,
+    session: ClientSession | None = None,
+    client_id: str | None = None,
     request_retries: int = DEFAULT_REQUEST_RETRIES,
 ) -> API:
     """Return an authenticated API object.

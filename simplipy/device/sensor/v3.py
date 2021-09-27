@@ -1,5 +1,5 @@
 """Define a v3 (new) SimpliSafe sensor."""
-from typing import Optional, cast
+from typing import cast
 
 from simplipy.device import DeviceTypes, DeviceV3
 
@@ -49,7 +49,7 @@ class SensorV3(DeviceV3):
         return False
 
     @property
-    def temperature(self) -> Optional[int]:
+    def temperature(self) -> int:
         """Return the temperature of the sensor (as appropriate).
 
         If the sensor isn't a temperature sensor, an ``AttributeError`` will be raised.

@@ -1,6 +1,8 @@
 """Define a base SimpliSafe device."""
+from __future__ import annotations
+
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, cast
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from simplipy.system import System
@@ -43,7 +45,7 @@ class Device:
     :type serial: ``str``
     """
 
-    def __init__(self, system: "System", device_type: DeviceTypes, serial: str) -> None:
+    def __init__(self, system: System, device_type: DeviceTypes, serial: str) -> None:
         """Initialize."""
         self._device_type = device_type
         self._serial = serial
@@ -122,11 +124,11 @@ class DeviceV3(Device):
         return cast(bool, self._system.sensor_data[self._serial]["flags"]["offline"])
 
     @property
-    def settings(self) -> Dict[str, Any]:
+    def settings(self) -> dict[str, Any]:
         """Return the device's settings.
 
         Note that these can change based on what device type the device is.
 
         :rtype: ``dict``
         """
-        return cast(Dict[str, Any], self._system.sensor_data[self._serial]["setting"])
+        return cast(dict[str, Any], self._system.sensor_data[self._serial]["setting"])

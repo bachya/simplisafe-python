@@ -1,5 +1,5 @@
 """Define a V2 (original) SimpliSafe system."""
-from typing import Dict
+from __future__ import annotations
 
 from simplipy.const import LOGGER
 from simplipy.device.sensor.v2 import SensorV2
@@ -14,7 +14,7 @@ from simplipy.system import (
 )
 
 
-def create_pin_payload(pins: dict) -> Dict[str, Dict[str, Dict[str, str]]]:
+def create_pin_payload(pins: dict) -> dict[str, dict[str, dict[str, str]]]:
     """Create the request payload to send for updating PINs."""
     duress_pin = pins.pop(CONF_DURESS_PIN)
     master_pin = pins.pop(CONF_MASTER_PIN)
@@ -83,7 +83,7 @@ class SystemV2(System):
             sensor_type = get_device_type_from_data(data)
             self.sensors[serial] = SensorV2(self, sensor_type, serial)
 
-    async def get_pins(self, cached: bool = True) -> Dict[str, str]:
+    async def get_pins(self, cached: bool = True) -> dict[str, str]:
         """Return all of the set PINs, including master and duress.
 
         The ``cached`` parameter determines whether the SimpliSafe Cloud uses the last
@@ -91,7 +91,7 @@ class SystemV2(System):
 
         :param cached: Whether to used cached data.
         :type cached: ``bool``
-        :rtype: ``Dict[str, str]``
+        :rtype: ``dict[str, str]``
         """
         pins_resp = await self._api.request(
             "get",

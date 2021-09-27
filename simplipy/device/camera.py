@@ -1,5 +1,7 @@
 """Define SimpliSafe cameras (SimpliCams)."""
-from typing import TYPE_CHECKING, Any, Dict, cast
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, cast
 from urllib.parse import urlencode
 
 from simplipy.const import LOGGER
@@ -28,16 +30,16 @@ MODEL_TO_TYPE = {
 class Camera(DeviceV3):
     """Define a SimpliCam."""
 
-    _system: "SystemV3"
+    _system: SystemV3
 
     @property
-    def camera_settings(self) -> Dict[str, Any]:
+    def camera_settings(self) -> dict[str, Any]:
         """Return the camera settings.
 
         :rtype: ``dict``
         """
         return cast(
-            Dict[str, Any], self._system.camera_data[self._serial]["cameraSettings"]
+            dict[str, Any], self._system.camera_data[self._serial]["cameraSettings"]
         )
 
     @property
@@ -122,7 +124,7 @@ class Camera(DeviceV3):
         self,
         width: int = DEFAULT_VIDEO_WIDTH,
         audio_encoding: str = DEFAULT_AUDIO_ENCODING,
-        **kwargs: Dict[str, Any],
+        **kwargs: dict[str, Any],
     ) -> str:
         """Return the camera video URL.
 

@@ -1,6 +1,8 @@
 """Define a V3 (new) SimpliSafe system."""
+from __future__ import annotations
+
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Dict, Optional, cast
+from typing import TYPE_CHECKING, cast
 
 import voluptuous as vol
 
@@ -80,7 +82,7 @@ SYSTEM_PROPERTIES_PAYLOAD_SCHEMA = vol.Schema(
 )
 
 
-def create_pin_payload(pins: dict) -> Dict[str, Dict[str, Dict[str, str]]]:
+def create_pin_payload(pins: dict) -> dict[str, dict[str, dict[str, str]]]:
     """Create the request payload to send for updating PINs."""
     duress_pin = pins.pop(CONF_DURESS_PIN)
     master_pin = pins.pop(CONF_MASTER_PIN)
@@ -117,13 +119,13 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         """Initialize."""
         super().__init__(api, system_id)
 
-        self._last_state_change_dt: Optional[datetime] = None
+        self._last_state_change_dt: datetime | None = None
 
         # This will be filled in by the appropriate data update methods:
-        self.camera_data: Dict[str, dict] = self._generate_camera_data()
-        self.cameras: Dict[str, Camera] = {}
-        self.locks: Dict[str, Lock] = {}
-        self.settings_data: Dict[str, dict] = {}
+        self.camera_data: dict[str, dict] = self._generate_camera_data()
+        self.cameras: dict[str, Camera] = {}
+        self.locks: dict[str, Lock] = {}
+        self.settings_data: dict[str, dict] = {}
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -327,7 +329,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         """
         return cast(int, self.settings_data["basestationStatus"]["wifiRssi"])
 
-    def _generate_camera_data(self) -> Dict[str, dict]:
+    def _generate_camera_data(self) -> dict[str, dict]:
         """Generate usable, hashable camera data from subscription data.
 
         This method exists because the SimpliSafe API includes camera data with the
@@ -397,7 +399,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         for serial in self.camera_data:
             self.cameras[serial] = Camera(self, DeviceTypes.camera, serial)
 
-    async def get_pins(self, cached: bool = True) -> Dict[str, str]:
+    async def get_pins(self, cached: bool = True) -> dict[str, str]:
         """Return all of the set PINs, including master and duress.
 
         The ``cached`` parameter determines whether the SimpliSafe Cloud uses the last
@@ -405,7 +407,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         :param cached: Whether to used cached data.
         :type cached: ``bool``
-        :rtype: ``Dict[str, str]``
+        :rtype: ``dict[str, str]``
         """
         await self._update_settings_data(cached)
 

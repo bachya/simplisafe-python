@@ -1,9 +1,11 @@
 """Define V2 and V3 SimpliSafe systems."""
+from __future__ import annotations
+
 import asyncio
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, cast
 
 from simplipy.const import LOGGER
 from simplipy.device import DeviceTypes
@@ -40,8 +42,8 @@ class SystemNotification:
     code: str
     timestamp: float
 
-    link: Optional[str] = None
-    link_label: Optional[str] = None
+    link: str | None = None
+    link_label: str | None = None
 
     def __post_init__(self) -> None:
         """Run post-init initialization."""
@@ -74,7 +76,7 @@ def coerce_state_from_raw_value(value: str) -> SystemStates:
         return SystemStates.unknown
 
 
-def get_device_type_from_data(device_data: Dict[str, Any]) -> DeviceTypes:
+def get_device_type_from_data(device_data: dict[str, Any]) -> DeviceTypes:
     """Get the device type of a raw data payload."""
     try:
         return DeviceTypes(device_data["type"])
@@ -122,10 +124,10 @@ class System:
         self._sid = sid
 
         # These will get filled in after initial update:
-        self._notifications: List[SystemNotification] = []
+        self._notifications: list[SystemNotification] = []
         self._state = SystemStates.unknown
-        self.sensor_data: Dict[str, Dict[str, Any]] = {}
-        self.sensors: Dict[str, Union[SensorV2, SensorV3]] = {}
+        self.sensor_data: dict[str, dict[str, Any]] = {}
+        self.sensors: dict[str, SensorV2 | SensorV3] = {}
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -161,7 +163,7 @@ class System:
         )
 
     @property
-    def notifications(self) -> List[SystemNotification]:
+    def notifications(self) -> list[SystemNotification]:
         """Return the system's current messages/notifications.
 
         :rtype: ``List[:meth:`simplipy.system.SystemNotification`]``
@@ -225,7 +227,7 @@ class System:
         """Raise if calling this undefined based method."""
         raise NotImplementedError()
 
-    async def _set_updated_pins(self, pins: Dict[str, Any]) -> None:
+    async def _set_updated_pins(self, pins: dict[str, Any]) -> None:
         """Post new PINs."""
         raise NotImplementedError()
 
@@ -258,8 +260,8 @@ class System:
         raise NotImplementedError()
 
     async def get_events(
-        self, from_datetime: Optional[datetime] = None, num_events: Optional[int] = None
-    ) -> List[Dict[str, Any]]:
+        self, from_datetime: datetime | None = None, num_events: int | None = None
+    ) -> list[dict[str, Any]]:
         """Get events recorded by the base station.
 
         If no parameters are provided, this will return the most recent 50 events.
@@ -294,7 +296,7 @@ class System:
         except IndexError:
             raise SimplipyError("SimpliSafe didn't return any events") from None
 
-    async def get_pins(self, cached: bool = True) -> Dict[str, str]:
+    async def get_pins(self, cached: bool = True) -> dict[str, str]:
         """Return all of the set PINs, including master and duress.
 
         The ``cached`` parameter determines whether the SimpliSafe Cloud uses the last

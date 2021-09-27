@@ -60,7 +60,7 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-aiohttp = "^3.7.4"
+aiohttp = "^3.7.4.post0"
 backoff = "^1.11.1"
 python = "^3.7.0"
 pytz = ">=2019.3,<2022.0"
@@ -69,7 +69,7 @@ voluptuous = ">=0.11.7,<0.13.0"
 
 [tool.poetry.dev-dependencies]
 Sphinx = "^4.0.0"
-aioresponses = "^0.7.2"
+aresponses = "^2.1.4"
 asynctest = "^0.13.0"
 pre-commit = "^2.0.1"
 pytest = "^6.0.0"

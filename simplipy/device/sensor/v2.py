@@ -1,11 +1,11 @@
 """Define a v2 (old) SimpliSafe sensor."""
 from typing import cast
 
-from simplipy.entity import Entity, EntityTypes
+from simplipy.device import Device, DeviceTypes
 from simplipy.errors import SimplipyError
 
 
-class SensorV2(Entity):
+class SensorV2(Device):
     """A V2 (old) sensor.
 
     Note that this class shouldn't be instantiated directly; it will be
@@ -18,7 +18,7 @@ class SensorV2(Entity):
 
         :rtype: ``int``
         """
-        return cast(int, self._system.entity_data[self._serial]["sensorData"])
+        return cast(int, self._system.sensor_data[self._serial]["sensorData"])
 
     @property
     def error(self) -> bool:
@@ -26,7 +26,7 @@ class SensorV2(Entity):
 
         :rtype: ``bool``
         """
-        return cast(bool, self._system.entity_data[self._serial]["error"])
+        return cast(bool, self._system.sensor_data[self._serial]["error"])
 
     @property
     def low_battery(self) -> bool:
@@ -35,7 +35,7 @@ class SensorV2(Entity):
         :rtype: ``bool``
         """
         return cast(
-            bool, self._system.entity_data[self._serial].get("battery", "ok") != "ok"
+            bool, self._system.sensor_data[self._serial].get("battery", "ok") != "ok"
         )
 
     @property
@@ -44,7 +44,7 @@ class SensorV2(Entity):
 
         :rtype: ``bool``
         """
-        return cast(bool, self._system.entity_data[self._serial]["setting"])
+        return cast(bool, self._system.sensor_data[self._serial]["setting"])
 
     @property
     def trigger_instantly(self) -> bool:
@@ -52,7 +52,7 @@ class SensorV2(Entity):
 
         :rtype: ``bool``
         """
-        return cast(bool, self._system.entity_data[self._serial]["instant"])
+        return cast(bool, self._system.sensor_data[self._serial]["instant"])
 
     @property
     def triggered(self) -> bool:
@@ -60,10 +60,10 @@ class SensorV2(Entity):
 
         :rtype: ``bool``
         """
-        if self.type == EntityTypes.entry:
+        if self.type == DeviceTypes.entry:
             return cast(
                 bool,
-                self._system.entity_data[self._serial].get("entryStatus", "closed")
+                self._system.sensor_data[self._serial].get("entryStatus", "closed")
                 == "open",
             )
 

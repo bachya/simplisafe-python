@@ -1,10 +1,10 @@
 """Define a v3 (new) SimpliSafe sensor."""
 from typing import Optional, cast
 
-from simplipy.entity import EntityTypes, EntityV3
+from simplipy.device import DeviceTypes, DeviceV3
 
 
-class SensorV3(EntityV3):
+class SensorV3(DeviceV3):
     """A V3 (new) sensor.
 
     Note that this class shouldn't be instantiated directly; it will be
@@ -19,7 +19,7 @@ class SensorV3(EntityV3):
         """
         return cast(
             bool,
-            self._system.entity_data[self._serial]["setting"].get(
+            self._system.sensor_data[self._serial]["setting"].get(
                 "instantTrigger", False
             ),
         )
@@ -31,17 +31,17 @@ class SensorV3(EntityV3):
         :rtype: ``bool``
         """
         if self.type in (
-            EntityTypes.carbon_monoxide,
-            EntityTypes.entry,
-            EntityTypes.glass_break,
-            EntityTypes.leak,
-            EntityTypes.motion,
-            EntityTypes.smoke,
-            EntityTypes.temperature,
+            DeviceTypes.carbon_monoxide,
+            DeviceTypes.entry,
+            DeviceTypes.glass_break,
+            DeviceTypes.leak,
+            DeviceTypes.motion,
+            DeviceTypes.smoke,
+            DeviceTypes.temperature,
         ):
             return cast(
                 bool,
-                self._system.entity_data[self._serial]["status"].get(
+                self._system.sensor_data[self._serial]["status"].get(
                     "triggered", False
                 ),
             )
@@ -56,9 +56,9 @@ class SensorV3(EntityV3):
 
         :rtype: ``int``
         """
-        if self.type != EntityTypes.temperature:
+        if self.type != DeviceTypes.temperature:
             raise AttributeError("Non-temperature sensor cannot have a temperature")
 
         return cast(
-            int, self._system.entity_data[self._serial]["status"]["temperature"]
+            int, self._system.sensor_data[self._serial]["status"]["temperature"]
         )

@@ -4,11 +4,11 @@ from typing import TYPE_CHECKING, Dict, Optional, cast
 
 import voluptuous as vol
 
-from simplipy.camera import Camera
 from simplipy.const import LOGGER
-from simplipy.entity import EntityTypes
-from simplipy.lock import Lock
-from simplipy.sensor.v3 import SensorV3
+from simplipy.device import DeviceTypes
+from simplipy.device.camera import Camera
+from simplipy.device.lock import Lock
+from simplipy.device.sensor.v3 import SensorV3
 from simplipy.system import (
     CONF_DURESS_PIN,
     CONF_MASTER_PIN,
@@ -16,7 +16,7 @@ from simplipy.system import (
     System,
     SystemStates,
     coerce_state_from_raw_value,
-    get_entity_type_from_data,
+    get_device_type_from_data,
     guard_from_missing_data,
 )
 
@@ -116,14 +116,14 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
     def __init__(self, api: "API", system_id: int) -> None:
         """Initialize."""
         super().__init__(api, system_id)
+
         self._last_state_change_dt: Optional[datetime] = None
 
         # This will be filled in by the appropriate data update methods:
         self.camera_data: Dict[str, dict] = self._generate_camera_data()
-        self.settings_data: Dict[str, dict] = {}
-
         self.cameras: Dict[str, Camera] = {}
         self.locks: Dict[str, Lock] = {}
+        self.settings_data: Dict[str, dict] = {}
 
     @property  # type: ignore
     @guard_from_missing_data()
@@ -262,9 +262,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         """
         return cast(
             bool,
-            self._api.subscription_data[self._system_id]["location"]["system"][
-                "isOffline"
-            ],
+            self._api.subscription_data[self._sid]["location"]["system"]["isOffline"],
         )
 
     @property  # type: ignore
@@ -276,9 +274,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         """
         return cast(
             bool,
-            self._api.subscription_data[self._system_id]["location"]["system"][
-                "powerOutage"
-            ],
+            self._api.subscription_data[self._sid]["location"]["system"]["powerOutage"],
         )
 
     @property  # type: ignore
@@ -332,10 +328,15 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         return cast(int, self.settings_data["basestationStatus"]["wifiRssi"])
 
     def _generate_camera_data(self) -> Dict[str, dict]:
-        """Generate usable, hashable camera data from system data."""
+        """Generate usable, hashable camera data from subscription data.
+
+        This method exists because the SimpliSafe API includes camera data with the
+        subscription (and not with other devices); by splitting this out, we can
+        separate this action from updating the subscription data itself.
+        """
         return {
             camera["uuid"]: camera
-            for camera in self._api.subscription_data[self._system_id]["location"][
+            for camera in self._api.subscription_data[self._sid]["location"][
                 "system"
             ].get("cameras", [])
         }
@@ -347,7 +348,6 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         )
 
         self._state = coerce_state_from_raw_value(state_resp["state"])
-
         self._last_state_change_dt = datetime.utcnow()
 
     async def _set_updated_pins(self, pins: dict) -> None:
@@ -358,16 +358,15 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
             json=create_pin_payload(pins),
         )
 
-    async def _update_entity_data(self, cached: bool = True) -> None:
+    async def _update_device_data(self, cached: bool = True) -> None:
         """Update sensors to the latest values."""
         sensor_resp = await self._api.request(
             "get",
             f"ss3/subscriptions/{self.system_id}/sensors",
             params={"forceUpdate": str(not cached).lower()},
         )
-
-        self.entity_data = {
-            entity["serial"]: entity for entity in sensor_resp.get("sensors", [])
+        self.sensor_data = {
+            sensor["serial"]: sensor for sensor in sensor_resp.get("sensors", [])
         }
 
     async def _update_settings_data(self, cached: bool = True) -> None:
@@ -381,22 +380,22 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         if settings_resp:
             self.settings_data = settings_resp
 
-    async def _update_system_data(self) -> None:
-        """Update all system data (including camera data in V3 systems)."""
-        await super()._update_system_data()
+    async def _update_subscription_data(self) -> None:
+        """Update subscription data."""
+        await super()._update_subscription_data()
         self.camera_data = self._generate_camera_data()
 
-    async def generate_entities(self) -> None:
-        """Generate entity objects for this system."""
-        for serial, entity in self.entity_data.items():
-            entity_type = get_entity_type_from_data(entity)
-            if entity_type == EntityTypes.lock:
-                self.locks[serial] = Lock(self._api, self, entity_type, serial)
+    def generate_device_objects(self) -> None:
+        """Generate device objects for this system."""
+        for serial, sensor in self.sensor_data.items():
+            sensor_type = get_device_type_from_data(sensor)
+            if sensor_type == DeviceTypes.lock:
+                self.locks[serial] = Lock(self._api.request, self, sensor_type, serial)
             else:
-                self.sensors[serial] = SensorV3(self._api, self, entity_type, serial)
+                self.sensors[serial] = SensorV3(self, sensor_type, serial)
 
-        for uuid in self.camera_data:
-            self.cameras[uuid] = Camera(self, uuid)
+        for serial in self.camera_data:
+            self.cameras[serial] = Camera(self, DeviceTypes.camera, serial)
 
     async def get_pins(self, cached: bool = True) -> Dict[str, str]:
         """Return all of the set PINs, including master and duress.
@@ -463,9 +462,9 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
     async def update(
         self,
         *,
-        include_system: bool = True,
+        include_subscription: bool = True,
         include_settings: bool = True,
-        include_entities: bool = True,
+        include_devices: bool = True,
         cached: bool = True,
     ) -> None:
         """Get the latest system data.
@@ -473,12 +472,12 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         The ``cached`` parameter determines whether the SimpliSafe Cloud uses the last
         known values retrieved from the base station (``True``) or retrieves new data.
 
-        :param include_system: Whether system state/properties should be updated
-        :type include_system: ``bool``
+        :param include_subscription: Whether system state/properties should be updated
+        :type include_subscription: ``bool``
         :param include_settings: Whether system settings (like PINs) should be updated
         :type include_settings: ``bool``
-        :param include_entities: whether sensors/locks/etc. should be updated
-        :type include_entities: ``bool``
+        :param include_devices: whether sensors/locks/etc. should be updated
+        :type include_devices: ``bool``
         :param cached: Whether to used cached data.
         :type cached: ``bool``
         """
@@ -499,8 +498,8 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
             return
 
         await super().update(
-            include_system=include_system,
+            include_subscription=include_subscription,
             include_settings=include_settings,
-            include_entities=include_entities,
+            include_devices=include_devices,
             cached=cached,
         )

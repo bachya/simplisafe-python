@@ -38,7 +38,7 @@ All ``Sensor`` objects come with a standard set of properties
 
         # Return the sensor's type:
         sensor.type
-        # >>> simplipy.EntityTypes.glass_break
+        # >>> simplipy.DeviceTypes.glass_break
 
         # Return whether the sensor is in an error state:
         sensor.error

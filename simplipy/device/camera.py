@@ -1,7 +1,7 @@
 """Define SimpliSafe cameras (SimpliCams)."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Dict, cast
 from urllib.parse import urlencode
 
 from simplipy.const import LOGGER
@@ -39,7 +39,7 @@ class Camera(DeviceV3):
         :rtype: ``dict``
         """
         return cast(
-            dict[str, Any], self._system.camera_data[self._serial]["cameraSettings"]
+            Dict[str, Any], self._system.camera_data[self._serial]["cameraSettings"]
         )
 
     @property

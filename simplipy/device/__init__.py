@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Dict, cast
 
 if TYPE_CHECKING:
     from simplipy.system import System
@@ -131,4 +131,4 @@ class DeviceV3(Device):
 
         :rtype: ``dict``
         """
-        return cast(dict[str, Any], self._system.sensor_data[self._serial]["setting"])
+        return cast(Dict[str, Any], self._system.sensor_data[self._serial]["setting"])

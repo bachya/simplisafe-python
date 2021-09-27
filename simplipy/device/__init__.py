@@ -24,6 +24,7 @@ class DeviceTypes(Enum):
     siren = 13
     doorbell = 15
     lock = 16
+    outdoor_camera = 17
     lock_keypad = 253
     unknown = 99
 

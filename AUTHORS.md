@@ -6,6 +6,7 @@
 
 ## Contributors
 
+- Abductist (https://github.com/Abductist)
 - Kendell Richards (https://github.com/KTibow)
 - Niccolo Zapponi (https://github.com/nzapponi)
 - Scott Newman (https://github.com/greencoder)

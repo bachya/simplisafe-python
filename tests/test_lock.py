@@ -16,7 +16,6 @@ from .common import (
     TEST_PASSWORD,
     TEST_SUBSCRIPTION_ID,
     TEST_SYSTEM_ID,
-    load_fixture,
 )
 
 

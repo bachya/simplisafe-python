@@ -1,11 +1,9 @@
 """Define functionality for interacting with the SimpliSafe API."""
 from __future__ import annotations
 
-import base64
 from json.decoder import JSONDecodeError
 import sys
 from typing import Any
-from uuid import uuid4
 
 from aiohttp import ClientSession, ClientTimeout
 from aiohttp.client_exceptions import ClientError
@@ -15,34 +13,26 @@ from simplipy.const import LOGGER
 from simplipy.errors import (
     EndpointUnavailableError,
     InvalidCredentialsError,
-    PendingAuthorizationError,
     RequestError,
 )
 from simplipy.system.v2 import SystemV2
 from simplipy.system.v3 import SystemV3
+from simplipy.util.auth import (
+    AUTH_URL_BASE,
+    AUTH_URL_HOSTNAME,
+    DEFAULT_CLIENT_ID,
+    DEFAULT_REDIRECT_URI,
+)
 
 API_URL_HOSTNAME = "api.simplisafe.com"
 API_URL_BASE = f"https://{API_URL_HOSTNAME}/v1"
-API_URL_MFA_OOB = "http://simplisafe.com/oauth/grant-type/mfa-oob"
 
-DEFAULT_APP_VERSION = "1.62.0"
 DEFAULT_REQUEST_RETRIES = 4
 DEFAULT_TIMEOUT = 10
 DEFAULT_USER_AGENT = (
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/605.1.15 "
-    "(KHTML, like Gecko) Version/13.1.2 Safari/605.1.15"
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+    "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15"
 )
-
-CLIENT_ID_TEMPLATE = "{0}.WebApp.simplisafe.com"
-DEVICE_ID_TEMPLATE = (
-    'WebApp; useragent="Safari 13.1 (SS-ID: {0}) / macOS 10.15.6"; uuid="{1}"; id="{0}"'
-)
-
-
-def generate_device_id(client_id: str) -> str:
-    """Generate a random 10-character ID to use as the SimpliSafe device ID."""
-    seed = base64.b64encode(client_id.encode()).decode()[:10]
-    return f"{seed[:5]}-{seed[5:]}"
 
 
 class API:  # pylint: disable=too-many-instance-attributes
@@ -65,21 +55,11 @@ class API:  # pylint: disable=too-many-instance-attributes
 
     def __init__(
         self,
-        email: str,
-        password: str,
         *,
         session: ClientSession | None = None,
-        client_id: str | None = None,
         request_retries: int = DEFAULT_REQUEST_RETRIES,
     ) -> None:
         """Initialize."""
-        self._client_id = client_id or str(uuid4())
-        self._client_id_string = CLIENT_ID_TEMPLATE.format(self._client_id)
-        self._device_id_string = DEVICE_ID_TEMPLATE.format(
-            generate_device_id(self._client_id), self._client_id
-        )
-        self._email = email
-        self._password = password
         self._session: ClientSession | None = session
 
         # These will get filled in after initial authentication:
@@ -98,6 +78,63 @@ class API:  # pylint: disable=too-many-instance-attributes
             on_giveup=self._handle_on_giveup,
         )(self._request)
 
+    @classmethod
+    async def from_auth(
+        cls,
+        authorization_code: str,
+        code_verifier: str,
+        *,
+        session: ClientSession | None = None,
+        request_retries: int = DEFAULT_REQUEST_RETRIES,
+    ) -> API:
+        """Get an authenticated API object from an Auth0 code/verifier."""
+        api = cls(session=session, request_retries=request_retries)
+
+        try:
+            token_resp = await api._request(
+                "post",
+                "oauth/token",
+                url_base=AUTH_URL_BASE,
+                json={
+                    "grant_type": "authorization_code",
+                    "client_id": DEFAULT_CLIENT_ID,
+                    "code_verifier": code_verifier,
+                    "code": authorization_code,
+                    "redirect_uri": DEFAULT_REDIRECT_URI,
+                },
+            )
+        except ClientError as err:
+            if any(code in str(err) for code in ("401", "403")):
+                raise InvalidCredentialsError("Invalid credentials") from err
+            raise RequestError(err) from err
+
+        api._access_token = token_resp["access_token"]
+        api._refresh_token = token_resp["refresh_token"]
+        await api._update_user_id()
+
+        return api
+
+    @classmethod
+    async def from_refresh_token(
+        cls,
+        refresh_token: str,
+        *,
+        session: ClientSession | None = None,
+        request_retries: int = DEFAULT_REQUEST_RETRIES,
+    ) -> API:
+        """Get an authenticated API object from a refresh token."""
+        api = cls(session=session, request_retries=request_retries)
+        api._refresh_token = refresh_token
+
+        try:
+            await api._update_access_token_from_refresh_token()
+        except ClientError as err:
+            if any(code in str(err) for code in ("401", "403")):
+                raise InvalidCredentialsError("Invalid refresh token") from err
+            raise RequestError(err) from err
+
+        return api
+
     async def _handle_on_backoff(self, _: dict[str, Any]) -> None:
         """Handle a backoff retry."""
         err_info = sys.exc_info()
@@ -105,7 +142,7 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         if "401" in str(err):
             LOGGER.info("401 detected; attempting refresh token")
-            await self._refresh_access_token()
+            await self._update_access_token_from_refresh_token()
 
     async def _handle_on_giveup(self, _: dict[str, Any]) -> None:
         """Handle a give up after retries are exhausted."""
@@ -116,35 +153,8 @@ class API:  # pylint: disable=too-many-instance-attributes
             raise InvalidCredentialsError("Refresh and reauth failed") from err
         raise RequestError(err) from err
 
-    async def _refresh_access_token(self) -> None:
-        """Regenerate an access token.
-
-        :param refresh_token: The refresh token to use
-        :type refresh_token: str
-        """
-        try:
-            token_resp = await self._request(
-                "post",
-                "api/token",
-                json={
-                    "grant_type": "refresh_token",
-                    "client_id": self._client_id,
-                    "refresh_token": self._refresh_token,
-                },
-            )
-        except ClientError as err:
-            if "401" in str(err):
-                LOGGER.warning("401 during token refresh; attempting full re-auth")
-                await self.login()
-                return
-            raise RequestError(err) from err
-
-        # Set access and refresh tokens:
-        self._access_token = token_resp["access_token"]
-        self._refresh_token = token_resp["refresh_token"]
-
     async def _request(
-        self, method: str, endpoint: str, **kwargs: Any
+        self, method: str, endpoint: str, url_base: str = API_URL_BASE, **kwargs: Any
     ) -> dict[str, Any]:
         """Execute an API request.
 
@@ -152,14 +162,16 @@ class API:  # pylint: disable=too-many-instance-attributes
         :type method: ``str``
         :param endpoint: The relative SimpliSafe API endpoint to hit
         :type endpoint: ``str``
+        :param url_base: The base URL to use
+        :type url_base: ``str``
         :rtype: ``dict``
         """
         kwargs.setdefault("headers", {})
+        kwargs["headers"].setdefault("Host", API_URL_HOSTNAME)
+        kwargs["headers"]["Content-Type"] = "application/json; charset=utf-8"
+        kwargs["headers"]["User-Agent"] = DEFAULT_USER_AGENT
         if self._access_token:
             kwargs["headers"]["Authorization"] = f"Bearer {self._access_token}"
-        kwargs["headers"]["Content-Type"] = "application/json; charset=utf-8"
-        kwargs["headers"]["Host"] = API_URL_HOSTNAME
-        kwargs["headers"]["User-Agent"] = DEFAULT_USER_AGENT
 
         use_running_session = self._session and not self._session.closed
 
@@ -170,10 +182,12 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         assert session
 
+        print(f"{url_base}/{endpoint}")
+        print(kwargs["headers"])
+        print(kwargs.get("json"))
+
         data: dict[str, Any] | str = {}
-        async with session.request(
-            method, f"{API_URL_BASE}/{endpoint}", **kwargs
-        ) as resp:
+        async with session.request(method, f"{url_base}/{endpoint}", **kwargs) as resp:
             try:
                 data = await resp.json(content_type=None)
             except JSONDecodeError:
@@ -193,11 +207,6 @@ class API:  # pylint: disable=too-many-instance-attributes
 
             LOGGER.debug("Data received from /%s: %s", endpoint, data)
 
-            if data and data.get("error") == "mfa_required":
-                # If we get an "error" related to MFA, the response body data is
-                # necessary for continuing on, so we swallow the error and return
-                # that data:
-                return data
             if data and data.get("type") == "NoRemoteManagement":
                 raise EndpointUnavailableError(
                     f"Endpoint unavailable in plan: {endpoint}"
@@ -210,60 +219,28 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         return data
 
-    async def login(self) -> None:
-        """Authenticate the API object (making it ready for requests)."""
-        try:
-            token_resp = await self._request(
-                "post",
-                "api/token",
-                json={
-                    "grant_type": "password",
-                    "username": self._email,
-                    "password": self._password,
-                    "client_id": self._client_id_string,
-                    "device_id": self._device_id_string,
-                    "app_version": DEFAULT_APP_VERSION,
-                    "scope": "offline_access",
-                },
-            )
-        except ClientError as err:
-            if any(code in str(err) for code in ("401", "403")):
-                raise InvalidCredentialsError("Invalid credentials") from err
-            raise RequestError(err) from err
+    async def _update_access_token_from_refresh_token(self) -> None:
+        """Update access/refresh tokens from a refresh token."""
+        token_resp = await self._request(
+            "post",
+            "oauth/token",
+            url_base=AUTH_URL_BASE,
+            headers={
+                "Host": AUTH_URL_HOSTNAME,
+            },
+            json={
+                "grant_type": "refresh_token",
+                "client_id": DEFAULT_CLIENT_ID,
+                "refresh_token": self._refresh_token,
+            },
+        )
 
-        if "mfa_token" in token_resp:
-            mfa_challenge_response = await self._request(
-                "post",
-                "api/mfa/challenge",
-                json={
-                    "challenge_type": "oob",
-                    "client_id": self._client_id_string,
-                    "mfa_token": token_resp["mfa_token"],
-                },
-            )
-
-            await self._request(
-                "post",
-                "api/token",
-                json={
-                    "client_id": self._client_id_string,
-                    "grant_type": API_URL_MFA_OOB,
-                    "mfa_token": token_resp["mfa_token"],
-                    "oob_code": mfa_challenge_response["oob_code"],
-                    "scope": "offline_access",
-                },
-            )
-
-            raise PendingAuthorizationError(
-                f"Check your email for an MFA link, then use {self._client_id} "
-                "as the client_id parameter in future API calls"
-            )
-
-        # Set access and refresh tokens:
         self._access_token = token_resp["access_token"]
         self._refresh_token = token_resp["refresh_token"]
+        await self._update_user_id()
 
-        # Fetch the SimpliSafe user ID:
+    async def _update_user_id(self) -> None:
+        """Verify and update the user ID."""
         auth_check_resp = await self._request("get", "api/authCheck")
         self.user_id = auth_check_resp["userId"]
 
@@ -313,36 +290,3 @@ class API:  # pylint: disable=too-many-instance-attributes
             subscription["sid"]: subscription
             for subscription in subscription_resp["subscriptions"]
         }
-
-
-async def get_api(
-    email: str,
-    password: str,
-    *,
-    session: ClientSession | None = None,
-    client_id: str | None = None,
-    request_retries: int = DEFAULT_REQUEST_RETRIES,
-) -> API:
-    """Return an authenticated API object.
-
-    :param email: A SimpliSafe email address
-    :type email: ``str``
-    :param password: A SimpliSafe password
-    :type password: ``str``
-    :param session: An ``aiohttp`` ``ClientSession``
-    :type session: ``aiohttp.client.ClientSession``
-    :param client_id: The SimpliSafe client ID to use for this API object
-    :type client_id: ``str``
-    :param request_retries: The default number of request retries to use
-    :type request_retries: ``int``
-    :rtype: :meth:`simplipy.API`
-    """
-    api = API(
-        email,
-        password,
-        session=session,
-        client_id=client_id,
-        request_retries=request_retries,
-    )
-    await api.login()
-    return api

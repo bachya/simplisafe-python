@@ -19,12 +19,6 @@ class InvalidCredentialsError(SimplipyError):
     pass
 
 
-class PendingAuthorizationError(SimplipyError):
-    """An error ralted to an unconfirmed multi-factor authentication."""
-
-    pass
-
-
 class PinError(SimplipyError):
     """An error related to invalid PINs or PIN operations."""
 

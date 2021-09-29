@@ -39,16 +39,11 @@ class API:  # pylint: disable=too-many-instance-attributes
     """An API object to interact with the SimpliSafe cloud.
 
     Note that this class shouldn't be instantiated directly; instead, the
-    :meth:`simplipy.api.login` method should be used.
+    :meth:`simplipy.api.API.from_auth` and :meth:`simplipy.api.API.from_refresh_token`
+    methods should be used.
 
-    :param email: A SimpliSafe email address
-    :type email: ``str``
-    :param password: A SimpliSafe password
-    :type password: ``str``
     :param session: The ``aiohttp`` ``ClientSession`` session used for all HTTP requests
     :type session: ``aiohttp.client.ClientSession``
-    :param client_id: The SimpliSafe client ID to use for this API object
-    :type client_id: ``str``
     :param request_retries: The default number of request retries to use
     :type request_retries: ``int``
     """
@@ -87,7 +82,18 @@ class API:  # pylint: disable=too-many-instance-attributes
         session: ClientSession | None = None,
         request_retries: int = DEFAULT_REQUEST_RETRIES,
     ) -> API:
-        """Get an authenticated API object from an Auth0 code/verifier."""
+        """Get an authenticated API object from an Authorization Code and Code Verifier.
+
+        :param authorization_code: The Authorization Code
+        :type authorization_code: ``str``
+        :param code_verifier: The Code Verifier
+        :type code_verifier: ``str``
+        :param session: The ``aiohttp`` ``ClientSession`` session used for all HTTP requests
+        :type session: ``aiohttp.client.ClientSession``
+        :param request_retries: The default number of request retries to use
+        :type request_retries: ``int``
+        :rtype: :meth:`simplipy.api.API`
+        """
         api = cls(session=session, request_retries=request_retries)
 
         try:
@@ -122,7 +128,16 @@ class API:  # pylint: disable=too-many-instance-attributes
         session: ClientSession | None = None,
         request_retries: int = DEFAULT_REQUEST_RETRIES,
     ) -> API:
-        """Get an authenticated API object from a refresh token."""
+        """Get an authenticated API object from a refresh token.
+
+        :param refresh_token: The refresh token
+        :type refresh_token: ``str``
+        :param session: The ``aiohttp`` ``ClientSession`` session used for all HTTP requests
+        :type session: ``aiohttp.client.ClientSession``
+        :param request_retries: The default number of request retries to use
+        :type request_retries: ``int``
+        :rtype: :meth:`simplipy.api.API`
+        """
         api = cls(session=session, request_retries=request_retries)
         api.refresh_token = refresh_token
         await api._refresh_access_token()
@@ -169,16 +184,7 @@ class API:  # pylint: disable=too-many-instance-attributes
     async def _request(
         self, method: str, endpoint: str, url_base: str = API_URL_BASE, **kwargs: Any
     ) -> dict[str, Any]:
-        """Execute an API request.
-
-        :param method: The HTTP method to use
-        :type method: ``str``
-        :param endpoint: The relative SimpliSafe API endpoint to hit
-        :type endpoint: ``str``
-        :param url_base: The base URL to use
-        :type url_base: ``str``
-        :rtype: ``dict``
-        """
+        """Execute an API request."""
         kwargs.setdefault("headers", {})
         kwargs["headers"].setdefault("Host", API_URL_HOSTNAME)
         kwargs["headers"]["Content-Type"] = "application/json; charset=utf-8"

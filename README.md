@@ -13,6 +13,14 @@
 get data on their system (including available sensors), set the system state,
 and more.
 
+# 2021-09-28: Important Update
+
+In Q3 2021, users noticed that the traditional way of authenticating this library [was
+scheduled to be deprecated](https://github.com/bachya/simplisafe-python/issues/251). The
+latest version of the library is able to accommodate this, but it is substantially
+different from the previous method. A thorough reading of the documentation is highly
+recommended.
+
 # Documentation
 
 You can find complete documentation here: https://simplisafe-python.readthedocs.io

@@ -64,6 +64,27 @@ Systems
    :members:
    :undoc-members:
 
+Utilities
+---------
+
+``auth``
+********
+
+.. automodule:: simplipy.util.auth
+   :members:
+
+``dt``
+******
+
+.. automodule:: simplipy.util.dt
+   :members:
+
+``string``
+**********
+
+.. automodule:: simplipy.util.string
+   :members:
+
 Errors
 ------
 

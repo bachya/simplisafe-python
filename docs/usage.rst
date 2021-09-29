@@ -17,8 +17,8 @@ Python Versions
 * Python 3.8
 * Python 3.9
 
-SimpliSafe Plans
-----------------
+SimpliSafe™ Plans
+-----------------
 
 SimpliSafe™ offers two different monitoring plans:
 
@@ -39,20 +39,15 @@ the current system state.
 Accessing the API
 -----------------
 
-The usual way to create an API object is via the
-:meth:`get_api <simplipy.api.get_api>` coroutine. In
-order to use it effectively, you must first walk through SimpliSafe™'s multi-factor
-authentication flow.
+Starting in 2021, SimpliSafe™  began to implement an OAuth-based form of authentication.
+To use this library, you must handshake with the SimpliSafe™  API; although this process
+cannot be 100% accomplished programmatically, the procedure is fairly straightforward.
 
-SimpliSafe™ Multi-Factor Authentication
-***************************************
+Authentication
+**************
 
-As of early 2020, SimpliSafe™ has begun to enforce a multi-factor authentication
-mechanism in which any client accessing its private, unpublished API must first be
-validated by the user.
-
-``simplipy`` comes with a helper script that makes this process fairly painless. To use
-it, follow these steps from a command line:
+``simplipy`` comes with a helper script to get you started. To use it, follow these
+steps from a command line:
 
 1. Clone the ``simplipy`` Git repo and ``cd`` into it:
 
@@ -74,49 +69,56 @@ it, follow these steps from a command line:
 
     $ script/setup
 
-4. Finally, run the ``mfa`` script:
+4. Run the ``auth`` script:
 
 .. code:: bash
 
-    $ script/mfa
+    $ script/auth
 
-The script will ask for your SimpliSafe™ email address and password. After the process
-completes, you should see a message like this:
+5. This will open your browser to a SimpliSafe™ login page. Once you log in with your
+   credentials, you will see a "Verification Pending" webpage (we'll call this
+   ``Tab 1``):
 
-.. code:: text
+.. image:: images/ss-login-screen.png
+   :width: 400
 
-    Check your email for an MFA link, then use <UNIQUE IDENTIFIER> as the client_id
-    parameter in future API calls
+6. Check your email; you should see an email from SimpliSafe™ asking you to verify the
+   new authentication request:
 
-(Note that technically, the above message results from a
-:meth:`PendingAuthorizationError <simplipy.errors.PendingAuthorizationError>` exception.)
+.. image:: images/ss-verification-email.png
+   :width: 400
 
-5. Check your email. You should see an email from SimpliSafe™ asking you to verify a
-   new device access – note that the User-Agent header shown in the email should include
-   the unique identifier from the ``mfa`` script:
+7. Once you click the "Verify Device" link, a new browser tab (``Tab 2``) will open
+   and notify you that the verification is successful:
 
-.. code:: text
+.. image:: images/ss-verification-confirmed.png
+   :width: 400
 
-    Someone tried to log in to your SimpliSafe account from a new device:
+8. Return to ``Tab 1``. The browser will show an error about not being able to navigate
+   to the page; ignore it. Instead, take a look at the URL and note the ``code``
+   parameter at the very end:
 
-    Unknown App
-    WebApp; useragent="Safari 13.1 (SS-ID: xxxxx-xxxxx) / macOS 10.15.6";
-    uuid="<UNIQUE IDENTIFIER>"; id="xxxxx-xxxxx"
-    IP address: 192.168.1.100
+.. code::
 
-    We want to make sure that it's really you. Click below to verify this device.
-    Link will expire in 15 minutes.
+   com.simplisafe.mobile://auth.simplisafe.com/ios/com.simplisafe.mobile/callback?code=<CODE>
 
-6. Click ``Verify Device`` in the email. This will allow the generated unique identifier
-   future access to the API.
+8. Copy the ``code`` parameter, return to your terminal, and paste it into the prompt.
+   You should now see this message:
 
-At this stage, you will be authorized to use the SimpliSafe™ API.
+.. code::
+
+   You are now ready to use the SimpliSafe API!
+   Authorization Code: <CODE>
+   Code Verifier: <VERIFIER>
+
+These one-time values are now ready to be used to instantiate an
+:meth:`API <simplipy.api.API>` object.
 
 Creating an API Object
 **********************
 
-The primary way of creating an API object is via the
-:meth:`get_api <simplipy.api.get_api>` coroutine:
+Once you have an Authorization Code and Code Verifier, you can create an API object like
+this:
 
 .. code:: python
 
@@ -129,11 +131,10 @@ The primary way of creating an API object is via the
     async def main() -> None:
         """Create the aiohttp session and run."""
         async with ClientSession() as session:
-            simplisafe = await simplipy.get_api(
-                "<EMAIL>",
-                "<PASSWORD>",
+            simplisafe = await simplipy.API(
+                "<AUTHORIZATION_CODE>",
+                "<CODE_VERIFIER>",
                 session=session,
-                client_id="<UNIQUE IDENTIFIER>",
             )
 
             # ...
@@ -141,7 +142,47 @@ The primary way of creating an API object is via the
 
     asyncio.run(main())
 
-Note that the multi-factor authentication unique identifier is passed to the coroutine.
+**REMINDER:** this Authorization Code and Code Verifier can only be used once. 
+
+Refreshing the Access Token
+***************************
+
+The official way to create an :meth:`API <simplipy.api.API>` object after the initial
+Authorization Code/Code Verifier handshake is to use the refresh token to generate a new
+access token:
+
+.. code:: python
+
+    import asyncio
+
+    from aiohttp import ClientSession
+    import simplipy
+
+
+    async def main() -> None:
+        """Create the aiohttp session and run."""
+        async with ClientSession() as session:
+            simplisafe = await simplipy.API(
+                "<AUTHORIZATION_CODE>",
+                "<CODE_VERIFIER>",
+                session=session,
+            )
+
+            # Sometime later:
+            new_simplisafe = await simplipy.API(
+                simplisafe.refresh_token,
+                session=session,
+            )
+
+            # ...
+
+
+    asyncio.run(main())
+
+Note that you do not need to worry about refreshing the access token within an
+:meth:`API <simplipy.api.API>` object's normal operations; that is handled for you. The
+primary reason you would interface with the refresh token yourself is when you need to
+create a new object (as above).
 
 Connection Pooling
 ------------------

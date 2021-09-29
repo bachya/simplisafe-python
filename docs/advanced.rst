@@ -17,11 +17,11 @@ usage of these properties is solely your responsibility.**
 .. code:: python
 
     # Return the current access token:
-    simplisafe._access_token
+    simplisafe.access_token
     # >>> 7s9yasdh9aeu21211add
 
     # Return the current refresh token:
-    simplisafe._refresh_token
+    simplisafe.refresh_token
     # >>> 896sad86gudas87d6asd
 
     # Return the SimpliSafe™ user ID associated with this account:

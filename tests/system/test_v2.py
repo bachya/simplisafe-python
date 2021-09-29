@@ -3,13 +3,12 @@
 import aiohttp
 import pytest
 
-from simplipy import get_api
+from simplipy import API
 from simplipy.system import SystemStates
 
 from tests.common import (
-    TEST_CLIENT_ID,
-    TEST_EMAIL,
-    TEST_PASSWORD,
+    TEST_AUTHORIZATION_CODE,
+    TEST_CODE_VERIFIER,
     TEST_SUBSCRIPTION_ID,
     TEST_SYSTEM_ID,
     TEST_SYSTEM_SERIAL_NO,
@@ -27,10 +26,9 @@ async def test_get_pins(aresponses, v2_pins_response, v2_server):
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await get_api(
-            TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
+        simplisafe = await API.from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-
         systems = await simplisafe.get_systems()
         system = systems[TEST_SYSTEM_ID]
         pins = await system.get_pins()
@@ -48,10 +46,9 @@ async def test_get_pins(aresponses, v2_pins_response, v2_server):
 async def test_get_systems(aresponses, v2_server, v2_subscriptions_response):
     """Test the ability to get systems attached to a v2 account."""
     async with aiohttp.ClientSession() as session:
-        simplisafe = await get_api(
-            TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
+        simplisafe = await API.from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-
         systems = await simplisafe.get_systems()
         assert len(systems) == 1
 
@@ -96,10 +93,9 @@ async def test_set_pin(aresponses, v2_pins_response, v2_server, v2_settings_resp
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await get_api(
-            TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
+        simplisafe = await API.from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-
         systems = await simplisafe.get_systems()
         system = systems[TEST_SYSTEM_ID]
 
@@ -144,10 +140,9 @@ async def test_set_states(aresponses, v2_server, v2_state_response):
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await get_api(
-            TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
+        simplisafe = await API.from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-
         systems = await simplisafe.get_systems()
         system = systems[TEST_SYSTEM_ID]
 
@@ -184,10 +179,9 @@ async def test_update_system_data(
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await get_api(
-            TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
+        simplisafe = await API.from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-
         systems = await simplisafe.get_systems()
         system = systems[TEST_SYSTEM_ID]
         assert system.serial == TEST_SYSTEM_SERIAL_NO

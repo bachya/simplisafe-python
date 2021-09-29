@@ -3,20 +3,19 @@
 import aiohttp
 import pytest
 
-from simplipy import get_api
+from simplipy import API
 from simplipy.errors import SimplipyError
 
-from tests.common import TEST_CLIENT_ID, TEST_EMAIL, TEST_PASSWORD, TEST_SYSTEM_ID
+from tests.common import TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, TEST_SYSTEM_ID
 
 
 @pytest.mark.asyncio
 async def test_properties_v2(aresponses, v2_server):
     """Test that v2 sensor properties are created properly."""
     async with aiohttp.ClientSession() as session:
-        simplisafe = await get_api(
-            TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID, session=session
+        simplisafe = await API.from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-
         systems = await simplisafe.get_systems()
         system = systems[TEST_SYSTEM_ID]
         keypad = system.sensors["195"]

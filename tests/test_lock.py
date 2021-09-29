@@ -3,17 +3,16 @@
 import aiohttp
 import pytest
 
-from simplipy import get_api
+from simplipy import API
 from simplipy.device.lock import LockStates
 from simplipy.errors import InvalidCredentialsError
 
 from .common import (
-    TEST_CLIENT_ID,
-    TEST_EMAIL,
+    TEST_AUTHORIZATION_CODE,
+    TEST_CODE_VERIFIER,
     TEST_LOCK_ID,
     TEST_LOCK_ID_2,
     TEST_LOCK_ID_3,
-    TEST_PASSWORD,
     TEST_SUBSCRIPTION_ID,
     TEST_SYSTEM_ID,
 )
@@ -48,10 +47,9 @@ async def test_lock_unlock(aresponses, v3_lock_state_response, v3_server):
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await get_api(
-            TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
+        simplisafe = await API.from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-
         systems = await simplisafe.get_systems()
         system = systems[TEST_SYSTEM_ID]
         lock = system.locks[TEST_LOCK_ID]
@@ -70,8 +68,8 @@ async def test_lock_unlock(aresponses, v3_lock_state_response, v3_server):
 async def test_jammed(aresponses, v3_server):
     """Test that a jammed lock shows the correct state."""
     async with aiohttp.ClientSession() as session:
-        simplisafe = await get_api(
-            TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
+        simplisafe = await API.from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
         systems = await simplisafe.get_systems()
         system = systems[TEST_SYSTEM_ID]
@@ -82,7 +80,9 @@ async def test_jammed(aresponses, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_no_state_change_on_failure(aresponses, v3_server):
+async def test_no_state_change_on_failure(
+    aresponses, invalid_refresh_token_response, v3_server
+):
     """Test that the lock doesn't change state on error."""
     v3_server.add(
         "api.simplisafe.com",
@@ -91,23 +91,20 @@ async def test_no_state_change_on_failure(aresponses, v3_server):
         response=aresponses.Response(text="Unauthorized", status=401),
     )
     v3_server.add(
-        "api.simplisafe.com",
-        "/v1/api/token",
+        "auth.simplisafe.com",
+        "/oauth/token",
         "post",
-        response=aresponses.Response(text="Unauthorized", status=401),
-    )
-    v3_server.add(
-        "api.simplisafe.com",
-        "/v1/api/token",
-        "post",
-        response=aresponses.Response(text="Unauthorized", status=401),
+        response=aiohttp.web_response.json_response(
+            invalid_refresh_token_response, status=401
+        ),
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await get_api(
-            TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
+        simplisafe = await API.from_auth(
+            TEST_AUTHORIZATION_CODE,
+            TEST_CODE_VERIFIER,
+            session=session,
         )
-
         systems = await simplisafe.get_systems()
         system = systems[TEST_SYSTEM_ID]
         lock = system.locks[TEST_LOCK_ID]
@@ -124,10 +121,9 @@ async def test_no_state_change_on_failure(aresponses, v3_server):
 async def test_properties(aresponses, v3_server):
     """Test that lock properties are created properly."""
     async with aiohttp.ClientSession() as session:
-        simplisafe = await get_api(
-            TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
+        simplisafe = await API.from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-
         systems = await simplisafe.get_systems()
         system = systems[TEST_SYSTEM_ID]
         lock = system.locks[TEST_LOCK_ID]
@@ -147,10 +143,9 @@ async def test_properties(aresponses, v3_server):
 async def test_unknown_state(aresponses, caplog, v3_server):
     """Test handling a generic error during update."""
     async with aiohttp.ClientSession() as session:
-        simplisafe = await get_api(
-            TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
+        simplisafe = await API.from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-
         systems = await simplisafe.get_systems()
         system = systems[TEST_SYSTEM_ID]
         lock = system.locks[TEST_LOCK_ID_3]
@@ -197,13 +192,11 @@ async def test_update(
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await get_api(
-            TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
+        simplisafe = await API.from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-
         systems = await simplisafe.get_systems()
         system = systems[TEST_SYSTEM_ID]
-
         lock = system.locks[TEST_LOCK_ID]
         assert lock.state == LockStates.locked
 

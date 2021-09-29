@@ -6,7 +6,7 @@ import sys
 from typing import Any
 
 from aiohttp import ClientSession, ClientTimeout
-from aiohttp.client_exceptions import ClientError
+from aiohttp.client_exceptions import ClientResponseError
 import backoff
 
 from simplipy.const import LOGGER
@@ -63,15 +63,15 @@ class API:  # pylint: disable=too-many-instance-attributes
         self._session: ClientSession | None = session
 
         # These will get filled in after initial authentication:
-        self._access_token: str | None = None
-        self._refresh_token: str | None = None
+        self.access_token: str | None = None
+        self.refresh_token: str | None = None
         self.subscription_data: dict[int, Any] = {}
         self.user_id: int | None = None
 
         # Implement a version of the request coroutine, but with backoff/retry logic:
         self.request = backoff.on_exception(
             backoff.expo,
-            ClientError,
+            ClientResponseError,
             logger=LOGGER,
             max_tries=request_retries,
             on_backoff=self._handle_on_backoff,
@@ -95,6 +95,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 "post",
                 "oauth/token",
                 url_base=AUTH_URL_BASE,
+                headers={"Host": AUTH_URL_HOSTNAME},
                 json={
                     "grant_type": "authorization_code",
                     "client_id": DEFAULT_CLIENT_ID,
@@ -103,15 +104,14 @@ class API:  # pylint: disable=too-many-instance-attributes
                     "redirect_uri": DEFAULT_REDIRECT_URI,
                 },
             )
-        except ClientError as err:
-            if any(code in str(err) for code in ("401", "403")):
+        except ClientResponseError as err:
+            if err.status == 401 or err.status == 403:
                 raise InvalidCredentialsError("Invalid credentials") from err
             raise RequestError(err) from err
 
-        api._access_token = token_resp["access_token"]
-        api._refresh_token = token_resp["refresh_token"]
+        api.access_token = token_resp["access_token"]
+        api.refresh_token = token_resp["refresh_token"]
         await api._update_user_id()
-
         return api
 
     @classmethod
@@ -124,15 +124,9 @@ class API:  # pylint: disable=too-many-instance-attributes
     ) -> API:
         """Get an authenticated API object from a refresh token."""
         api = cls(session=session, request_retries=request_retries)
-        api._refresh_token = refresh_token
-
-        try:
-            await api._update_access_token_from_refresh_token()
-        except ClientError as err:
-            if any(code in str(err) for code in ("401", "403")):
-                raise InvalidCredentialsError("Invalid refresh token") from err
-            raise RequestError(err) from err
-
+        api.refresh_token = refresh_token
+        await api._refresh_access_token()
+        await api._update_user_id()
         return api
 
     async def _handle_on_backoff(self, _: dict[str, Any]) -> None:
@@ -140,18 +134,37 @@ class API:  # pylint: disable=too-many-instance-attributes
         err_info = sys.exc_info()
         err = err_info[1].with_traceback(err_info[2])  # type: ignore
 
-        if "401" in str(err):
+        if err.status == 401 or err.status == 403:
             LOGGER.info("401 detected; attempting refresh token")
-            await self._update_access_token_from_refresh_token()
+            await self._refresh_access_token()
 
     async def _handle_on_giveup(self, _: dict[str, Any]) -> None:
         """Handle a give up after retries are exhausted."""
         err_info = sys.exc_info()
         err = err_info[1].with_traceback(err_info[2])  # type: ignore
-
-        if "401" in str(err):
-            raise InvalidCredentialsError("Refresh and reauth failed") from err
         raise RequestError(err) from err
+
+    async def _refresh_access_token(self) -> None:
+        """Update access/refresh tokens from a refresh token."""
+        try:
+            token_resp = await self._request(
+                "post",
+                "oauth/token",
+                url_base=AUTH_URL_BASE,
+                headers={"Host": AUTH_URL_HOSTNAME},
+                json={
+                    "grant_type": "refresh_token",
+                    "client_id": DEFAULT_CLIENT_ID,
+                    "refresh_token": self.refresh_token,
+                },
+            )
+        except ClientResponseError as err:
+            if err.status == 401 or err.status == 403:
+                raise InvalidCredentialsError("Invalid refresh token") from err
+            raise RequestError(err) from err
+
+        self.access_token = token_resp["access_token"]
+        self.refresh_token = token_resp["refresh_token"]
 
     async def _request(
         self, method: str, endpoint: str, url_base: str = API_URL_BASE, **kwargs: Any
@@ -170,8 +183,8 @@ class API:  # pylint: disable=too-many-instance-attributes
         kwargs["headers"].setdefault("Host", API_URL_HOSTNAME)
         kwargs["headers"]["Content-Type"] = "application/json; charset=utf-8"
         kwargs["headers"]["User-Agent"] = DEFAULT_USER_AGENT
-        if self._access_token:
-            kwargs["headers"]["Authorization"] = f"Bearer {self._access_token}"
+        if self.access_token:
+            kwargs["headers"]["Authorization"] = f"Bearer {self.access_token}"
 
         use_running_session = self._session and not self._session.closed
 
@@ -181,10 +194,6 @@ class API:  # pylint: disable=too-many-instance-attributes
             session = ClientSession(timeout=ClientTimeout(total=DEFAULT_TIMEOUT))
 
         assert session
-
-        print(f"{url_base}/{endpoint}")
-        print(kwargs["headers"])
-        print(kwargs.get("json"))
 
         data: dict[str, Any] | str = {}
         async with session.request(method, f"{url_base}/{endpoint}", **kwargs) as resp:
@@ -218,26 +227,6 @@ class API:  # pylint: disable=too-many-instance-attributes
             await session.close()
 
         return data
-
-    async def _update_access_token_from_refresh_token(self) -> None:
-        """Update access/refresh tokens from a refresh token."""
-        token_resp = await self._request(
-            "post",
-            "oauth/token",
-            url_base=AUTH_URL_BASE,
-            headers={
-                "Host": AUTH_URL_HOSTNAME,
-            },
-            json={
-                "grant_type": "refresh_token",
-                "client_id": DEFAULT_CLIENT_ID,
-                "refresh_token": self._refresh_token,
-            },
-        )
-
-        self._access_token = token_resp["access_token"]
-        self._refresh_token = token_resp["refresh_token"]
-        await self._update_user_id()
 
     async def _update_user_id(self) -> None:
         """Verify and update the user ID."""

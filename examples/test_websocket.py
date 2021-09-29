@@ -15,19 +15,21 @@ SIMPLISAFE_REFRESH_TOKEN = "<REFRESH_TOKEN>"
 async def main() -> None:
     """Create the aiohttp session and run the example."""
     async with ClientSession() as session:
-        logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(level=logging.INFO)
 
         try:
             simplisafe = await API.from_refresh_token(
                 SIMPLISAFE_REFRESH_TOKEN, session=session
             )
+
+            try:
+                await simplisafe.websocket.async_connect()
+            except CannotConnectError as err:
+                _LOGGER.error(
+                    "There was a error while connecting to the server: %s", err
+                )
         except SimplipyError as err:
             _LOGGER.error(err)
-
-        try:
-            await simplisafe.websocket.async_connect()
-        except CannotConnectError as err:
-            _LOGGER.error("There was a error while connecting to the server: %s", err)
         except KeyboardInterrupt:
             pass
 

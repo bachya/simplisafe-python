@@ -52,10 +52,10 @@ class API:  # pylint: disable=too-many-instance-attributes
         request_retries: int = DEFAULT_REQUEST_RETRIES,
     ) -> None:
         """Initialize."""
-        self._session: ClientSession = session
+        self.session: ClientSession = session
 
         # These will get filled in after initial authentication:
-        self._access_token: str | None = None
+        self.access_token: str | None = None
         self.refresh_token: str | None = None
         self.subscription_data: dict[int, Any] = {}
         self.user_id: int | None = None
@@ -113,7 +113,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 raise InvalidCredentialsError("Invalid credentials") from err
             raise RequestError(err) from err
 
-        api._access_token = token_resp["access_token"]
+        api.access_token = token_resp["access_token"]
         api.refresh_token = token_resp["refresh_token"]
         await api._post_init()
         return api
@@ -161,7 +161,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         """Perform some post-init actions."""
         auth_check_resp = await self._request("get", "api/authCheck")
         self.user_id = auth_check_resp["userId"]
-        self.websocket = WebsocketClient(self.user_id, self._access_token, self._session)
+        self.websocket = WebsocketClient(self)
 
     async def _refresh_access_token(self) -> None:
         """Update access/refresh tokens from a refresh token."""
@@ -182,13 +182,14 @@ class API:  # pylint: disable=too-many-instance-attributes
                 raise InvalidCredentialsError("Invalid refresh token") from err
             raise RequestError(err) from err
 
-        self._access_token = token_resp["access_token"]
+        self.access_token = token_resp["access_token"]
         self.refresh_token = token_resp["refresh_token"]
 
-        # If we were connected to the websocket, reconnect to it using the new access
-        # token:
+        # If we were already connected to the websocket, reconnect to it (so that it can
+        # use the new access token):
         if self.websocket and self.websocket.connected:
-            await self.websocket.async_new_access_token(self._access_token)
+            await self.websocket.async_disconnect()
+            await self.websocket.async_connect()
 
     async def _request(
         self, method: str, endpoint: str, url_base: str = API_URL_BASE, **kwargs: Any
@@ -198,13 +199,13 @@ class API:  # pylint: disable=too-many-instance-attributes
         kwargs["headers"].setdefault("Host", API_URL_HOSTNAME)
         kwargs["headers"]["Content-Type"] = "application/json; charset=utf-8"
         kwargs["headers"]["User-Agent"] = DEFAULT_USER_AGENT
-        if self._access_token:
-            kwargs["headers"]["Authorization"] = f"Bearer {self._access_token}"
+        if self.access_token:
+            kwargs["headers"]["Authorization"] = f"Bearer {self.access_token}"
 
-        use_running_session = self._session and not self._session.closed
+        use_running_session = self.session and not self.session.closed
 
         if use_running_session:
-            session = self._session
+            session = self.session
         else:
             session = ClientSession(timeout=ClientTimeout(total=DEFAULT_TIMEOUT))
 

@@ -4,10 +4,9 @@ from __future__ import annotations
 import asyncio
 from dataclasses import InitVar, dataclass, field
 from datetime import datetime
-from types import TracebackType
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from aiohttp import ClientSession, ClientWebSocketResponse, WSMsgType
+from aiohttp import ClientWebSocketResponse, WSMsgType
 from aiohttp.client_exceptions import (
     ClientError,
     ServerDisconnectedError,
@@ -24,6 +23,9 @@ from simplipy.errors import (
     NotConnectedError,
 )
 from simplipy.util.dt import utc_from_timestamp
+
+if TYPE_CHECKING:
+    from simplipy import API
 
 WEBSOCKET_SERVER_URL = "wss://socketlink.prd.aser.simplisafe.com"
 
@@ -171,25 +173,13 @@ class WebsocketClient:
     :type session: ``aiohttp.client.ClientSession``
     """
 
-    def __init__(self, user_id: int, access_token: str, session: ClientSession) -> None:
+    def __init__(self, api: API) -> None:
         """Initialize."""
-        self._access_token = access_token
-        self._client: ClientWebSocketResponse | None = None
+        self._api = api
         self._loop = asyncio.get_running_loop()
-        self._result_futures: dict[str, asyncio.Future] = {}
-        self._session = session
-        self._user_id = user_id
 
-    async def __aenter__(self) -> WebsocketClient:
-        """Connect to the websocket."""
-        await self.async_connect()
-        return self
-
-    async def __aexit__(
-        self, exc_type: Exception, exc_value: str, traceback: TracebackType
-    ) -> None:
-        """Disconnect from the websocket."""
-        await self.async_disconnect()
+        # These will get filled in after initial authentication:
+        self._client: ClientWebSocketResponse | None = None
 
     @property
     def connected(self) -> bool:
@@ -246,7 +236,7 @@ class WebsocketClient:
     async def async_connect(self) -> None:
         """Connect to the websocket server."""
         try:
-            self._client = await self._session.ws_connect(
+            self._client = await self._api.session.ws_connect(
                 WEBSOCKET_SERVER_URL, heartbeat=55
             )
         except ServerDisconnectedError as err:
@@ -272,9 +262,9 @@ class WebsocketClient:
                     "data": {
                         "auth": {
                             "schema": "bearer",
-                            "token": self._access_token,
+                            "token": self._api.access_token,
                         },
-                        "join": [f"uid:{self._user_id}"],
+                        "join": [f"uid:{self._api.user_id}"],
                     },
                 }
             )
@@ -289,9 +279,6 @@ class WebsocketClient:
         finally:
             LOGGER.debug("Listen completed; cleaning up")
 
-            for future in self._result_futures.values():
-                future.cancel()
-
             if not self._client.closed:
                 await self._client.close()
 
@@ -303,14 +290,6 @@ class WebsocketClient:
         await self._client.close()
 
         LOGGER.info("Disconnected from websocket server")
-
-    async def async_new_access_token(self, access_token: str) -> None:
-        """Reconnect to the websocket with a new access token."""
-        LOGGER.debug("Reconnecting to websocket with new access token")
-
-        self._access_token = access_token
-        await self.async_disconnect()
-        await self.async_connect()
 
 
 # class Websocket:
@@ -334,7 +313,7 @@ class WebsocketClient:
 #         self._watchdog: WebsocketWatchdog = WebsocketWatchdog(self.async_reconnect)
 
 #         # Set by async_init():
-#         self._access_token: Optional[str] = None
+#         self._api.access_token: Optional[str] = None
 #         self._namespace: Optional[str] = None
 
 #     async def async_init(
@@ -344,7 +323,7 @@ class WebsocketClient:
 #         if not self._namespace:
 #             self._namespace = f"/v1/user/{user_id}"
 
-#         self._access_token = access_token
+#         self._api.access_token = access_token
 
 #         # If the websocket is connected, reconnect it:
 #         if self._sio.connected:
@@ -352,7 +331,7 @@ class WebsocketClient:
 
 #     async def async_connect(self) -> None:
 #         """Connect to the socket."""
-#         params = {"ns": self._namespace, "accessToken": self._access_token}
+#         params = {"ns": self._namespace, "accessToken": self._api.access_token}
 #         try:
 #             await self._sio.connect(
 #                 f"{API_URL_BASE}?{urlencode(params)}",

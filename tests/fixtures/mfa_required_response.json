@@ -1,6 +1,0 @@
-{
-  "error": "mfa_required",
-  "error_description": "Multi-factor authentication required",
-  "mfa_token": "12345",
-  "country": "US"
-}

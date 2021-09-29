@@ -1,0 +1,30 @@
+#!/usr/bin/env python
+"""Initiate the SimpliSafe authorization process."""
+import asyncio
+import webbrowser
+
+from simplipy.util.auth import (
+    get_auth_url,
+    get_auth0_code_challenge,
+    get_auth0_code_verifier,
+)
+
+
+async def main() -> None:
+    """Run!"""
+    code_verifier = get_auth0_code_verifier()
+    code_challenge = get_auth0_code_challenge(code_verifier)
+    auth_url = get_auth_url(code_challenge)
+
+    input("Press <ENTER> to be taken to the SimpliSafe login page... ")
+
+    webbrowser.open(auth_url)
+
+    auth_code = input("Enter the code received from the SimpliSafe auth webpage: ")
+    print()
+    print("You are now ready to use the SimpliSafe API!")
+    print(f"Authorization Code: {auth_code}")
+    print(f"Code Verifier: {code_verifier}")
+
+
+asyncio.run(main())

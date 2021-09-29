@@ -5,14 +5,13 @@ from datetime import datetime
 import aiohttp
 import pytest
 
-from simplipy import get_api
+from simplipy import API
 from simplipy.system import SystemStates
 
 from tests.common import (
     TEST_ADDRESS,
-    TEST_CLIENT_ID,
-    TEST_EMAIL,
-    TEST_PASSWORD,
+    TEST_AUTHORIZATION_CODE,
+    TEST_CODE_VERIFIER,
     TEST_SUBSCRIPTION_ID,
     TEST_SYSTEM_ID,
     TEST_SYSTEM_SERIAL_NO,
@@ -32,7 +31,7 @@ async def test_deactivated_system(aresponses, server, subscriptions_response):
         response=aiohttp.web_response.json_response(subscriptions_response, status=200),
     )
 
-    simplisafe = await get_api(TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID)
+    simplisafe = await API.from_auth(TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER)
     systems = await simplisafe.get_systems()
     assert len(systems) == 0
 
@@ -49,7 +48,7 @@ async def test_get_events(aresponses, events_response, v2_server):
         response=aiohttp.web_response.json_response(events_response, status=200),
     )
 
-    simplisafe = await get_api(TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID)
+    simplisafe = await API.from_auth(TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER)
     systems = await simplisafe.get_systems()
     system = systems[TEST_SYSTEM_ID]
     events = await system.get_events(datetime.now(), 2)
@@ -90,10 +89,9 @@ async def test_missing_property(
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await get_api(
-            TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID, session=session
+        simplisafe = await API.from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-
         systems = await simplisafe.get_systems()
         system = systems[TEST_SYSTEM_ID]
         assert system.offline is True
@@ -118,11 +116,8 @@ async def test_missing_system_info(aresponses, caplog, server, subscriptions_res
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await get_api(
-            TEST_EMAIL,
-            TEST_PASSWORD,
-            session=session,
-            client_id=TEST_CLIENT_ID,
+        simplisafe = await API.from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
         await simplisafe.get_systems()
         assert any(
@@ -137,10 +132,9 @@ async def test_missing_system_info(aresponses, caplog, server, subscriptions_res
 async def test_properties(aresponses, v2_server):
     """Test that base system properties are created properly."""
     async with aiohttp.ClientSession() as session:
-        simplisafe = await get_api(
-            TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
+        simplisafe = await API.from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-
         systems = await simplisafe.get_systems()
         system = systems[TEST_SYSTEM_ID]
         assert not system.alarm_going_off
@@ -159,10 +153,9 @@ async def test_properties(aresponses, v2_server):
 async def test_unknown_sensor_type(aresponses, caplog, v2_server):
     """Test whether a message is logged upon finding an unknown sensor type."""
     async with aiohttp.ClientSession() as session:
-        simplisafe = await get_api(
-            TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
+        simplisafe = await API.from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-
         await simplisafe.get_systems()
         assert any("Unknown device type" in e.message for e in caplog.records)
 
@@ -203,10 +196,9 @@ async def test_unknown_system_state(
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await get_api(
-            TEST_EMAIL, TEST_PASSWORD, client_id=TEST_CLIENT_ID, session=session
+        simplisafe = await API.from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-
         await simplisafe.get_systems()
         assert any("Unknown raw system state" in e.message for e in caplog.records)
         assert any("NOT_REAL_STATE" in e.message for e in caplog.records)

@@ -3,14 +3,13 @@
 import aiohttp
 import pytest
 
-from simplipy import get_api
+from simplipy import API
 
 from .common import (
+    TEST_AUTHORIZATION_CODE,
     TEST_CAMERA_ID,
     TEST_CAMERA_ID_2,
-    TEST_CLIENT_ID,
-    TEST_EMAIL,
-    TEST_PASSWORD,
+    TEST_CODE_VERIFIER,
     TEST_SYSTEM_ID,
 )
 
@@ -19,19 +18,12 @@ from .common import (
 async def test_properties(aresponses, v3_server):
     """Test that camera properties are created properly."""
     async with aiohttp.ClientSession() as session:
-        simplisafe = await get_api(
-            TEST_EMAIL,
-            TEST_PASSWORD,
-            session=session,
-            client_id=TEST_CLIENT_ID,
-            # Set so that our tests don't take too long:
-            request_retries=1,
+        simplisafe = await API.from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
 
         systems = await simplisafe.get_systems()
-
         system = systems[TEST_SYSTEM_ID]
-
         camera = system.cameras[TEST_CAMERA_ID]
         assert camera.name == "Camera"
         assert camera.serial == TEST_CAMERA_ID
@@ -53,8 +45,8 @@ async def test_properties(aresponses, v3_server):
 async def test_video_urls(aresponses, v3_server):
     """Test that camera video URL is configured properly."""
     async with aiohttp.ClientSession() as session:
-        simplisafe = await get_api(
-            TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
+        simplisafe = await API.from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
 
         systems = await simplisafe.get_systems()

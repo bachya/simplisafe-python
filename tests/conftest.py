@@ -9,7 +9,7 @@ import pytest
 from tests.common import TEST_SUBSCRIPTION_ID, TEST_USER_ID, load_fixture
 
 
-@pytest.fixture(name="api_token_response", scope="session")
+@pytest.fixture(name="api_token_response")
 def api_token_response_fixture():
     """Define a fixture to return a successful token response."""
     return json.loads(load_fixture("api_token_response.json"))
@@ -25,6 +25,18 @@ def auth_check_response_fixture():
 def events_response_fixture():
     """Define a fixture to return an events response."""
     return json.loads(load_fixture("events_response.json"))
+
+
+@pytest.fixture(name="invalid_authorization_code_response", scope="session")
+def invalid_authorization_code_response_fixture():
+    """Define a fixture to return an invalid authorization code response."""
+    return json.loads(load_fixture("invalid_authorization_code_response.json"))
+
+
+@pytest.fixture(name="invalid_refresh_token_response", scope="session")
+def invalid_refresh_token_response_fixture():
+    """Define a fixture to return an invalid refresh token response."""
+    return json.loads(load_fixture("invalid_refresh_token_response.json"))
 
 
 @pytest.fixture(name="latest_event_response", scope="session")
@@ -56,8 +68,8 @@ async def server_fixture(api_token_response, auth_check_response):
     """Define a fixture that returns an authenticated API connection."""
     async with aresponses.ResponsesMockServer() as server:
         server.add(
-            "api.simplisafe.com",
-            "/v1/api/token",
+            "auth.simplisafe.com",
+            "/oauth/token",
             "post",
             response=aiohttp.web_response.json_response(api_token_response, status=200),
         )

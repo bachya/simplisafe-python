@@ -23,6 +23,7 @@ from simplipy.util.auth import (
     DEFAULT_CLIENT_ID,
     DEFAULT_REDIRECT_URI,
 )
+from simplipy.websocket import Websocket
 
 API_URL_HOSTNAME = "api.simplisafe.com"
 API_URL_BASE = f"https://{API_URL_HOSTNAME}/v1"
@@ -56,6 +57,7 @@ class API:  # pylint: disable=too-many-instance-attributes
     ) -> None:
         """Initialize."""
         self._session: ClientSession | None = session
+        self.websocket = Websocket()
 
         # These will get filled in after initial authentication:
         self.access_token: str | None = None
@@ -117,7 +119,7 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         api.access_token = token_resp["access_token"]
         api.refresh_token = token_resp["refresh_token"]
-        await api._update_user_id()
+        await api._post_init()
         return api
 
     @classmethod
@@ -141,7 +143,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         api = cls(session=session, request_retries=request_retries)
         api.refresh_token = refresh_token
         await api._refresh_access_token()
-        await api._update_user_id()
+        await api._post_init()
         return api
 
     async def _handle_on_backoff(self, _: dict[str, Any]) -> None:
@@ -158,6 +160,14 @@ class API:  # pylint: disable=too-many-instance-attributes
         err_info = sys.exc_info()
         err = err_info[1].with_traceback(err_info[2])  # type: ignore
         raise RequestError(err) from err
+
+    async def _post_init(self) -> None:
+        """Perform some post-init actions."""
+        auth_check_resp = await self._request("get", "api/authCheck")
+        self.user_id = auth_check_resp["userId"]
+
+        # Start the websocket:
+        await self.websocket.async_init(self.access_token, self.user_id)
 
     async def _refresh_access_token(self) -> None:
         """Update access/refresh tokens from a refresh token."""
@@ -233,11 +243,6 @@ class API:  # pylint: disable=too-many-instance-attributes
             await session.close()
 
         return data
-
-    async def _update_user_id(self) -> None:
-        """Verify and update the user ID."""
-        auth_check_resp = await self._request("get", "api/authCheck")
-        self.user_id = auth_check_resp["userId"]
 
     async def get_systems(self) -> dict[int, SystemV2 | SystemV3]:
         """Get systems associated to the associated SimpliSafe account.

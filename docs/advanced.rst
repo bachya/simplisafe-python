@@ -17,7 +17,7 @@ usage of these properties is solely your responsibility.**
 .. code:: python
 
     # Return the current access token:
-    simplisafe.access_token
+    simplisafe._access_token
     # >>> 7s9yasdh9aeu21211add
 
     # Return the current refresh token:

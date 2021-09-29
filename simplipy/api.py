@@ -9,7 +9,7 @@ from aiohttp import ClientSession, ClientTimeout
 from aiohttp.client_exceptions import ClientResponseError
 import backoff
 
-from simplipy.const import LOGGER
+from simplipy.const import DEFAULT_USER_AGENT, LOGGER
 from simplipy.errors import (
     EndpointUnavailableError,
     InvalidCredentialsError,
@@ -23,17 +23,13 @@ from simplipy.util.auth import (
     DEFAULT_CLIENT_ID,
     DEFAULT_REDIRECT_URI,
 )
-from simplipy.websocket import Websocket
+from simplipy.websocket import WebsocketClient
 
 API_URL_HOSTNAME = "api.simplisafe.com"
 API_URL_BASE = f"https://{API_URL_HOSTNAME}/v1"
 
 DEFAULT_REQUEST_RETRIES = 4
 DEFAULT_TIMEOUT = 10
-DEFAULT_USER_AGENT = (
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-    "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15"
-)
 
 
 class API:  # pylint: disable=too-many-instance-attributes
@@ -52,18 +48,18 @@ class API:  # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         *,
-        session: ClientSession | None = None,
+        session: ClientSession,
         request_retries: int = DEFAULT_REQUEST_RETRIES,
     ) -> None:
         """Initialize."""
-        self._session: ClientSession | None = session
-        self.websocket = Websocket()
+        self._session: ClientSession = session
 
         # These will get filled in after initial authentication:
-        self.access_token: str | None = None
+        self._access_token: str | None = None
         self.refresh_token: str | None = None
         self.subscription_data: dict[int, Any] = {}
         self.user_id: int | None = None
+        self.websocket: WebsocketClient | None = None
 
         # Implement a version of the request coroutine, but with backoff/retry logic:
         self.request = backoff.on_exception(
@@ -81,7 +77,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         authorization_code: str,
         code_verifier: str,
         *,
-        session: ClientSession | None = None,
+        session: ClientSession,
         request_retries: int = DEFAULT_REQUEST_RETRIES,
     ) -> API:
         """Get an authenticated API object from an Authorization Code and Code Verifier.
@@ -117,7 +113,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 raise InvalidCredentialsError("Invalid credentials") from err
             raise RequestError(err) from err
 
-        api.access_token = token_resp["access_token"]
+        api._access_token = token_resp["access_token"]
         api.refresh_token = token_resp["refresh_token"]
         await api._post_init()
         return api
@@ -126,8 +122,8 @@ class API:  # pylint: disable=too-many-instance-attributes
     async def from_refresh_token(
         cls,
         refresh_token: str,
+        session: ClientSession,
         *,
-        session: ClientSession | None = None,
         request_retries: int = DEFAULT_REQUEST_RETRIES,
     ) -> API:
         """Get an authenticated API object from a refresh token.
@@ -165,9 +161,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         """Perform some post-init actions."""
         auth_check_resp = await self._request("get", "api/authCheck")
         self.user_id = auth_check_resp["userId"]
-
-        # Start the websocket:
-        await self.websocket.async_init(self.access_token, self.user_id)
+        self.websocket = WebsocketClient(self.user_id, self._access_token, self._session)
 
     async def _refresh_access_token(self) -> None:
         """Update access/refresh tokens from a refresh token."""
@@ -188,8 +182,13 @@ class API:  # pylint: disable=too-many-instance-attributes
                 raise InvalidCredentialsError("Invalid refresh token") from err
             raise RequestError(err) from err
 
-        self.access_token = token_resp["access_token"]
+        self._access_token = token_resp["access_token"]
         self.refresh_token = token_resp["refresh_token"]
+
+        # If we were connected to the websocket, reconnect to it using the new access
+        # token:
+        if self.websocket and self.websocket.connected:
+            await self.websocket.async_new_access_token(self._access_token)
 
     async def _request(
         self, method: str, endpoint: str, url_base: str = API_URL_BASE, **kwargs: Any
@@ -199,8 +198,8 @@ class API:  # pylint: disable=too-many-instance-attributes
         kwargs["headers"].setdefault("Host", API_URL_HOSTNAME)
         kwargs["headers"]["Content-Type"] = "application/json; charset=utf-8"
         kwargs["headers"]["User-Agent"] = DEFAULT_USER_AGENT
-        if self.access_token:
-            kwargs["headers"]["Authorization"] = f"Bearer {self.access_token}"
+        if self._access_token:
+            kwargs["headers"]["Authorization"] = f"Bearer {self._access_token}"
 
         use_running_session = self._session and not self._session.closed
 

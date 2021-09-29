@@ -1,64 +1,35 @@
-"""Run an example script to exercise the websocket."""
+"""Test system functionality with an Auth0 code/verifier."""
 import asyncio
 import logging
 
 from aiohttp import ClientSession
 
 from simplipy import API
-from simplipy.errors import SimplipyError, WebsocketError
+from simplipy.errors import CannotConnectError, SimplipyError
 
 _LOGGER = logging.getLogger()
 
-SIMPLISAFE_CLIENT_ID = "<CLIENT ID>"
-SIMPLISAFE_EMAIL = "<EMAIL>"  # nosec
-SIMPLISAFE_PASSWORD = "<PASSWORD>"  # nosec
-
-
-def print_data(data):
-    """Print data as it is received."""
-    _LOGGER.info("Data received: %s", data)
-
-
-def print_goodbye():
-    """Print a simple "goodbye" message."""
-    _LOGGER.info("Client has disconnected from the websocket")
-
-
-def print_hello():
-    """Print a simple "hello" message."""
-    _LOGGER.info("Client has connected to the websocket")
+SIMPLISAFE_REFRESH_TOKEN = "<REFRESH_TOKEN>"
 
 
 async def main() -> None:
     """Create the aiohttp session and run the example."""
     async with ClientSession() as session:
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=logging.DEBUG)
 
         try:
-            simplisafe = await API.login_via_credentials(
-                SIMPLISAFE_EMAIL,
-                SIMPLISAFE_PASSWORD,
-                client_id=SIMPLISAFE_CLIENT_ID,
-                session=session,
+            simplisafe = await API.from_refresh_token(
+                SIMPLISAFE_REFRESH_TOKEN, session=session
             )
-
-            simplisafe.websocket.on_connect(print_hello)
-            simplisafe.websocket.on_disconnect(print_goodbye)
-            simplisafe.websocket.on_event(print_data)
-
-            try:
-                await simplisafe.websocket.async_connect()
-            except WebsocketError as err:
-                _LOGGER.error("There was a websocket error: %s", err)
-                await simplisafe.websocket.async_disconnect()
-                return
-
-            while True:
-                _LOGGER.info("Simulating some other task...")
-                await asyncio.sleep(5)
-
         except SimplipyError as err:
             _LOGGER.error(err)
+
+        try:
+            await simplisafe.websocket.async_connect()
+        except CannotConnectError as err:
+            _LOGGER.error("There was a error while connecting to the server: %s", err)
+        except KeyboardInterrupt:
+            pass
 
 
 asyncio.run(main())

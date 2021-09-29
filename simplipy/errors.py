@@ -1,4 +1,5 @@
 """Define package errors."""
+from __future__ import annotations
 
 
 class SimplipyError(Exception):
@@ -33,5 +34,35 @@ class RequestError(SimplipyError):
 
 class WebsocketError(SimplipyError):
     """An error related to generic websocket errors."""
+
+    pass
+
+
+class CannotConnectError(WebsocketError):
+    """Define a error when the websocket can't be connected to."""
+
+    pass
+
+
+class ConnectionClosedError(WebsocketError):
+    """Define a error when the websocket closes unexpectedly."""
+
+    pass
+
+
+class ConnectionFailedError(WebsocketError):
+    """Define a error when the websocket connection fails."""
+
+    pass
+
+
+class InvalidMessageError(WebsocketError):
+    """Define a error related to an invalid message from the websocket server."""
+
+    pass
+
+
+class NotConnectedError(WebsocketError):
+    """Define a error when the websocket isn't properly connected to."""
 
     pass

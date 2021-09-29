@@ -1,21 +1,31 @@
 """Define a connection to the SimpliSafe websocket."""
+from __future__ import annotations
+
 import asyncio
 from dataclasses import InitVar, dataclass, field
 from datetime import datetime
-from typing import Awaitable, Callable, Optional
-from urllib.parse import urlencode
+from types import TracebackType
+from typing import Any
 
-from socketio import AsyncClient
-from socketio.exceptions import ConnectionError as ConnError, SocketIOError
+from aiohttp import ClientSession, ClientWebSocketResponse, WSMsgType
+from aiohttp.client_exceptions import (
+    ClientError,
+    ServerDisconnectedError,
+    WSServerHandshakeError,
+)
 
-from simplipy.const import LOGGER
-from simplipy.entity import EntityTypes
-from simplipy.errors import WebsocketError
+from simplipy.const import DEFAULT_USER_AGENT, LOGGER
+from simplipy.device import DeviceTypes
+from simplipy.errors import (
+    CannotConnectError,
+    ConnectionClosedError,
+    ConnectionFailedError,
+    InvalidMessageError,
+    NotConnectedError,
+)
 from simplipy.util.dt import utc_from_timestamp
 
-API_URL_BASE = "wss://api.simplisafe.com/socket.io"
-
-DEFAULT_WATCHDOG_TIMEOUT = 900
+WEBSOCKET_SERVER_URL = "wss://socketlink.prd.aser.simplisafe.com"
 
 EVENT_ALARM_CANCELED = "alarm_canceled"
 EVENT_ALARM_TRIGGERED = "alarm_triggered"
@@ -85,6 +95,8 @@ EVENT_MAPPING = {
     9703: EVENT_LOCK_ERROR,
 }
 
+SIZE_PARSE_JSON_EXECUTOR = 8192
+
 
 @dataclass(frozen=True)
 class WebsocketEvent:  # pylint: disable=too-many-instance-attributes
@@ -95,12 +107,12 @@ class WebsocketEvent:  # pylint: disable=too-many-instance-attributes
     system_id: int
     timestamp: datetime
 
-    event_type: Optional[str] = field(init=False)
+    event_type: str | None = field(init=False)
 
-    changed_by: Optional[str] = None
-    sensor_name: Optional[str] = None
-    sensor_serial: Optional[str] = None
-    sensor_type: Optional[EntityTypes] = None
+    changed_by: str | None = None
+    sensor_name: str | None = None
+    sensor_serial: str | None = None
+    sensor_type: DeviceTypes | None = None
 
     def __post_init__(self, event_cid):
         """Run post-init initialization."""
@@ -119,7 +131,7 @@ class WebsocketEvent:  # pylint: disable=too-many-instance-attributes
 
         if self.sensor_type is not None:
             try:
-                object.__setattr__(self, "sensor_type", EntityTypes(self.sensor_type))
+                object.__setattr__(self, "sensor_type", DeviceTypes(self.sensor_type))
             except ValueError:
                 LOGGER.warning(
                     'Encountered unknown entity type: %s ("%s"). Please report it at'
@@ -130,201 +142,320 @@ class WebsocketEvent:  # pylint: disable=too-many-instance-attributes
                 object.__setattr__(self, "sensor_type", None)
 
 
-def websocket_event_from_raw_data(event: dict):
+def websocket_event_from_payload(payload: dict):
     """Create a Message object from a websocket event payload."""
     return WebsocketEvent(
-        event["eventCid"],
-        event["info"],
-        event["sid"],
-        event["eventTimestamp"],
-        changed_by=event["pinName"],
-        sensor_name=event["sensorName"],
-        sensor_serial=event["sensorSerial"],
-        sensor_type=event["sensorType"],
+        payload["data"]["eventCid"],
+        payload["data"]["info"],
+        payload["data"]["sid"],
+        payload["data"]["eventTimestamp"],
+        changed_by=payload["data"]["pinName"],
+        sensor_name=payload["data"]["sensorName"],
+        sensor_serial=payload["data"]["sensorSerial"],
+        sensor_type=payload["data"]["sensorType"],
     )
 
 
-class WebsocketWatchdog:  # pylint: disable=too-few-public-methods
-    """A watchdog that will ensure the websocket connection is functioning."""
-
-    def __init__(
-        self,
-        action: Callable[..., Awaitable],
-        *,
-        timeout_seconds: int = DEFAULT_WATCHDOG_TIMEOUT,
-    ):
-        """Initialize."""
-        self._action: Callable[..., Awaitable] = action
-        self._loop = asyncio.get_event_loop()
-        self._timer_task: Optional[asyncio.TimerHandle] = None
-        self._timeout = timeout_seconds
-
-    def cancel(self):
-        """Cancel the watchdog."""
-        if self._timer_task:
-            self._timer_task.cancel()
-            self._timer_task = None
-
-    async def on_expire(self):
-        """Log and act when the watchdog expires."""
-        LOGGER.info("Watchdog expired – calling %s", self._action.__name__)
-        await self._action()
-
-    async def trigger(self):
-        """Trigger the watchdog."""
-        LOGGER.info("Watchdog triggered – sleeping for %s seconds", self._timeout)
-
-        if self._timer_task:
-            self._timer_task.cancel()
-
-        self._timer_task = self._loop.call_later(
-            self._timeout, lambda: asyncio.create_task(self.on_expire())
-        )
-
-
-class Websocket:
+class WebsocketClient:
     """A websocket connection to the SimpliSafe cloud.
 
     Note that this class shouldn't be instantiated directly; it will be instantiated as
     appropriate via :meth:`simplipy.API.login_via_credentials` or
     :meth:`simplipy.API.login_via_token`.
 
-    :param access_token: A SimpliSafe access token
-    :type access_token: ``str``
     :param user_id: A SimpliSafe user ID
     :type user_id: ``int``
+    :param access_token: A SimpliSafe access token
+    :type access_token: ``str``
+    :param session: The ``aiohttp`` ``ClientSession`` session used for the websocket
+    :type session: ``aiohttp.client.ClientSession``
     """
 
-    def __init__(self) -> None:
+    def __init__(self, user_id: int, access_token: str, session: ClientSession) -> None:
         """Initialize."""
-        self._async_disconnect_handler: Optional[Callable[..., Awaitable]] = None
-        self._sio: AsyncClient = AsyncClient()
-        self._sync_disconnect_handler: Optional[Callable[..., Awaitable]] = None
-        self._watchdog: WebsocketWatchdog = WebsocketWatchdog(self.async_reconnect)
-
-        # Set by async_init():
-        self._access_token: Optional[str] = None
-        self._namespace: Optional[str] = None
-
-    async def async_init(
-        self, access_token: Optional[str], user_id: Optional[int] = None
-    ) -> None:
-        """Set the user ID and generate the namespace."""
-        if not self._namespace:
-            self._namespace = f"/v1/user/{user_id}"
-
         self._access_token = access_token
+        self._client: ClientWebSocketResponse | None = None
+        self._loop = asyncio.get_running_loop()
+        self._result_futures: dict[str, asyncio.Future] = {}
+        self._session = session
+        self._user_id = user_id
 
-        # If the websocket is connected, reconnect it:
-        if self._sio.connected:
-            await self.async_reconnect()
+    async def __aenter__(self) -> WebsocketClient:
+        """Connect to the websocket."""
+        await self.async_connect()
+        return self
+
+    async def __aexit__(
+        self, exc_type: Exception, exc_value: str, traceback: TracebackType
+    ) -> None:
+        """Disconnect from the websocket."""
+        await self.async_disconnect()
+
+    @property
+    def connected(self) -> bool:
+        """Return if current connected to the websocket."""
+        return self._client is not None and not self._client.closed
+
+    async def _async_receive_json(self) -> dict:
+        """Receive a JSON response from the websocket server."""
+        assert self._client
+        msg = await self._client.receive()
+
+        if msg.type in (WSMsgType.CLOSE, WSMsgType.CLOSED, WSMsgType.CLOSING):
+            raise ConnectionClosedError("Connection was closed.")
+
+        if msg.type == WSMsgType.ERROR:
+            raise ConnectionFailedError
+
+        if msg.type != WSMsgType.TEXT:
+            raise InvalidMessageError(f"Received non-text message: {msg.type}")
+
+        try:
+            if len(msg.data) > SIZE_PARSE_JSON_EXECUTOR:
+                data = await self._loop.run_in_executor(None, msg.json)
+            else:
+                data = msg.json()
+        except ValueError as err:
+            raise InvalidMessageError("Received invalid JSON") from err
+
+        LOGGER.debug("Received data from websocket server: %s", data)
+
+        return data
+
+    async def _async_send_json(self, payload: dict[str, Any]) -> None:
+        """Send a JSON message to the websocket server.
+
+        Raises NotConnectedError if client is not connected.
+        """
+        if not self.connected:
+            raise NotConnectedError
+
+        assert self._client
+
+        LOGGER.debug("Sending data to websocket server: %s", payload)
+
+        await self._client.send_json(payload)
+
+    @staticmethod
+    def _parse_response_payload(payload: dict) -> None:
+        """Handle a message from the websocket server."""
+        if payload["type"] == "com.simplisafe.event.standard":
+            event = websocket_event_from_payload(payload)
+            print(event)
 
     async def async_connect(self) -> None:
-        """Connect to the socket."""
-        params = {"ns": self._namespace, "accessToken": self._access_token}
+        """Connect to the websocket server."""
         try:
-            await self._sio.connect(
-                f"{API_URL_BASE}?{urlencode(params)}",
-                namespaces=[self._namespace],
-                transports=["websocket"],
+            self._client = await self._session.ws_connect(
+                WEBSOCKET_SERVER_URL, heartbeat=55
             )
-        except (ConnError, SocketIOError) as err:
-            raise WebsocketError(err) from None
+        except ServerDisconnectedError as err:
+            raise ConnectionClosedError(err) from err
+        except (ClientError, WSServerHandshakeError) as err:
+            raise CannotConnectError(err) from err
+
+        LOGGER.info("Connected to websocket server")
+
+        now = datetime.utcnow()
+        now_ts = round(now.timestamp() * 1000)
+        now_utc_iso = now.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+
+        try:
+            await self._async_send_json(
+                {
+                    "datacontenttype": "application/json",
+                    "type": "com.simplisafe.connection.identify",
+                    "time": f"{now_utc_iso}Z",
+                    "id": f"ts:{now_ts}",
+                    "specversion": "1.0",
+                    "source": DEFAULT_USER_AGENT,
+                    "data": {
+                        "auth": {
+                            "schema": "bearer",
+                            "token": self._access_token,
+                        },
+                        "join": [f"uid:{self._user_id}"],
+                    },
+                }
+            )
+
+            LOGGER.info("Started listening to websocket server")
+
+            while not self._client.closed:
+                msg = await self._async_receive_json()
+                self._parse_response_payload(msg)
+        except ConnectionClosedError:
+            pass
+        finally:
+            LOGGER.debug("Listen completed; cleaning up")
+
+            for future in self._result_futures.values():
+                future.cancel()
+
+            if not self._client.closed:
+                await self._client.close()
 
     async def async_disconnect(self) -> None:
-        """Disconnect from the socket."""
-        await self._sio.disconnect()
-        self._watchdog.cancel()
+        """Disconnect from the websocket server."""
+        if not self.connected:
+            return
 
-        if self._async_disconnect_handler:
-            await self._async_disconnect_handler()
-            self._async_disconnect_handler = None
-        if self._sync_disconnect_handler:
-            self._sync_disconnect_handler()
-            self._sync_disconnect_handler = None
+        await self._client.close()
 
-    def async_on_connect(self, target: Callable[..., Awaitable]) -> None:
-        """Define a coroutine to be called when connecting.
+        LOGGER.info("Disconnected from websocket server")
 
-        :param target: A coroutine
-        :type target: ``Callable[..., Awaitable]``
-        """
+    async def async_new_access_token(self, access_token: str) -> None:
+        """Reconnect to the websocket with a new access token."""
+        LOGGER.debug("Reconnecting to websocket with new access token")
 
-        async def _async_on_connect():
-            """Act when connection occurs."""
-            await self._watchdog.trigger()
-            await target()
-
-        self._sio.on("connect", _async_on_connect)
-
-    def on_connect(self, target: Callable) -> None:
-        """Define a synchronous method to be called when connecting.
-
-        :param target: A synchronous function
-        :type target: ``Callable``
-        """
-
-        async def _on_connect():
-            """Act when connection occurs."""
-            await self._watchdog.trigger()
-            target()
-
-        self._sio.on("connect", _on_connect)
-
-    def async_on_disconnect(self, target: Callable[..., Awaitable]) -> None:
-        """Define a coroutine to be called when disconnecting.
-
-        :param target: A coroutine
-        :type target: ``Callable[..., Awaitable]``
-        """
-        self._async_disconnect_handler = target
-
-    def on_disconnect(self, target: Callable) -> None:
-        """Define a synchronous method to be called when disconnecting.
-
-        :param target: A synchronous function
-        :type target: ``Callable``
-        """
-        self._sync_disconnect_handler = target
-
-    def async_on_event(self, target: Callable[..., Awaitable]) -> None:
-        """Define a coroutine to be called an event is received.
-
-        The couroutine will have a ``data`` parameter that contains the raw data from
-        the event.
-
-        :param target: A coroutine
-        :type target: ``Callable[..., Awaitable]``
-        """
-
-        async def _async_on_event(event_data: dict):
-            """Act on the Message object."""
-            await self._watchdog.trigger()
-            message = websocket_event_from_raw_data(event_data)
-            await target(message)
-
-        self._sio.on("event", _async_on_event, namespace=self._namespace)
-
-    def on_event(self, target: Callable) -> None:
-        """Define a synchronous method to be called when an event is received.
-
-        The method will have a ``data`` parameter that contains the raw data from the
-        event.
-
-        :param target: A synchronous function
-        :type target: ``Callable``
-        """
-
-        async def _async_on_event(event_data: dict):
-            """Act on the Message object."""
-            await self._watchdog.trigger()
-            message = websocket_event_from_raw_data(event_data)
-            target(message)
-
-        self._sio.on("event", _async_on_event, namespace=self._namespace)
-
-    async def async_reconnect(self) -> None:
-        """Reconnect the websocket connection."""
+        self._access_token = access_token
         await self.async_disconnect()
-        await asyncio.sleep(1)
         await self.async_connect()
+
+
+# class Websocket:
+#     """A websocket connection to the SimpliSafe cloud.
+
+#     Note that this class shouldn't be instantiated directly; it will be instantiated as
+#     appropriate via :meth:`simplipy.API.login_via_credentials` or
+#     :meth:`simplipy.API.login_via_token`.
+
+#     :param access_token: A SimpliSafe access token
+#     :type access_token: ``str``
+#     :param user_id: A SimpliSafe user ID
+#     :type user_id: ``int``
+#     """
+
+#     def __init__(self) -> None:
+#         """Initialize."""
+#         self._async_disconnect_handler: Optional[Callable[..., Awaitable]] = None
+#         self._sio: AsyncClient = AsyncClient()
+#         self._sync_disconnect_handler: Optional[Callable[..., Awaitable]] = None
+#         self._watchdog: WebsocketWatchdog = WebsocketWatchdog(self.async_reconnect)
+
+#         # Set by async_init():
+#         self._access_token: Optional[str] = None
+#         self._namespace: Optional[str] = None
+
+#     async def async_init(
+#         self, access_token: Optional[str], user_id: Optional[int] = None
+#     ) -> None:
+#         """Set the user ID and generate the namespace."""
+#         if not self._namespace:
+#             self._namespace = f"/v1/user/{user_id}"
+
+#         self._access_token = access_token
+
+#         # If the websocket is connected, reconnect it:
+#         if self._sio.connected:
+#             await self.async_reconnect()
+
+#     async def async_connect(self) -> None:
+#         """Connect to the socket."""
+#         params = {"ns": self._namespace, "accessToken": self._access_token}
+#         try:
+#             await self._sio.connect(
+#                 f"{API_URL_BASE}?{urlencode(params)}",
+#                 namespaces=[self._namespace],
+#                 transports=["websocket"],
+#             )
+#         except (ConnError, SocketIOError) as err:
+#             raise WebsocketError(err) from None
+
+#     async def async_disconnect(self) -> None:
+#         """Disconnect from the socket."""
+#         await self._sio.disconnect()
+#         self._watchdog.cancel()
+
+#         if self._async_disconnect_handler:
+#             await self._async_disconnect_handler()
+#             self._async_disconnect_handler = None
+#         if self._sync_disconnect_handler:
+#             self._sync_disconnect_handler()
+#             self._sync_disconnect_handler = None
+
+#     def async_on_connect(self, target: Callable[..., Awaitable]) -> None:
+#         """Define a coroutine to be called when connecting.
+
+#         :param target: A coroutine
+#         :type target: ``Callable[..., Awaitable]``
+#         """
+
+#         async def _async_on_connect():
+#             """Act when connection occurs."""
+#             await self._watchdog.trigger()
+#             await target()
+
+#         self._sio.on("connect", _async_on_connect)
+
+#     def on_connect(self, target: Callable) -> None:
+#         """Define a synchronous method to be called when connecting.
+
+#         :param target: A synchronous function
+#         :type target: ``Callable``
+#         """
+
+#         async def _on_connect():
+#             """Act when connection occurs."""
+#             await self._watchdog.trigger()
+#             target()
+
+#         self._sio.on("connect", _on_connect)
+
+#     def async_on_disconnect(self, target: Callable[..., Awaitable]) -> None:
+#         """Define a coroutine to be called when disconnecting.
+
+#         :param target: A coroutine
+#         :type target: ``Callable[..., Awaitable]``
+#         """
+#         self._async_disconnect_handler = target
+
+#     def on_disconnect(self, target: Callable) -> None:
+#         """Define a synchronous method to be called when disconnecting.
+
+#         :param target: A synchronous function
+#         :type target: ``Callable``
+#         """
+#         self._sync_disconnect_handler = target
+
+#     def async_on_event(self, target: Callable[..., Awaitable]) -> None:
+#         """Define a coroutine to be called an event is received.
+
+#         The couroutine will have a ``data`` parameter that contains the raw data from
+#         the event.
+
+#         :param target: A coroutine
+#         :type target: ``Callable[..., Awaitable]``
+#         """
+
+#         async def _async_on_event(event_data: dict):
+#             """Act on the Message object."""
+#             await self._watchdog.trigger()
+#             message = websocket_event_from_raw_data(event_data)
+#             await target(message)
+
+#         self._sio.on("event", _async_on_event, namespace=self._namespace)
+
+#     def on_event(self, target: Callable) -> None:
+#         """Define a synchronous method to be called when an event is received.
+
+#         The method will have a ``data`` parameter that contains the raw data from the
+#         event.
+
+#         :param target: A synchronous function
+#         :type target: ``Callable``
+#         """
+
+#         async def _async_on_event(event_data: dict):
+#             """Act on the Message object."""
+#             await self._watchdog.trigger()
+#             message = websocket_event_from_raw_data(event_data)
+#             target(message)
+
+#         self._sio.on("event", _async_on_event, namespace=self._namespace)
+
+#     async def async_reconnect(self) -> None:
+#         """Reconnect the websocket connection."""
+#         await self.async_disconnect()
+#         await asyncio.sleep(1)
+#         await self.async_connect()

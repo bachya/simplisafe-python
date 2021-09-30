@@ -131,7 +131,7 @@ this:
     async def main() -> None:
         """Create the aiohttp session and run."""
         async with ClientSession() as session:
-            simplisafe = await simplipy.API(
+            simplisafe = await simplipy.API.from_auth(
                 "<AUTHORIZATION_CODE>",
                 "<CODE_VERIFIER>",
                 session=session,
@@ -162,14 +162,14 @@ access token:
     async def main() -> None:
         """Create the aiohttp session and run."""
         async with ClientSession() as session:
-            simplisafe = await simplipy.API(
+            simplisafe = await simplipy.API.from_auth(
                 "<AUTHORIZATION_CODE>",
                 "<CODE_VERIFIER>",
                 session=session,
             )
 
             # Sometime later:
-            new_simplisafe = await simplipy.API(
+            new_simplisafe = await simplipy.API.from_refresh_token(
                 simplisafe.refresh_token,
                 session=session,
             )
@@ -183,37 +183,3 @@ Note that you do not need to worry about refreshing the access token within an
 :meth:`API <simplipy.api.API>` object's normal operations; that is handled for you. The
 primary reason you would interface with the refresh token yourself is when you need to
 create a new object (as above).
-
-Connection Pooling
-------------------
-
-By default, the :meth:`API <simplipy.api.API>` object creates a new connection to
-SimpliSafe™ with each coroutine. If you are calling a large number of coroutines (or
-merely want to squeeze out every second of runtime savings possible), an
-``aiohttp ClientSession`` can be supplied when logging into the API to achieve
-connection pooling:
-
-.. code:: python
-
-    import asyncio
-
-    from aiohttp import ClientSession
-    import simplipy
-
-
-    async def main() -> None:
-        """Create the aiohttp session and run."""
-        async with ClientSession() as session:
-            simplisafe = await simplipy.get_api(
-                "<EMAIL>",
-                "<PASSWORD>",
-                session=session,
-                client_id="<UNIQUE IDENTIFIER>",
-            )
-
-            # ...
-
-
-    asyncio.run(main())
-
-Every example in this documentation uses this pattern.

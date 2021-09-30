@@ -1,5 +1,7 @@
 """Define tests for the System object."""
 # pylint: disable=protected-access,too-many-arguments
+from unittest.mock import Mock
+
 import aiohttp
 import pytest
 
@@ -190,6 +192,67 @@ async def test_client_from_refresh_token(
         assert simplisafe.refresh_token == TEST_REFRESH_TOKEN
 
     aresponses.assert_plan_strictly_followed()
+
+
+@pytest.mark.asyncio
+async def test_refresh_token_listener_callback(
+    api_token_response,
+    aresponses,
+    server,
+    v2_settings_response,
+    v2_subscriptions_response,
+):
+    """Test that listener callbacks are executed correctly."""
+    server.add(
+        "api.simplisafe.com",
+        f"/v1/users/{TEST_SUBSCRIPTION_ID}/subscriptions",
+        "get",
+        response=aresponses.Response(text="Unauthorized", status=401),
+    )
+
+    api_token_response["access_token"] = "jjhhgg66"
+    api_token_response["refresh_token"] = "aabbcc11"
+
+    server.add(
+        "auth.simplisafe.com",
+        "/oauth/token",
+        "post",
+        response=aiohttp.web_response.json_response(api_token_response, status=200),
+    )
+    server.add(
+        "api.simplisafe.com",
+        f"/v1/users/{TEST_SUBSCRIPTION_ID}/subscriptions",
+        "get",
+        response=aiohttp.web_response.json_response(
+            v2_subscriptions_response, status=200
+        ),
+    )
+    server.add(
+        "api.simplisafe.com",
+        f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/settings",
+        "get",
+        response=aiohttp.web_response.json_response(v2_settings_response, status=200),
+    )
+
+    mock_listener_1 = Mock()
+    mock_listener_2 = Mock()
+
+    async with aiohttp.ClientSession() as session:
+        simplisafe = await API.from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
+        )
+
+        # We'll hang onto one listener callback:
+        simplisafe.add_refresh_token_listener(mock_listener_1)
+        assert mock_listener_1.call_count == 0
+
+        # ..and delete the a second one before ever using it:
+        remove = simplisafe.add_refresh_token_listener(mock_listener_2)
+        remove()
+
+        await simplisafe.get_systems()
+        mock_listener_1.assert_called_once_with("aabbcc11")
+        assert mock_listener_2.call_count == 0
 
 
 @pytest.mark.asyncio

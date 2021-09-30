@@ -1,343 +1,308 @@
-"""Define tests for the Websocket API."""
+"""Define tests for the System object."""
 # pylint: disable=protected-access
-from datetime import datetime
-import json
-from urllib.parse import urlencode
+import asyncio
+from datetime import datetime, timedelta
+import logging
+from time import time
+from unittest.mock import Mock
 
-import aiohttp
+from aiohttp.client_exceptions import (
+    ClientError,
+    ServerDisconnectedError,
+    WSServerHandshakeError,
+)
+from aiohttp.client_reqrep import ClientResponse, RequestInfo
+from aiohttp.http_websocket import WSMsgType
 import pytest
 import pytz
-from socketio.exceptions import SocketIOError
 
-from simplipy import API
-from simplipy.entity import EntityTypes
-from simplipy.errors import WebsocketError
-from simplipy.websocket import WebsocketEvent, WebsocketWatchdog
-
-from tests.async_mock import AsyncMock
-from tests.common import (
-    TEST_ACCESS_TOKEN,
-    TEST_CLIENT_ID,
-    TEST_EMAIL,
-    TEST_PASSWORD,
-    TEST_REFRESH_TOKEN,
-    TEST_USER_ID,
-    async_mock,
-    load_fixture,
+from simplipy.device import DeviceTypes
+from simplipy.errors import (
+    CannotConnectError,
+    ConnectionFailedError,
+    InvalidMessageError,
+)
+from simplipy.websocket import (
+    EVENT_DISARMED_BY_MASTER_PIN,
+    Watchdog,
+    WebsocketClient,
+    websocket_event_from_payload,
 )
 
-
-@pytest.mark.asyncio
-async def test_async_events(v3_server):
-    """Test events with async handlers."""
-    async with v3_server:
-        async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
-            )
-
-            simplisafe.websocket._sio.eio._trigger_event = async_mock()
-            simplisafe.websocket._sio.eio.connect = async_mock()
-            simplisafe.websocket._sio.eio.disconnect = async_mock()
-            simplisafe.websocket._sio.namespaces = {"/": 1}
-
-            on_connect = async_mock()
-            on_disconnect = async_mock()
-            on_event = async_mock()
-
-            simplisafe.websocket.async_on_connect(on_connect)
-            simplisafe.websocket.async_on_disconnect(on_disconnect)
-            simplisafe.websocket.async_on_event(on_event)
-
-            connect_params = {
-                "ns": f"/v1/user/{TEST_USER_ID}",
-                "accessToken": TEST_ACCESS_TOKEN,
-            }
-
-            await simplisafe.websocket.async_connect()
-            simplisafe.websocket._sio.eio.connect.mock.assert_called_once_with(
-                f"wss://api.simplisafe.com/socket.io?{urlencode(connect_params)}",
-                engineio_path="socket.io",
-                headers={},
-                transports=["websocket"],
-            )
-
-            await simplisafe.websocket._sio._trigger_event("connect", "/")
-            on_connect.mock.assert_called_once()
-
-            await simplisafe.websocket._sio._trigger_event(
-                "event",
-                f"/v1/user/{TEST_USER_ID}",
-                json.loads(load_fixture("websocket_known_event_response.json")),
-            )
-            on_event.mock.assert_called_once()
-
-            await simplisafe.websocket.async_disconnect()
-            await simplisafe.websocket._sio._trigger_event("disconnect", "/")
-            simplisafe.websocket._sio.eio.disconnect.mock.assert_called_once_with(
-                abort=True
-            )
-            on_disconnect.mock.assert_called_once()
+from .common import create_ws_message
 
 
 @pytest.mark.asyncio
-async def test_connect_async_success(v3_server):
-    """Test triggering an async handler upon connection to the websocket."""
-    async with v3_server:
-        async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
-            )
+@pytest.mark.parametrize(
+    "error",
+    [
+        ClientError,
+        ServerDisconnectedError,
+        WSServerHandshakeError(Mock(RequestInfo), (Mock(ClientResponse),)),
+    ],
+)
+async def test_cannot_connect(error, mock_api, ws_client_session):
+    """Test being unable to connect to the websocket."""
+    ws_client_session.ws_connect.side_effect = error
+    client = WebsocketClient(mock_api)
 
-            simplisafe.websocket._sio.eio._trigger_event = async_mock()
-            simplisafe.websocket._sio.eio.connect = async_mock()
-            simplisafe.websocket._sio.namespaces = {"/": 1}
+    with pytest.raises(CannotConnectError):
+        await client.async_connect()
 
-            on_connect = async_mock()
-            simplisafe.websocket.async_on_connect(on_connect)
-
-            connect_params = {
-                "ns": f"/v1/user/{TEST_USER_ID}",
-                "accessToken": TEST_ACCESS_TOKEN,
-            }
-
-            await simplisafe.websocket.async_connect()
-            simplisafe.websocket._sio.eio.connect.mock.assert_called_once_with(
-                f"wss://api.simplisafe.com/socket.io?{urlencode(connect_params)}",
-                engineio_path="socket.io",
-                headers={},
-                transports=["websocket"],
-            )
-
-            await simplisafe.websocket._sio._trigger_event("connect", "/")
-            on_connect.mock.assert_called_once()
+    assert not client.connected
 
 
 @pytest.mark.asyncio
-async def test_connect_sync_success(v3_server):
-    """Test triggering a synchronous handler upon connection to the websocket."""
-    async with v3_server:
-        async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
-            )
+async def test_connect_disconnect(mock_api):
+    """Test connecting and disconnecting the client."""
+    client = WebsocketClient(mock_api)
 
-            simplisafe.websocket._sio.eio._trigger_event = async_mock()
-            simplisafe.websocket._sio.eio.connect = async_mock()
-            simplisafe.websocket._sio.namespaces = {"/": 1}
+    await client.async_connect()
+    assert client.connected
 
-            on_connect = AsyncMock()
-            simplisafe.websocket.on_connect(on_connect)
+    await client.async_disconnect()
+    assert not client.connected
 
-            connect_params = {
-                "ns": f"/v1/user/{TEST_USER_ID}",
-                "accessToken": TEST_ACCESS_TOKEN,
-            }
 
-            await simplisafe.websocket.async_connect()
-            simplisafe.websocket._sio.eio.connect.mock.assert_called_once_with(
-                f"wss://api.simplisafe.com/socket.io?{urlencode(connect_params)}",
-                engineio_path="socket.io",
-                headers={},
-                transports=["websocket"],
-            )
-
-            await simplisafe.websocket._sio._trigger_event("connect", "/")
-            on_connect.assert_called_once()
+def test_create_event(ws_message_event):
+    """Test creating an event object."""
+    event = websocket_event_from_payload(ws_message_event)
+    assert event.event_type == EVENT_DISARMED_BY_MASTER_PIN
+    assert event.info == "System Disarmed by Master PIN"
+    assert event.system_id == 12345
+    assert event.timestamp == datetime(2021, 9, 29, 23, 14, 46, tzinfo=pytz.UTC)
+    assert event.changed_by == "Master PIN"
+    assert event.sensor_name == ""
+    assert event.sensor_serial == "abcdef12"
+    assert event.sensor_type == DeviceTypes.keypad
 
 
 @pytest.mark.asyncio
-async def test_connect_failure(v3_server):
-    """Test connecting to the socket and an exception occurring."""
-    async with v3_server:
-        async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
-            )
+async def test_listen_invalid_message_data(mock_api, ws_message_event, ws_messages):
+    """Test websocket message data that should raise on listen."""
+    client = WebsocketClient(mock_api)
 
-            simplisafe.websocket._sio.eio.connect = async_mock(
-                side_effect=SocketIOError()
-            )
+    await client.async_connect()
+    assert client.connected
 
-        with pytest.raises(WebsocketError):
-            await simplisafe.websocket.async_connect()
+    ws_message = create_ws_message(ws_message_event)
+    ws_message.json.side_effect = ValueError("Boom")
+    ws_messages.append(ws_message)
 
-
-def test_create_websocket_event():
-    """Test the successful creation of a message."""
-    basic_event = WebsocketEvent(1110, "Alarm triggered!", 1234, 1581892842)
-    assert basic_event.event_type == "alarm_triggered"
-    assert basic_event.info == "Alarm triggered!"
-    assert basic_event.system_id == 1234
-    assert basic_event.timestamp == datetime(2020, 2, 16, 22, 40, 42, tzinfo=pytz.UTC)
-    assert not basic_event.changed_by
-    assert not basic_event.sensor_name
-    assert not basic_event.sensor_serial
-    assert not basic_event.sensor_type
-
-    complete_event = WebsocketEvent(
-        1110,
-        "Alarm triggered!",
-        1234,
-        1581892842,
-        changed_by="1234",
-        sensor_name="Kitchen Window",
-        sensor_serial="ABC123",
-        sensor_type=5,
-    )
-    assert complete_event.event_type == "alarm_triggered"
-    assert complete_event.info == "Alarm triggered!"
-    assert complete_event.system_id == 1234
-    assert complete_event.timestamp == datetime(
-        2020, 2, 16, 22, 40, 42, tzinfo=pytz.UTC
-    )
-    assert complete_event.changed_by == "1234"
-    assert complete_event.sensor_name == "Kitchen Window"
-    assert complete_event.sensor_serial == "ABC123"
-    assert complete_event.sensor_type == EntityTypes.entry
-
-    assert basic_event != complete_event
+    with pytest.raises(InvalidMessageError):
+        await client.async_listen()
 
 
 @pytest.mark.asyncio
-async def test_reconnect_on_new_access_token(aresponses, v3_server):
-    """Test reconnecting to the websocket when the access token refreshes."""
-    async with v3_server:
-        v3_server.add(
-            "api.simplisafe.com",
-            "/v1/api/token",
-            "post",
-            aresponses.Response(
-                text=load_fixture("api_token_response.json"), status=200
-            ),
-        )
-        v3_server.add(
-            "api.simplisafe.com",
-            "/v1/api/authCheck",
-            "get",
-            aresponses.Response(
-                text=load_fixture("auth_check_response.json"), status=200
-            ),
-        )
+async def test_listen(mock_api):
+    """Test listening to the websocket server."""
+    client = WebsocketClient(mock_api)
 
-        async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
-            )
+    await client.async_connect()
+    assert client.connected
 
-            simplisafe.websocket._sio.eio._trigger_event = async_mock()
-            simplisafe.websocket._sio.eio.connect = async_mock()
-            simplisafe.websocket._sio.eio.disconnect = async_mock()
-            simplisafe.websocket._sio.namespaces = {"/": 1}
+    # If this succeeds without throwing an exception, listening was successful:
+    asyncio.create_task(client.async_listen())
 
-            on_connect = AsyncMock()
-            simplisafe.websocket.on_connect(on_connect)
-
-            connect_params = {
-                "ns": f"/v1/user/{TEST_USER_ID}",
-                "accessToken": TEST_ACCESS_TOKEN,
-            }
-
-            await simplisafe.websocket.async_connect()
-            simplisafe.websocket._sio.eio.connect.mock.assert_called_once_with(
-                f"wss://api.simplisafe.com/socket.io?{urlencode(connect_params)}",
-                engineio_path="socket.io",
-                headers={},
-                transports=["websocket"],
-            )
-
-            await simplisafe.websocket._sio._trigger_event("connect", "/")
-            on_connect.assert_called_once()
-
-            await simplisafe.refresh_access_token(TEST_REFRESH_TOKEN)
-            simplisafe.websocket._sio.eio.disconnect.mock.assert_called_once()
-            assert simplisafe.websocket._sio.eio.connect.mock.call_count == 2
+    await client.async_disconnect()
+    assert not client.connected
 
 
 @pytest.mark.asyncio
-async def test_sync_events(v3_server):
-    """Test events with synchronous handlers."""
-    async with v3_server:
-        async with aiohttp.ClientSession() as session:
-            simplisafe = await API.login_via_credentials(
-                TEST_EMAIL, TEST_PASSWORD, session=session, client_id=TEST_CLIENT_ID
-            )
+@pytest.mark.parametrize(
+    "message_type", [WSMsgType.CLOSE, WSMsgType.CLOSED, WSMsgType.CLOSING]
+)
+async def test_listen_disconnect_message_types(
+    message_type, mock_api, ws_client, ws_message_event, ws_messages
+):
+    """Test different websocket message types that stop listen."""
+    client = WebsocketClient(mock_api)
 
-            simplisafe.websocket._sio.eio._trigger_event = async_mock()
-            simplisafe.websocket._sio.eio.connect = async_mock()
-            simplisafe.websocket._sio.eio.disconnect = async_mock()
-            simplisafe.websocket._sio.namespaces = {"/": 1}
+    await client.async_connect()
+    assert client.connected
 
-            on_connect = AsyncMock()
-            on_disconnect = AsyncMock()
-            on_event = AsyncMock()
+    ws_message = create_ws_message(ws_message_event)
+    ws_message.type = message_type
+    ws_messages.append(ws_message)
 
-            simplisafe.websocket.on_connect(on_connect)
-            simplisafe.websocket.on_disconnect(on_disconnect)
-            simplisafe.websocket.on_event(on_event)
+    # This should break out of the listen loop before handling the received message;
+    # otherwise there will be an error:
+    await client.async_listen()
 
-            connect_params = {
-                "ns": f"/v1/user/{TEST_USER_ID}",
-                "accessToken": TEST_ACCESS_TOKEN,
-            }
-
-            await simplisafe.websocket.async_connect()
-            simplisafe.websocket._sio.eio.connect.mock.assert_called_once_with(
-                f"wss://api.simplisafe.com/socket.io?{urlencode(connect_params)}",
-                engineio_path="socket.io",
-                headers={},
-                transports=["websocket"],
-            )
-
-            await simplisafe.websocket._sio._trigger_event("connect", "/")
-            on_connect.assert_called_once()
-
-            await simplisafe.websocket._sio._trigger_event(
-                "event",
-                f"/v1/user/{TEST_USER_ID}",
-                json.loads(load_fixture("websocket_known_event_response.json")),
-            )
-            on_event.assert_called_once()
-
-            await simplisafe.websocket.async_disconnect()
-            await simplisafe.websocket._sio._trigger_event("disconnect", "/")
-            simplisafe.websocket._sio.eio.disconnect.mock.assert_called_once_with(
-                abort=True
-            )
-            on_disconnect.assert_called_once()
+    # Assert that we received a message:
+    ws_client.receive.assert_awaited()
 
 
 @pytest.mark.asyncio
-async def test_watchdog_firing():
-    """Test that the watchdog expiring fires the provided coroutine."""
-    mock_coro = AsyncMock()
-    mock_coro.__name__ = "mock_coro"
+@pytest.mark.parametrize(
+    "message_type, exception",
+    [
+        (WSMsgType.BINARY, InvalidMessageError),
+        (WSMsgType.ERROR, ConnectionFailedError),
+    ],
+)
+async def test_listen_error_message_types(
+    exception, message_type, mock_api, ws_message_event, ws_messages
+):
+    """Test different websocket message types that should raise on listen."""
+    client = WebsocketClient(mock_api)
 
-    watchdog = WebsocketWatchdog(mock_coro)
+    await client.async_connect()
+    assert client.connected
 
-    await watchdog.on_expire()
-    mock_coro.assert_called_once()
+    ws_message = create_ws_message(ws_message_event)
+    ws_message.type = message_type
+    ws_messages.append(ws_message)
+
+    with pytest.raises(exception):
+        await client.async_listen()
 
 
-def test_unknown_event_type_in_websocket_event(caplog):
-    """Test creating a message with an unknown event type."""
-    event = WebsocketEvent(
-        9999, "What is this?", 1234, 1581892842, sensor_type="doesnt_exist"
-    )
+@pytest.mark.asyncio
+async def test_listener_callbacks(mock_api, ws_message_event, ws_messages):
+    """Test that listener callbacks are executed correctly."""
+    mock_connect_listener = Mock()
+    mock_disconnect_listener = Mock()
+    mock_event_listener = Mock()
 
+    client = WebsocketClient(mock_api)
+    client.add_connect_listener(mock_connect_listener)
+    client.add_disconnect_listener(mock_disconnect_listener)
+    client.add_event_listener(mock_event_listener)
+
+    assert mock_connect_listener.call_count == 0
+    assert mock_disconnect_listener.call_count == 0
+    assert mock_event_listener.call_count == 0
+
+    await client.async_connect()
+    assert client.connected
+    assert mock_connect_listener.call_count == 1
+
+    ws_messages.append(create_ws_message(ws_message_event))
+    await client.async_listen()
+    expected_event = websocket_event_from_payload(ws_message_event)
+    mock_event_listener.assert_called_once_with(expected_event)
+
+    await client.async_disconnect()
+    assert not client.connected
+    assert mock_disconnect_listener.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_reconnect(mock_api):
+    """Test reconnecting to the websocket."""
+    client = WebsocketClient(mock_api)
+
+    await client.async_connect()
+    assert client.connected
+
+    await client.async_reconnect()
+
+    await client.async_disconnect()
+    assert not client.connected
+
+
+@pytest.mark.asyncio
+async def test_remove_listener_callback(mock_api):
+    """Test that a removed listener callback doesn't get executed."""
+    mock_listener = Mock()
+    client = WebsocketClient(mock_api)
+    remove = client.add_connect_listener(mock_listener)
+    remove()
+
+    await client.async_connect()
+    assert client.connected
+    assert mock_listener.call_count == 0
+
+    await client.async_disconnect()
+    assert not client.connected
+
+
+def test_unknown_event(caplog, ws_message_event):
+    """Test that an unknown event type is handled correctly."""
+    ws_message_event["data"]["eventCid"] = 9999
+    event = websocket_event_from_payload(ws_message_event)
+    assert event.event_type is None
     assert any(
         "Encountered unknown websocket event type" in e.message for e in caplog.records
     )
-    assert any("What is this?" in e.message for e in caplog.records)
-    assert not event.sensor_type
 
 
-def test_unknown_sensor_type_in_websocket_event(caplog):
-    """Test creating a message with an unknown sensor type."""
-    event = WebsocketEvent(
-        1110, "Alarm triggered!", 1234, 1581892842, sensor_type="doesnt_exist"
-    )
+def test_unknown_sensor_type_in_event(caplog, ws_message_event):
+    """Test that an unknown sensor type in a websocket event is handled correctly."""
+    ws_message_event["data"]["sensorType"] = 999
+    event = websocket_event_from_payload(ws_message_event)
+    assert event.sensor_type is None
+    assert any("Encountered unknown device type" in e.message for e in caplog.records)
 
-    assert any("Encountered unknown entity type" in e.message for e in caplog.records)
-    assert any("doesnt_exist" in e.message for e in caplog.records)
-    assert not event.sensor_type
+
+@pytest.mark.asyncio
+async def test_watchdog_async_trigger(caplog):
+    """Test that the watchdog works with a coroutine as a trigger."""
+    caplog.set_level(logging.INFO)
+    logger = logging.getLogger("simplipy")
+
+    async def mock_trigger():
+        """Define a mock trigger."""
+        logger.info("Triggered mock_trigger")
+
+    watchdog = Watchdog(mock_trigger, timeout=timedelta(seconds=0))
+    watchdog.trigger()
+    assert any("Websocket watchdog triggered" in e.message for e in caplog.records)
+
+    await asyncio.sleep(1)
+    assert any("Websocket watchdog expired" in e.message for e in caplog.records)
+    assert any("Triggered mock_trigger" in e.message for e in caplog.records)
+
+
+@pytest.mark.asyncio
+async def test_watchdog_cancel(caplog):
+    """Test that canceling the watchdog resets and stops it."""
+    caplog.set_level(logging.INFO)
+    logger = logging.getLogger("simplipy")
+
+    async def mock_trigger():
+        """Define a mock trigger."""
+        logger.info("Triggered mock_trigger")
+
+    # We test this by ensuring that, although the watchdog has a 5-second timeout,
+    # canceling it ensures that task is stopped:
+    start = time()
+    watchdog = Watchdog(mock_trigger, timeout=timedelta(seconds=5))
+    watchdog.trigger()
+    await asyncio.sleep(1)
+    watchdog.cancel()
+    end = time()
+    assert (end - start) < 5
+    assert not any("Triggered mock_trigger" in e.message for e in caplog.records)
+
+
+@pytest.mark.asyncio
+async def test_watchdog_quick_trigger(caplog):
+    """Test that quick triggering of the watchdog resets the timer task."""
+    caplog.set_level(logging.INFO)
+
+    mock_trigger = Mock()
+
+    watchdog = Watchdog(mock_trigger, timeout=timedelta(seconds=1))
+    watchdog.trigger()
+    await asyncio.sleep(1)
+    watchdog.trigger()
+    await asyncio.sleep(1)
+    assert mock_trigger.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_watchdog_sync_trigger(caplog):
+    """Test that the watchdog works with a normal function as a trigger."""
+    caplog.set_level(logging.INFO)
+
+    mock_trigger = Mock()
+
+    watchdog = Watchdog(mock_trigger, timeout=timedelta(seconds=0))
+    watchdog.trigger()
+    assert any("Websocket watchdog triggered" in e.message for e in caplog.records)
+
+    await asyncio.sleep(1)
+    assert any("Websocket watchdog expired" in e.message for e in caplog.records)
+    assert mock_trigger.call_count == 1

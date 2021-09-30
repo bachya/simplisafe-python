@@ -9,13 +9,13 @@ from simplipy.errors import CannotConnectError, SimplipyError
 
 _LOGGER = logging.getLogger()
 
-SIMPLISAFE_REFRESH_TOKEN = "<REFRESH_TOKEN>"
+SIMPLISAFE_REFRESH_TOKEN = "<REFRESH TOKEN>"
 
 
 async def main() -> None:
     """Create the aiohttp session and run the example."""
     async with ClientSession() as session:
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=logging.DEBUG)
 
         try:
             simplisafe = await API.from_refresh_token(
@@ -28,6 +28,8 @@ async def main() -> None:
                 _LOGGER.error(
                     "There was a error while connecting to the server: %s", err
                 )
+
+            await simplisafe.websocket.async_listen()
         except SimplipyError as err:
             _LOGGER.error(err)
         except KeyboardInterrupt:

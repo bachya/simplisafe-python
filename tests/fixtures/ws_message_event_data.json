@@ -1,0 +1,40 @@
+{
+  "eventTimestamp": 1632957286,
+  "eventCid": 1400,
+  "zoneCid": "1",
+  "sensorType": 1,
+  "sensorSerial": "abcdef12",
+  "account": "abcdef12",
+  "userId": 12345,
+  "sid": 12345,
+  "info": "System Disarmed by Master PIN",
+  "pinName": "Master PIN",
+  "sensorName": "",
+  "messageSubject": "SimpliSafe System Disarmed",
+  "messageBody": "System Disarmed: Your SimpliSafe security system was disarmed by Keypad Master PIN at 1234 Main Street on 9-29-21 at 5:14 pm",
+  "eventType": "activity",
+  "timezone": 2,
+  "locationOffset": -360,
+  "internal": {
+    "dispatcher": "my_dispatcher"
+  },
+  "senderId": "wifi",
+  "openCount": 0,
+  "eventId": 16803409109,
+  "serviceFeatures": {
+    "monitoring": true,
+    "alerts": true,
+    "online": true,
+    "hazard": true,
+    "video": true,
+    "cameras": 10,
+    "dispatch": true,
+    "proInstall": false,
+    "discount": 0,
+    "vipCS": false,
+    "medical": true,
+    "careVisit": false,
+    "storageDays": 30
+  },
+  "copsVideoOptIn": false
+}

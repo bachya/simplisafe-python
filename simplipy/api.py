@@ -3,9 +3,9 @@ from __future__ import annotations
 
 from json.decoder import JSONDecodeError
 import sys
-from typing import Any
+from typing import Any, Callable
 
-from aiohttp import ClientSession, ClientTimeout
+from aiohttp import ClientSession
 from aiohttp.client_exceptions import ClientResponseError
 import backoff
 
@@ -52,6 +52,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         request_retries: int = DEFAULT_REQUEST_RETRIES,
     ) -> None:
         """Initialize."""
+        self._refresh_token_listeners: list[Callable[..., None]] = []
         self.session: ClientSession = session
 
         # These will get filled in after initial authentication:
@@ -185,11 +186,8 @@ class API:  # pylint: disable=too-many-instance-attributes
         self.access_token = token_resp["access_token"]
         self.refresh_token = token_resp["refresh_token"]
 
-        # If we were already connected to the websocket, reconnect to it (so that it can
-        # use the new access token):
-        if self.websocket and self.websocket.connected:
-            await self.websocket.async_disconnect()
-            await self.websocket.async_connect()
+        for callback in self._refresh_token_listeners:
+            callback(self.refresh_token)
 
     async def _request(
         self, method: str, endpoint: str, url_base: str = API_URL_BASE, **kwargs: Any
@@ -202,17 +200,10 @@ class API:  # pylint: disable=too-many-instance-attributes
         if self.access_token:
             kwargs["headers"]["Authorization"] = f"Bearer {self.access_token}"
 
-        use_running_session = self.session and not self.session.closed
-
-        if use_running_session:
-            session = self.session
-        else:
-            session = ClientSession(timeout=ClientTimeout(total=DEFAULT_TIMEOUT))
-
-        assert session
-
         data: dict[str, Any] | str = {}
-        async with session.request(method, f"{url_base}/{endpoint}", **kwargs) as resp:
+        async with self.session.request(
+            method, f"{url_base}/{endpoint}", **kwargs
+        ) as resp:
             try:
                 data = await resp.json(content_type=None)
             except JSONDecodeError:
@@ -239,10 +230,25 @@ class API:  # pylint: disable=too-many-instance-attributes
 
             resp.raise_for_status()
 
-        if not use_running_session:
-            await session.close()
-
         return data
+
+    def add_refresh_token_listener(
+        self, callback: Callable[..., None]
+    ) -> Callable[..., None]:
+        """Add a listener that should be triggered when tokens are refreshed.
+
+        Note that callbacks should expect to receive a refresh token as a parameter.
+
+        :param callback: The method to call after receiving an event.
+        :type callback: ``Callable[..., None]``
+        """
+        self._refresh_token_listeners.append(callback)
+
+        def remove():
+            """Remove the callback."""
+            self._refresh_token_listeners.remove(callback)
+
+        return remove
 
     async def get_systems(self) -> dict[int, SystemV2 | SystemV3]:
         """Get systems associated to the associated SimpliSafe account.

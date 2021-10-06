@@ -23,21 +23,7 @@ pre-commit uninstall
 
 old_version="$(poetry version | awk -F' ' '{ print $2 }')"
 
-case "$1" in
-    patch)
-        poetry version patch
-        ;;
-    minor)
-        poetry version minor
-        ;;
-    major)
-        poetry version major
-        ;;
-    *)
-        echo "Unknown release action: \"$1\""
-        exit 1
-        ;;
-esac
+poetry version "$1"
 
 # Update the PyPI package version:
 new_version="$(poetry version | awk -F' ' '{ print $2 }')"

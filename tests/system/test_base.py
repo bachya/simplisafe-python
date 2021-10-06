@@ -31,9 +31,12 @@ async def test_deactivated_system(aresponses, server, subscriptions_response):
         response=aiohttp.web_response.json_response(subscriptions_response, status=200),
     )
 
-    simplisafe = await API.from_auth(TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER)
-    systems = await simplisafe.get_systems()
-    assert len(systems) == 0
+    async with aiohttp.ClientSession() as session:
+        simplisafe = await API.from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
+        )
+        systems = await simplisafe.get_systems()
+        assert len(systems) == 0
 
     aresponses.assert_plan_strictly_followed()
 
@@ -48,11 +51,14 @@ async def test_get_events(aresponses, events_response, v2_server):
         response=aiohttp.web_response.json_response(events_response, status=200),
     )
 
-    simplisafe = await API.from_auth(TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER)
-    systems = await simplisafe.get_systems()
-    system = systems[TEST_SYSTEM_ID]
-    events = await system.get_events(datetime.now(), 2)
-    assert len(events) == 2
+    async with aiohttp.ClientSession() as session:
+        simplisafe = await API.from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
+        )
+        systems = await simplisafe.get_systems()
+        system = systems[TEST_SYSTEM_ID]
+        events = await system.get_events(datetime.now(), 2)
+        assert len(events) == 2
 
     aresponses.assert_plan_strictly_followed()
 

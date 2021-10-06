@@ -1,12 +1,22 @@
 """Define fixtures, constants, etc. available for all tests."""
-# pylint: disable=redefined-outer-name
+# pylint: disable=redefined-outer-name,unused-argument
+import asyncio
+from collections import deque
 import json
+from unittest.mock import AsyncMock, Mock
 
 import aiohttp
 import aresponses
 import pytest
 
-from tests.common import TEST_SUBSCRIPTION_ID, TEST_USER_ID, load_fixture
+from simplipy.api import API
+
+from tests.common import (
+    TEST_SUBSCRIPTION_ID,
+    TEST_USER_ID,
+    create_ws_message,
+    load_fixture,
+)
 
 
 @pytest.fixture(name="api_token_response")
@@ -45,22 +55,14 @@ def latest_event_response_fixture():
     return json.loads(load_fixture("latest_event_response.json"))
 
 
-@pytest.fixture(name="mfa_authorization_pending_response", scope="session")
-def mfa_authorization_pending_response_fixture():
-    """Define a fixture to return an MFA pending response."""
-    return json.loads(load_fixture("mfa_authorization_pending_response.json"))
-
-
-@pytest.fixture(name="mfa_challenge_response", scope="session")
-def mfa_challenge_response_fixture():
-    """Define a fixture to return an MFA challenge response."""
-    return json.loads(load_fixture("mfa_challenge_response.json"))
-
-
-@pytest.fixture(name="mfa_required_response", scope="session")
-def mfa_required_response_fixture():
-    """Define a fixture to return a response when MFA is required."""
-    return json.loads(load_fixture("mfa_required_response.json"))
+@pytest.fixture(name="mock_api")
+def mock_api_fixture(ws_client_session):
+    """Define a fixture to return a mock simplipy.API object."""
+    mock_api = Mock(API)
+    mock_api.access_token = "12345"
+    mock_api.session = ws_client_session
+    mock_api.user_id = 98765
+    return mock_api
 
 
 @pytest.fixture(name="server")
@@ -189,3 +191,140 @@ def v3_settings_response_fixture():
 def v3_state_response_fixture():
     """Define a fixture that returns a V3 state change response."""
     return json.loads(load_fixture("v3_state_response.json"))
+
+
+@pytest.fixture(name="ws_client")
+async def ws_client_fixture(
+    loop,
+    ws_message_hello,
+    ws_message_registered,
+    ws_message_subscribed,
+    ws_messages,
+):
+    """Mock a websocket client.
+
+    This fixture only allows a single message to be received.
+    """
+    ws_client = AsyncMock(spec_set=aiohttp.ClientWebSocketResponse, closed=False)
+    ws_client.receive_json.side_effect = (
+        ws_message_hello,
+        ws_message_registered,
+        ws_message_subscribed,
+    )
+    for data in (ws_message_hello, ws_message_registered, ws_message_subscribed):
+        ws_messages.append(create_ws_message(data))
+
+    async def receive():
+        """Return a websocket message."""
+        await asyncio.sleep(0)
+
+        message = ws_messages.popleft()
+        if not ws_messages:
+            ws_client.closed = True
+
+        return message
+
+    ws_client.receive.side_effect = receive
+
+    ws_client.send_json.side_effect = Mock()
+
+    async def reset_close():
+        """Reset the websocket client close method."""
+        ws_client.closed = True
+
+    ws_client.close.side_effect = reset_close
+
+    return ws_client
+
+
+@pytest.fixture(name="ws_client_session")
+def ws_client_session_fixture(ws_client):
+    """Mock an aiohttp client session."""
+    client_session = AsyncMock(spec_set=aiohttp.ClientSession)
+    client_session.ws_connect.side_effect = AsyncMock(return_value=ws_client)
+    return client_session
+
+
+@pytest.fixture(name="ws_message_event")
+def ws_message_event_fixture(ws_message_event_data):
+    """Define a fixture to represent an event response."""
+    return {
+        "data": ws_message_event_data,
+        "datacontenttype": "application/json",
+        "id": "id:16803409109",
+        "source": "messagequeue",
+        "specversion": "1.0",
+        "time": "2021-09-29T23:14:46.000Z",
+        "type": "com.simplisafe.event.standard",
+    }
+
+
+@pytest.fixture(name="ws_message_event_data", scope="session")
+def ws_message_event_data_fixture():
+    """Define a fixture that returns the data payload from a data event."""
+    return json.loads(load_fixture("ws_message_event_data.json"))
+
+
+@pytest.fixture(name="ws_message_hello")
+def ws_message_hello_fixture(ws_message_hello_data):
+    """Define a fixture to represent the "hello" response."""
+    return {
+        "data": ws_message_hello_data,
+        "datacontenttype": "application/json",
+        "id": "id:16803409109",
+        "source": "service",
+        "specversion": "1.0",
+        "time": "2021-09-29T23:14:46.000Z",
+        "type": "com.simplisafe.service.hello",
+    }
+
+
+@pytest.fixture(name="ws_message_hello_data", scope="session")
+def ws_message_hello_data_fixture():
+    """Define a fixture that returns the data payload from a "hello" event."""
+    return json.loads(load_fixture("ws_message_hello_data.json"))
+
+
+@pytest.fixture(name="ws_message_registered")
+def ws_message_registered_fixture():
+    """Define a fixture to represent the "registered" response."""
+    return {
+        "datacontenttype": "application/json",
+        "id": "id:16803409109",
+        "source": "service",
+        "specversion": "1.0",
+        "time": "2021-09-29T23:14:46.000Z",
+        "type": "com.simplisafe.service.registered",
+    }
+
+
+@pytest.fixture(name="ws_message_registered_data", scope="session")
+def ws_message_registered_data_fixture():
+    """Define a fixture that returns the data payload from a "registered" event."""
+    return json.loads(load_fixture("ws_message_registered_data.json"))
+
+
+@pytest.fixture(name="ws_message_subscribed")
+def ws_message_subscribed_fixture(ws_message_subscribed_data):
+    """Define a fixture to represent the "registered" response."""
+    return {
+        "data": ws_message_subscribed_data,
+        "datacontenttype": "application/json",
+        "id": "id:16803409109",
+        "source": "service",
+        "specversion": "1.0",
+        "time": "2021-09-29T23:14:46.000Z",
+        "type": "com.simplisafe.service.subscribed",
+    }
+
+
+@pytest.fixture(name="ws_message_subscribed_data", scope="session")
+def ws_message_subscribed_data_fixture():
+    """Define a fixture that returns the data payload from a "subscribed" event."""
+    return json.loads(load_fixture("ws_message_subscribed_data.json"))
+
+
+@pytest.fixture(name="ws_messages")
+def ws_messages_fixture():
+    """Return a message buffer for the WS client."""
+    return deque()

@@ -3,13 +3,13 @@ from __future__ import annotations
 
 from json.decoder import JSONDecodeError
 import sys
-from typing import Any
+from typing import Any, Callable
 
-from aiohttp import ClientSession, ClientTimeout
+from aiohttp import ClientSession
 from aiohttp.client_exceptions import ClientResponseError
 import backoff
 
-from simplipy.const import LOGGER
+from simplipy.const import DEFAULT_USER_AGENT, LOGGER
 from simplipy.errors import (
     EndpointUnavailableError,
     InvalidCredentialsError,
@@ -23,16 +23,13 @@ from simplipy.util.auth import (
     DEFAULT_CLIENT_ID,
     DEFAULT_REDIRECT_URI,
 )
+from simplipy.websocket import WebsocketClient
 
 API_URL_HOSTNAME = "api.simplisafe.com"
 API_URL_BASE = f"https://{API_URL_HOSTNAME}/v1"
 
 DEFAULT_REQUEST_RETRIES = 4
 DEFAULT_TIMEOUT = 10
-DEFAULT_USER_AGENT = (
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-    "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15"
-)
 
 
 class API:  # pylint: disable=too-many-instance-attributes
@@ -51,17 +48,19 @@ class API:  # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         *,
-        session: ClientSession | None = None,
+        session: ClientSession,
         request_retries: int = DEFAULT_REQUEST_RETRIES,
     ) -> None:
         """Initialize."""
-        self._session: ClientSession | None = session
+        self._refresh_token_listeners: list[Callable[..., None]] = []
+        self.session: ClientSession = session
 
         # These will get filled in after initial authentication:
         self.access_token: str | None = None
         self.refresh_token: str | None = None
         self.subscription_data: dict[int, Any] = {}
         self.user_id: int | None = None
+        self.websocket: WebsocketClient | None = None
 
         # Implement a version of the request coroutine, but with backoff/retry logic:
         self.request = backoff.on_exception(
@@ -79,7 +78,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         authorization_code: str,
         code_verifier: str,
         *,
-        session: ClientSession | None = None,
+        session: ClientSession,
         request_retries: int = DEFAULT_REQUEST_RETRIES,
     ) -> API:
         """Get an authenticated API object from an Authorization Code and Code Verifier.
@@ -117,15 +116,15 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         api.access_token = token_resp["access_token"]
         api.refresh_token = token_resp["refresh_token"]
-        await api._update_user_id()
+        await api._post_init()
         return api
 
     @classmethod
     async def from_refresh_token(
         cls,
         refresh_token: str,
+        session: ClientSession,
         *,
-        session: ClientSession | None = None,
         request_retries: int = DEFAULT_REQUEST_RETRIES,
     ) -> API:
         """Get an authenticated API object from a refresh token.
@@ -141,7 +140,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         api = cls(session=session, request_retries=request_retries)
         api.refresh_token = refresh_token
         await api._refresh_access_token()
-        await api._update_user_id()
+        await api._post_init()
         return api
 
     async def _handle_on_backoff(self, _: dict[str, Any]) -> None:
@@ -158,6 +157,12 @@ class API:  # pylint: disable=too-many-instance-attributes
         err_info = sys.exc_info()
         err = err_info[1].with_traceback(err_info[2])  # type: ignore
         raise RequestError(err) from err
+
+    async def _post_init(self) -> None:
+        """Perform some post-init actions."""
+        auth_check_resp = await self._request("get", "api/authCheck")
+        self.user_id = auth_check_resp["userId"]
+        self.websocket = WebsocketClient(self)
 
     async def _refresh_access_token(self) -> None:
         """Update access/refresh tokens from a refresh token."""
@@ -181,6 +186,9 @@ class API:  # pylint: disable=too-many-instance-attributes
         self.access_token = token_resp["access_token"]
         self.refresh_token = token_resp["refresh_token"]
 
+        for callback in self._refresh_token_listeners:
+            callback(self.refresh_token)
+
     async def _request(
         self, method: str, endpoint: str, url_base: str = API_URL_BASE, **kwargs: Any
     ) -> dict[str, Any]:
@@ -192,17 +200,10 @@ class API:  # pylint: disable=too-many-instance-attributes
         if self.access_token:
             kwargs["headers"]["Authorization"] = f"Bearer {self.access_token}"
 
-        use_running_session = self._session and not self._session.closed
-
-        if use_running_session:
-            session = self._session
-        else:
-            session = ClientSession(timeout=ClientTimeout(total=DEFAULT_TIMEOUT))
-
-        assert session
-
         data: dict[str, Any] | str = {}
-        async with session.request(method, f"{url_base}/{endpoint}", **kwargs) as resp:
+        async with self.session.request(
+            method, f"{url_base}/{endpoint}", **kwargs
+        ) as resp:
             try:
                 data = await resp.json(content_type=None)
             except JSONDecodeError:
@@ -229,15 +230,25 @@ class API:  # pylint: disable=too-many-instance-attributes
 
             resp.raise_for_status()
 
-        if not use_running_session:
-            await session.close()
-
         return data
 
-    async def _update_user_id(self) -> None:
-        """Verify and update the user ID."""
-        auth_check_resp = await self._request("get", "api/authCheck")
-        self.user_id = auth_check_resp["userId"]
+    def add_refresh_token_listener(
+        self, callback: Callable[..., None]
+    ) -> Callable[..., None]:
+        """Add a listener that should be triggered when tokens are refreshed.
+
+        Note that callbacks should expect to receive a refresh token as a parameter.
+
+        :param callback: The method to call after receiving an event.
+        :type callback: ``Callable[..., None]``
+        """
+        self._refresh_token_listeners.append(callback)
+
+        def remove():
+            """Remove the callback."""
+            self._refresh_token_listeners.remove(callback)
+
+        return remove
 
     async def get_systems(self) -> dict[int, SystemV2 | SystemV3]:
         """Get systems associated to the associated SimpliSafe account.

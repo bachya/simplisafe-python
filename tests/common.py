@@ -1,5 +1,9 @@
 """Define common test utilities."""
+import json
 import os
+from unittest.mock import Mock
+
+import aiohttp
 
 TEST_ACCESS_TOKEN = "abcde12345"
 TEST_ADDRESS = "1234 Main Street"
@@ -15,6 +19,15 @@ TEST_SUBSCRIPTION_ID = 12345
 TEST_SYSTEM_ID = 12345
 TEST_SYSTEM_SERIAL_NO = "1234ABCD"
 TEST_USER_ID = 12345
+
+
+def create_ws_message(result):
+    """Return a mock WSMessage."""
+    message = Mock(spec_set=aiohttp.http_websocket.WSMessage)
+    message.type = aiohttp.http_websocket.WSMsgType.TEXT
+    message.data = json.dumps(result)
+    message.json.return_value = result
+    return message
 
 
 def load_fixture(filename):

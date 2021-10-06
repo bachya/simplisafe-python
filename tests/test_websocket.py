@@ -16,6 +16,7 @@ from aiohttp.http_websocket import WSMsgType
 import pytest
 import pytz
 
+from simplipy.const import LOGGER
 from simplipy.device import DeviceTypes
 from simplipy.errors import (
     CannotConnectError,
@@ -159,14 +160,21 @@ async def test_listen_error_message_types(
 
 
 @pytest.mark.asyncio
-async def test_listener_callbacks(mock_api, ws_message_event, ws_messages):
+async def test_listener_callbacks(caplog, mock_api, ws_message_event, ws_messages):
     """Test that listener callbacks are executed correctly."""
+    caplog.set_level(logging.INFO)
+
     mock_connect_listener = Mock()
     mock_disconnect_listener = Mock()
     mock_event_listener = Mock()
 
+    async def async_mock_connect_listener():
+        """Define a mock async conenct listener."""
+        LOGGER.info("We are connected!")
+
     client = WebsocketClient(mock_api)
     client.add_connect_listener(mock_connect_listener)
+    client.add_connect_listener(async_mock_connect_listener)
     client.add_disconnect_listener(mock_disconnect_listener)
     client.add_event_listener(mock_event_listener)
 
@@ -176,13 +184,18 @@ async def test_listener_callbacks(mock_api, ws_message_event, ws_messages):
 
     await client.async_connect()
     assert client.connected
+    await asyncio.sleep(1)
     assert mock_connect_listener.call_count == 1
+    assert any("We are connected!" in e.message for e in caplog.records)
 
     ws_messages.append(create_ws_message(ws_message_event))
     await client.async_listen()
+    await asyncio.sleep(1)
     expected_event = websocket_event_from_payload(ws_message_event)
     mock_event_listener.assert_called_once_with(expected_event)
 
+    # Add another message to the queue to keep the websocket open while we disconnect
+    # from it:
     await client.async_disconnect()
     assert not client.connected
     assert mock_disconnect_listener.call_count == 1
@@ -197,9 +210,6 @@ async def test_reconnect(mock_api):
     assert client.connected
 
     await client.async_reconnect()
-
-    await client.async_disconnect()
-    assert not client.connected
 
 
 @pytest.mark.asyncio
@@ -240,11 +250,10 @@ def test_unknown_sensor_type_in_event(caplog, ws_message_event):
 async def test_watchdog_async_trigger(caplog):
     """Test that the watchdog works with a coroutine as a trigger."""
     caplog.set_level(logging.INFO)
-    logger = logging.getLogger("simplipy")
 
     async def mock_trigger():
         """Define a mock trigger."""
-        logger.info("Triggered mock_trigger")
+        LOGGER.info("Triggered mock_trigger")
 
     watchdog = Watchdog(mock_trigger, timeout=timedelta(seconds=0))
     watchdog.trigger()
@@ -259,11 +268,10 @@ async def test_watchdog_async_trigger(caplog):
 async def test_watchdog_cancel(caplog):
     """Test that canceling the watchdog resets and stops it."""
     caplog.set_level(logging.INFO)
-    logger = logging.getLogger("simplipy")
 
     async def mock_trigger():
         """Define a mock trigger."""
-        logger.info("Triggered mock_trigger")
+        LOGGER.info("Triggered mock_trigger")
 
     # We test this by ensuring that, although the watchdog has a 5-second timeout,
     # canceling it ensures that task is stopped:

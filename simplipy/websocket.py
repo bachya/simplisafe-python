@@ -214,7 +214,7 @@ class WebsocketClient:
         """Initialize."""
         self._api = api
         self._connect_listeners: list[Callable[..., None]] = []
-        self._disconnect_listners: list[Callable[..., None]] = []
+        self._disconnect_listeners: list[Callable[..., None]] = []
         self._event_listeners: list[Callable[..., None]] = []
         self._loop = asyncio.get_running_loop()
         self._watchdog = Watchdog(self.async_reconnect)
@@ -281,8 +281,15 @@ class WebsocketClient:
         """Parse an incoming message."""
         if message["type"] == "com.simplisafe.event.standard":
             event = websocket_event_from_payload(message)
-            for callback in self._event_listeners:
-                callback(event)
+            for listener in self._event_listeners:
+                self._schedule_listener_call(listener, event)
+
+    def _schedule_listener_call(self, listener: Callable[..., Any], *args: Any) -> None:
+        """Schedule a listener to be called."""
+        if asyncio.iscoroutinefunction(listener):
+            asyncio.create_task(listener(*args))
+        else:
+            self._loop.call_soon(listener, *args)
 
     def add_connect_listener(
         self, callback: Callable[..., None]
@@ -302,7 +309,7 @@ class WebsocketClient:
         :param callback: The method to call after disconnecting
         :type callback: ``Callable[..., None]``
         """
-        return self._add_listener(self._disconnect_listners, callback)
+        return self._add_listener(self._disconnect_listeners, callback)
 
     def add_event_listener(self, callback: Callable[..., None]) -> Callable[..., None]:
         """Add a listener callback to be called upon receiving an event.
@@ -326,19 +333,19 @@ class WebsocketClient:
 
         LOGGER.info("Connected to websocket server")
 
-        for callback in self._connect_listeners:
-            callback()
+        for listener in self._connect_listeners:
+            self._schedule_listener_call(listener)
 
         self._watchdog.trigger()
 
     async def async_disconnect(self) -> None:
         """Disconnect from the websocket server."""
-        if not self.connected:
-            return
-
         await self._client.close()
 
         LOGGER.info("Disconnected from websocket server")
+
+        for listener in self._disconnect_listeners:
+            self._schedule_listener_call(listener)
 
     async def async_listen(self) -> None:
         """Start listening to the websocket server."""
@@ -373,8 +380,8 @@ class WebsocketClient:
         finally:
             LOGGER.debug("Listen completed; cleaning up")
 
-            for callback in self._disconnect_listners:
-                callback()
+            for listener in self._disconnect_listeners:
+                self._schedule_listener_call(listener)
 
     async def async_reconnect(self) -> None:
         """Reconnect (and re-listen, if appropriate) to the websocket."""

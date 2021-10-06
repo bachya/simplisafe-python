@@ -52,8 +52,8 @@ def get_auth0_code_challenge(code_verifier: str) -> str:
     :type code_verifier: ``str``
     :rtype: ``str``
     """
-    challenge = hashlib.sha256(code_verifier.encode("utf-8")).digest()
-    challenge = base64.urlsafe_b64encode(challenge).decode("utf-8")
+    verifier = hashlib.sha256(code_verifier.encode("utf-8")).digest()
+    challenge = base64.urlsafe_b64encode(verifier).decode("utf-8")
     return challenge.replace("=", "")
 
 

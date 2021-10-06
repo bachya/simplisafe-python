@@ -146,7 +146,7 @@ class API:  # pylint: disable=too-many-instance-attributes
     async def _handle_on_backoff(self, _: dict[str, Any]) -> None:
         """Handle a backoff retry."""
         err_info = sys.exc_info()
-        err = err_info[1].with_traceback(err_info[2])  # type: ignore
+        err: ClientResponseError = err_info[1].with_traceback(err_info[2])  # type: ignore
 
         if err.status == 401 or err.status == 403:
             LOGGER.info("401 detected; attempting refresh token")
@@ -244,7 +244,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         """
         self._refresh_token_listeners.append(callback)
 
-        def remove():
+        def remove() -> None:
             """Remove the callback."""
             self._refresh_token_listeners.remove(callback)
 

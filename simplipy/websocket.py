@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 from dataclasses import InitVar, dataclass, field
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, Dict, cast
 
 from aiohttp import ClientWebSocketResponse, WSMsgType
 from aiohttp.client_exceptions import (
@@ -148,7 +148,7 @@ class WebsocketEvent:  # pylint: disable=too-many-instance-attributes
     event_cid: InitVar[int]
     info: str
     system_id: int
-    timestamp: datetime
+    timestamp: float
 
     event_type: str | None = field(init=False)
 
@@ -157,7 +157,7 @@ class WebsocketEvent:  # pylint: disable=too-many-instance-attributes
     sensor_serial: str | None = None
     sensor_type: DeviceTypes | None = None
 
-    def __post_init__(self, event_cid):
+    def __post_init__(self, event_cid: int) -> None:
         """Run post-init initialization."""
         if event_cid in EVENT_MAPPING:
             object.__setattr__(self, "event_type", EVENT_MAPPING[event_cid])
@@ -185,7 +185,7 @@ class WebsocketEvent:  # pylint: disable=too-many-instance-attributes
                 object.__setattr__(self, "sensor_type", None)
 
 
-def websocket_event_from_payload(payload: dict):
+def websocket_event_from_payload(payload: dict[str, Any]) -> WebsocketEvent:
     """Create a Message object from a websocket event payload."""
     return WebsocketEvent(
         payload["data"]["eventCid"],
@@ -234,13 +234,13 @@ class WebsocketClient:
         """Add a listener callback to a particular list."""
         listener_list.append(callback)
 
-        def remove():
+        def remove() -> None:
             """Remove the callback."""
             listener_list.remove(callback)
 
         return remove
 
-    async def _async_receive_json(self) -> dict:
+    async def _async_receive_json(self) -> dict[str, Any]:
         """Receive a JSON response from the websocket server."""
         assert self._client
         msg = await self._client.receive()
@@ -261,7 +261,7 @@ class WebsocketClient:
 
         LOGGER.debug("Received data from websocket server: %s", data)
 
-        return data
+        return cast(Dict[str, Any], data)
 
     async def _async_send_json(self, payload: dict[str, Any]) -> None:
         """Send a JSON message to the websocket server.
@@ -340,6 +340,8 @@ class WebsocketClient:
 
     async def async_disconnect(self) -> None:
         """Disconnect from the websocket server."""
+        assert self._client
+
         await self._client.close()
 
         LOGGER.info("Disconnected from websocket server")
@@ -349,6 +351,8 @@ class WebsocketClient:
 
     async def async_listen(self) -> None:
         """Start listening to the websocket server."""
+        assert self._client
+
         now = datetime.utcnow()
         now_ts = round(now.timestamp() * 1000)
         now_utc_iso = f"{now.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]}Z"

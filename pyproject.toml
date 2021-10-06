@@ -37,6 +37,9 @@ warn_unreachable = true
 warn_unused_configs = true
 warn_unused_ignores = true
 
+[toll.mypy-simplipy.util.dt.py]
+ignore_errors = true
+
 [tool.poetry]
 name = "simplisafe-python"
 version = "11.0.6"

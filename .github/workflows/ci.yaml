@@ -76,11 +76,8 @@ jobs:
 
       - uses: actions/setup-python@v2
         with:
-          python-version: "3.9"
+          python-version: "3.x"
           architecture: x64
-
-      - run: |
-          pip install -r requirements_test.txt
 
       - uses: pre-commit/action@v2.0.0
         env:

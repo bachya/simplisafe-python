@@ -64,3 +64,25 @@ jobs:
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  lint:
+
+    name: "Linting & Static Analysis"
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+          architecture: x64
+
+      - run: |
+          python -m venv venv
+          venv/bin/pip install -r requirements_test.txt
+
+      - uses: pre-commit/action@v2.0.0
+        env:
+          SKIP: no-commit-to-branch

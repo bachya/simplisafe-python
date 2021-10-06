@@ -28,7 +28,7 @@ from simplipy.websocket import WebsocketClient
 API_URL_HOSTNAME = "api.simplisafe.com"
 API_URL_BASE = f"https://{API_URL_HOSTNAME}/v1"
 
-DEFAULT_async_request_RETRIES = 4
+DEFAULT_REQUEST_RETRIES = 4
 DEFAULT_TIMEOUT = 10
 
 
@@ -49,7 +49,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         self,
         *,
         session: ClientSession,
-        request_retries: int = DEFAULT_async_request_RETRIES,
+        request_retries: int = DEFAULT_REQUEST_RETRIES,
     ) -> None:
         """Initialize."""
         self._refresh_token_listeners: list[Callable[..., None]] = []
@@ -79,7 +79,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         code_verifier: str,
         *,
         session: ClientSession,
-        request_retries: int = DEFAULT_async_request_RETRIES,
+        request_retries: int = DEFAULT_REQUEST_RETRIES,
     ) -> API:
         """Get an authenticated API object from an Authorization Code and Code Verifier.
 
@@ -125,7 +125,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         refresh_token: str,
         session: ClientSession,
         *,
-        request_retries: int = DEFAULT_async_request_RETRIES,
+        request_retries: int = DEFAULT_REQUEST_RETRIES,
     ) -> API:
         """Get an authenticated API object from a refresh token.
 

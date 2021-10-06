@@ -17,6 +17,12 @@ Connecting
 
     await simplisafe.websocket.async_connect()
 
+Then, once you are connected to the websocket, you can start listening for events:
+
+.. code:: python
+
+    await simplisafe.websocket.async_listen()
+
 Disconnecting
 -------------
 
@@ -27,92 +33,71 @@ Disconnecting
 Responding to Events
 --------------------
 
-Users respond to events by defining handlers (synchronous functions *or* coroutines) and
-using the appropriate registration method. The following events exist:
+Users respond to events by defining listeners (synchronous functions *or* coroutines).
+The following events exist:
 
 * ``connect``: occurs when the websocket connection is established
 * ``disconnect``: occurs when the websocket connection is terminated
 * ``event``: occurs when any data is transmitted from the SimpliSafe™ cloud
 
-Note that you can only register one handler (synchronous function or coroutine) per
-event; calling ``async_on_<event>`` or ``on_<event>`` more than once will override the
-existing handler (again, regardless of whether the old handler was a synchronous function
-or a coroutine).
+Note that you can register as many listeners as you'd like.
 
 ``connect``
 ***********
 
-Asynchronous Connect Callback
-=============================
-
 .. code:: python
 
     async def async_connect_handler():
+        await asyncio.sleep(1)
         print("I connected to the websocket")
-
-    simplisafe.websocket.async_on_connect(async_connect_handler)
-
-Synchronous Connect Callback
-============================
-
-.. code:: python
 
     def connect_handler():
         print("I connected to the websocket")
 
-    simplisafe.websocket.on_connect(connect_handler)
+    remove_1 = simplisafe.websocket.add_connect_listener(async_connect_handler)
+    remove_2 = simplisafe.websocket.add_connect_listener(connect_handler)
+
+    # remove_1 and remove_2 are functions that, when called, remove the listener.
 
 ``disconnect``
 **************
 
-Asynchronous Disconnect Callback
-================================
-
 .. code:: python
 
-    async def async_disconnect_handler():
+    async def async_connect_handler():
+        await asyncio.sleep(1)
         print("I disconnected from the websocket")
 
-    simplisafe.websocket.async_on_disconnect(async_disconnect_handler)
-
-Synchronous Disconnect Callback
-===============================
-
-.. code:: python
-
-    def disconnect_handler():
+    def connect_handler():
         print("I disconnected from the websocket")
 
-    simplisafe.websocket.on_disconnect(disconnect_handler)
+    remove_1 = simplisafe.websocket.add_disconnect_listener(async_connect_handler)
+    remove_2 = simplisafe.websocket.add_disconnect_listener(connect_handler)
+
+    # remove_1 and remove_2 are functions that, when called, remove the listener.
 
 ``event``
 *********
 
-Asynchronous Event Callback
-===========================
-
 .. code:: python
 
-    async def async_event_handler(event):
-        print(f"SimpliSafe websocket event: {event}")
+    async def async_connect_handler(event):
+        await asyncio.sleep(1)
+        print(f"I received a SimpliSafe™ event: {event}")
 
-    simplisafe.websocket.async_on_event(async_event_handler)
+    def connect_handler():
+        print(f"I received a SimpliSafe™ event: {event}")
 
-Synchronous Event Callback
-==========================
+    remove_1 = simplisafe.websocket.add_event_listener(async_connect_handler)
+    remove_2 = simplisafe.websocket.add_event_listener(connect_handler)
 
-.. code:: python
-
-    def event_handler(event):
-        print(f"SimpliSafe websocket event: {event}")
-
-    simplisafe.websocket.on_event(event_handler)
+    # remove_1 and remove_2 are functions that, when called, remove the listener.
 
 Response Format
 ===============
 
-The ``event`` argument shown above is a :meth:`simplipy.websocket.WebsocketEvent`
-object, which comes with several properties:
+The ``event`` argument provided to event listeners is a
+:meth:`simplipy.websocket.WebsocketEvent` object, which comes with several properties:
 
 * ``changed_by``: the PIN that caused the event (in the case of arming/disarming/etc.)
 * ``event_type``: the type of event (see below)

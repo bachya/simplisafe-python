@@ -8,7 +8,7 @@ class SensorV3(DeviceV3):
     """A V3 (new) sensor.
 
     Note that this class shouldn't be instantiated directly; it will be
-    instantiated as appropriate via :meth:`simplipy.API.get_systems`.
+    instantiated as appropriate via :meth:`simplipy.API.async_get_systems`.
     """
 
     @property

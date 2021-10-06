@@ -18,7 +18,7 @@ async def main() -> None:
         logging.basicConfig(level=logging.DEBUG)
 
         try:
-            simplisafe = await API.from_refresh_token(
+            simplisafe = await API.async_from_refresh_token(
                 SIMPLISAFE_REFRESH_TOKEN, session=session
             )
 

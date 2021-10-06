@@ -343,7 +343,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
             ].get("cameras", [])
         }
 
-    async def _set_state(self, value: SystemStates) -> None:
+    async def _async_set_state(self, value: SystemStates) -> None:
         """Set the state of the system."""
         state_resp = await self._api.request(
             "post", f"ss3/subscriptions/{self.system_id}/state/{value.name}"
@@ -352,7 +352,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         self._state = coerce_state_from_raw_value(state_resp["state"])
         self._last_state_change_dt = datetime.utcnow()
 
-    async def _set_updated_pins(self, pins: dict) -> None:
+    async def _async_set_updated_pins(self, pins: dict) -> None:
         """Post new PINs."""
         self.settings_data = await self._api.request(
             "post",
@@ -360,7 +360,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
             json=create_pin_payload(pins),
         )
 
-    async def _update_device_data(self, cached: bool = True) -> None:
+    async def _async_update_device_data(self, cached: bool = True) -> None:
         """Update sensors to the latest values."""
         sensor_resp = await self._api.request(
             "get",
@@ -371,7 +371,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
             sensor["serial"]: sensor for sensor in sensor_resp.get("sensors", [])
         }
 
-    async def _update_settings_data(self, cached: bool = True) -> None:
+    async def _async_update_settings_data(self, cached: bool = True) -> None:
         """Get all system settings."""
         settings_resp = await self._api.request(
             "get",
@@ -382,9 +382,9 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         if settings_resp:
             self.settings_data = settings_resp
 
-    async def _update_subscription_data(self) -> None:
+    async def _async_update_subscription_data(self) -> None:
         """Update subscription data."""
-        await super()._update_subscription_data()
+        await super()._async_update_subscription_data()
         self.camera_data = self._generate_camera_data()
 
     def generate_device_objects(self) -> None:
@@ -399,7 +399,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         for serial in self.camera_data:
             self.cameras[serial] = Camera(self, DeviceTypes.camera, serial)
 
-    async def get_pins(self, cached: bool = True) -> dict[str, str]:
+    async def async_get_pins(self, cached: bool = True) -> dict[str, str]:
         """Return all of the set PINs, including master and duress.
 
         The ``cached`` parameter determines whether the SimpliSafe Cloud uses the last
@@ -409,7 +409,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         :type cached: ``bool``
         :rtype: ``dict[str, str]``
         """
-        await self._update_settings_data(cached)
+        await self._async_update_settings_data(cached)
 
         pins = {
             CONF_MASTER_PIN: self.settings_data["settings"]["pins"]["master"]["pin"],
@@ -423,7 +423,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         return pins
 
-    async def set_properties(self, properties: dict) -> None:
+    async def async_set_properties(self, properties: dict) -> None:
         """Set various system properties.
 
         The following properties can be set:
@@ -461,7 +461,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         if settings_resp:
             self.settings_data = settings_resp
 
-    async def update(
+    async def async_update(
         self,
         *,
         include_subscription: bool = True,
@@ -499,7 +499,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
             )
             return
 
-        await super().update(
+        await super().async_update(
             include_subscription=include_subscription,
             include_settings=include_settings,
             include_devices=include_devices,

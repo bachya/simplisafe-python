@@ -69,8 +69,8 @@ Locking and unlocking a lock is accomplished via two coroutines:
 .. code:: python
 
     for serial, lock in system.locks.items():
-        await lock.lock()
-        await lock.unlock()
+        await lock.async_lock()
+        await lock.async_unlock()
 
 
 Updating the Lock
@@ -80,4 +80,4 @@ To retrieve the sensor's latest state/properties/etc., simply:
 
 .. code:: python
 
-    await lock.update(cached=True)
+    await lock.async_update(cached=True)

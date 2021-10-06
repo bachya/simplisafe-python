@@ -203,8 +203,8 @@ class WebsocketClient:
     """A websocket connection to the SimpliSafe cloud.
 
     Note that this class shouldn't be instantiated directly; it will be instantiated as
-    appropriate via :meth:`simplipy.API.from_auth` or
-    :meth:`simplipy.API.from_refresh_token`.
+    appropriate via :meth:`simplipy.API.async_from_auth` or
+    :meth:`simplipy.API.async_from_refresh_token`.
 
     :param api: A :meth:`simplipy.API` object
     :type api: :meth:`simplipy.API`

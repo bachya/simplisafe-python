@@ -110,7 +110,7 @@ class System:
     """Define a system.
 
     Note that this class shouldn't be instantiated directly; it will be instantiated as
-    appropriate via :meth:`simplipy.API.get_systems`.
+    appropriate via :meth:`simplipy.API.async_get_systems`.
 
     :param api: A :meth:`simplipy.API` object
     :type api: :meth:`simplipy.API`
@@ -223,27 +223,27 @@ class System:
             self._api.subscription_data[self._sid]["location"]["system"]["version"],
         )
 
-    async def _set_state(self, value: SystemStates) -> None:
+    async def _async_set_state(self, value: SystemStates) -> None:
         """Raise if calling this undefined based method."""
         raise NotImplementedError()
 
-    async def _set_updated_pins(self, pins: dict[str, Any]) -> None:
+    async def _async_set_updated_pins(self, pins: dict[str, Any]) -> None:
         """Post new PINs."""
         raise NotImplementedError()
 
-    async def _update_device_data(self, cached: bool = False) -> None:
+    async def _async_update_device_data(self, cached: bool = False) -> None:
         """Update all device data."""
         raise NotImplementedError()
 
-    async def _update_settings_data(self, cached: bool = True) -> None:
+    async def _async_update_settings_data(self, cached: bool = True) -> None:
         """Update all settings data."""
         raise NotImplementedError()
 
-    async def _update_subscription_data(self) -> None:
+    async def _async_update_subscription_data(self) -> None:
         """Update subscription data."""
-        await self._api.update_subscription_data()
+        await self._api.async_update_subscription_data()
 
-    async def clear_notifications(self) -> None:
+    async def async_clear_notifications(self) -> None:
         """Clear all active notifications.
 
         This will remove the notifications from SimpliSafe's cloud, meaning they will no
@@ -259,7 +259,7 @@ class System:
         """Generate device objects for this system."""
         raise NotImplementedError()
 
-    async def get_events(
+    async def async_get_events(
         self, from_datetime: datetime | None = None, num_events: int | None = None
     ) -> list[dict[str, Any]]:
         """Get events recorded by the base station.
@@ -284,19 +284,19 @@ class System:
 
         return cast(List[Dict[str, Any]], events_resp.get("events", []))
 
-    async def get_latest_event(self) -> dict:
+    async def async_get_latest_event(self) -> dict:
         """Get the most recent system event.
 
         :rtype: ``dict``
         """
-        events = await self.get_events(num_events=1)
+        events = await self.async_get_events(num_events=1)
 
         try:
             return events[0]
         except IndexError:
             raise SimplipyError("SimpliSafe didn't return any events") from None
 
-    async def get_pins(self, cached: bool = True) -> dict[str, str]:
+    async def async_get_pins(self, cached: bool = True) -> dict[str, str]:
         """Return all of the set PINs, including master and duress.
 
         The ``cached`` parameter determines whether the SimpliSafe Cloud uses the last
@@ -308,7 +308,7 @@ class System:
         """
         raise NotImplementedError()
 
-    async def remove_pin(self, pin_or_label: str) -> None:
+    async def async_remove_pin(self, pin_or_label: str) -> None:
         """Remove a PIN by its value or label.
 
         :param pin_or_label: The PIN value or label to remove
@@ -317,7 +317,7 @@ class System:
         # Because SimpliSafe's API works by sending the entire payload of PINs, we
         # can't reasonably check a local cache for up-to-date PIN data; so, we fetch the
         # latest each time:
-        latest_pins = await self.get_pins(cached=False)
+        latest_pins = await self.async_get_pins(cached=False)
 
         if pin_or_label in RESERVED_PIN_LABELS:
             raise PinError(f"Refusing to delete reserved PIN: {pin_or_label}")
@@ -329,21 +329,21 @@ class System:
 
         del latest_pins[label]
 
-        await self._set_updated_pins(latest_pins)
+        await self._async_set_updated_pins(latest_pins)
 
-    async def set_away(self) -> None:
+    async def async_set_away(self) -> None:
         """Set the system in "Away" mode."""
-        await self._set_state(SystemStates.away)
+        await self._async_set_state(SystemStates.away)
 
-    async def set_home(self) -> None:
+    async def async_set_home(self) -> None:
         """Set the system in "Home" mode."""
-        await self._set_state(SystemStates.home)
+        await self._async_set_state(SystemStates.home)
 
-    async def set_off(self) -> None:
+    async def async_set_off(self) -> None:
         """Set the system in "Off" mode."""
-        await self._set_state(SystemStates.off)
+        await self._async_set_state(SystemStates.off)
 
-    async def set_pin(self, label: str, pin: str) -> None:
+    async def async_set_pin(self, label: str, pin: str) -> None:
         """Set a PIN.
 
         :param label: The label to use for the PIN (shown in the SimpliSafe app)
@@ -362,7 +362,7 @@ class System:
         # Because SimpliSafe's API works by sending the entire payload of PINs, we
         # can't reasonably check a local cache for up-to-date PIN data; so, we fetch the
         # latest each time.
-        latest_pins = await self.get_pins(cached=False)
+        latest_pins = await self.async_get_pins(cached=False)
 
         if pin in latest_pins.values():
             raise PinError(f"Refusing to create duplicate PIN: {pin}")
@@ -373,9 +373,9 @@ class System:
 
         latest_pins[label] = pin
 
-        await self._set_updated_pins(latest_pins)
+        await self._async_set_updated_pins(latest_pins)
 
-    async def update(
+    async def async_update(
         self,
         *,
         include_subscription: bool = True,
@@ -399,11 +399,11 @@ class System:
         """
         update_tasks = []
         if include_subscription:
-            update_tasks.append(self._update_subscription_data())
+            update_tasks.append(self._async_update_subscription_data())
         if include_settings:
-            update_tasks.append(self._update_settings_data(cached))
+            update_tasks.append(self._async_update_settings_data(cached))
         if include_devices:
-            update_tasks.append(self._update_device_data(cached))
+            update_tasks.append(self._async_update_device_data(cached))
         await asyncio.gather(*update_tasks)
 
         # Create notifications:

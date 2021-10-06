@@ -18,11 +18,11 @@ from .common import (
 async def test_properties(aresponses, v3_server):
     """Test that camera properties are created properly."""
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
 
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         camera = system.cameras[TEST_CAMERA_ID]
         assert camera.name == "Camera"
@@ -45,11 +45,11 @@ async def test_properties(aresponses, v3_server):
 async def test_video_urls(aresponses, v3_server):
     """Test that camera video URL is configured properly."""
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
 
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         camera = system.cameras[TEST_CAMERA_ID]
         assert (

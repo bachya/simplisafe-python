@@ -41,7 +41,7 @@ def create_pin_payload(pins: dict) -> dict[str, dict[str, dict[str, str]]]:
 class SystemV2(System):
     """Define a V2 (original) system."""
 
-    async def _set_state(self, value: SystemStates) -> None:
+    async def _async_set_state(self, value: SystemStates) -> None:
         """Set the state of the system."""
         state_resp = await self._api.request(
             "post",
@@ -52,7 +52,7 @@ class SystemV2(System):
         if state_resp["success"]:
             self._state = coerce_state_from_raw_value(state_resp["requestedState"])
 
-    async def _set_updated_pins(self, pins: dict) -> None:
+    async def _async_set_updated_pins(self, pins: dict) -> None:
         """Post new PINs."""
         await self._api.request(
             "post",
@@ -60,7 +60,7 @@ class SystemV2(System):
             json=create_pin_payload(pins),
         )
 
-    async def _update_device_data(self, cached: bool = True) -> None:
+    async def _async_update_device_data(self, cached: bool = True) -> None:
         """Update sensors to the latest values."""
         sensor_resp = await self._api.request(
             "get",
@@ -73,7 +73,7 @@ class SystemV2(System):
                 continue
             self.sensor_data[sensor["serial"]] = sensor
 
-    async def _update_settings_data(self, cached: bool = True) -> None:
+    async def _async_update_settings_data(self, cached: bool = True) -> None:
         """Update all settings data."""
         pass
 
@@ -83,7 +83,7 @@ class SystemV2(System):
             sensor_type = get_device_type_from_data(data)
             self.sensors[serial] = SensorV2(self, sensor_type, serial)
 
-    async def get_pins(self, cached: bool = True) -> dict[str, str]:
+    async def async_get_pins(self, cached: bool = True) -> dict[str, str]:
         """Return all of the set PINs, including master and duress.
 
         The ``cached`` parameter determines whether the SimpliSafe Cloud uses the last

@@ -31,7 +31,7 @@ async def test_401_bad_credentials(aresponses, invalid_authorization_code_respon
 
     async with aiohttp.ClientSession() as session:
         with pytest.raises(InvalidCredentialsError):
-            await API.from_auth(
+            await API.async_from_auth(
                 TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
             )
 
@@ -60,10 +60,10 @@ async def test_401_refresh_token_failure(
 
     async with aiohttp.ClientSession() as session:
         with pytest.raises(InvalidCredentialsError):
-            simplisafe = await API.from_auth(
+            simplisafe = await API.async_from_auth(
                 TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
             )
-            await simplisafe.get_systems()
+            await simplisafe.async_get_systems()
 
     aresponses.assert_plan_strictly_followed()
 
@@ -109,12 +109,12 @@ async def test_401_refresh_token_success(
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
 
         # If this succeeds without throwing an exception, the retry is successful:
-        await simplisafe.get_systems()
+        await simplisafe.async_get_systems()
         assert simplisafe.access_token == "jjhhgg66"
         assert simplisafe.refresh_token == "aabbcc11"
 
@@ -135,13 +135,13 @@ async def test_403_bad_credentials(aresponses, invalid_authorization_code_respon
 
     async with aiohttp.ClientSession() as session:
         with pytest.raises(InvalidCredentialsError):
-            await API.from_auth(
+            await API.async_from_auth(
                 TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
             )
 
 
 @pytest.mark.asyncio
-async def test_client_from_authorization_code(
+async def test_client_async_from_authorization_code(
     api_token_response, aresponses, auth_check_response
 ):
     """Test creating a client from an authorization code."""
@@ -159,7 +159,7 @@ async def test_client_from_authorization_code(
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
         assert simplisafe.access_token == TEST_ACCESS_TOKEN
@@ -169,7 +169,7 @@ async def test_client_from_authorization_code(
 
 
 @pytest.mark.asyncio
-async def test_client_from_refresh_token(
+async def test_client_async_from_refresh_token(
     api_token_response, aresponses, auth_check_response
 ):
     """Test creating a client from a refresh token."""
@@ -187,7 +187,9 @@ async def test_client_from_refresh_token(
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_refresh_token(TEST_REFRESH_TOKEN, session=session)
+        simplisafe = await API.async_from_refresh_token(
+            TEST_REFRESH_TOKEN, session=session
+        )
         assert simplisafe.access_token == TEST_ACCESS_TOKEN
         assert simplisafe.refresh_token == TEST_REFRESH_TOKEN
 
@@ -238,7 +240,7 @@ async def test_refresh_token_listener_callback(
     mock_listener_2 = Mock()
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
 
@@ -250,7 +252,7 @@ async def test_refresh_token_listener_callback(
         remove = simplisafe.add_refresh_token_listener(mock_listener_2)
         remove()
 
-        await simplisafe.get_systems()
+        await simplisafe.async_get_systems()
         mock_listener_1.assert_called_once_with("aabbcc11")
         assert mock_listener_2.call_count == 0
 
@@ -272,7 +274,7 @@ async def test_request_error_failed_retry(aresponses, server):
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE,
             TEST_CODE_VERIFIER,
             session=session,
@@ -281,7 +283,7 @@ async def test_request_error_failed_retry(aresponses, server):
         )
 
         with pytest.raises(RequestError):
-            await simplisafe.get_systems()
+            await simplisafe.async_get_systems()
 
     aresponses.assert_plan_strictly_followed()
 
@@ -323,12 +325,12 @@ async def test_request_error_successful_retry(
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
 
         # If this succeeds without throwing an exception, the retry is successful:
-        await simplisafe.get_systems()
+        await simplisafe.async_get_systems()
 
     aresponses.assert_plan_strictly_followed()
 
@@ -345,7 +347,7 @@ async def test_string_response(aresponses):
 
     async with aiohttp.ClientSession() as session:
         with pytest.raises(InvalidCredentialsError):
-            await API.from_auth(
+            await API.async_from_auth(
                 TEST_AUTHORIZATION_CODE,
                 TEST_CODE_VERIFIER,
                 session=session,

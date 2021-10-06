@@ -19,12 +19,12 @@ async def main() -> None:
         logging.basicConfig(level=logging.INFO)
 
         try:
-            simplisafe = await API.from_auth(
+            simplisafe = await API.async_from_auth(
                 SIMPLISAFE_AUTHORIZATION_CODE,
                 SIMPLISAFE_CODE_VERIFIER,
                 session=session,
             )
-            systems = await simplisafe.get_systems()
+            systems = await simplisafe.async_get_systems()
             for system in systems.values():
                 # Print system state:
                 _LOGGER.info("System state: %s", system.state)
@@ -40,26 +40,26 @@ async def main() -> None:
                     )
 
                 # Arm/disarm the system:
-                # await system.set_away()
-                # await system.set_home()
-                # await system.set_off()
+                # await system.async_set_away()
+                # await system.async_set_home()
+                # await system.async_set_off()
 
                 # Print system events:
-                events = await system.get_events()
+                events = await system.async_get_events()
                 for event in events:
                     _LOGGER.info("Event: %s", event)
 
                 # Set PINs:
-                # await system.set_pin("Test PIN", "1235")
-                # await system.remove_pin("Test PIN")
+                # await system.async_set_pin("Test PIN", "1235")
+                # await system.async_remove_pin("Test PIN")
 
                 # Interact with locks (if we have them):
                 for serial, lock in system.locks.items():
                     _LOGGER.info(
                         "Lock %s: (name: %s, state: %s)", serial, lock.name, lock.state
                     )
-                    # await lock.lock()
-                    # await lock.unlock()
+                    # await lock.async_lock()
+                    # await lock.async_unlock()
         except SimplipyError as err:
             _LOGGER.error(err)
 

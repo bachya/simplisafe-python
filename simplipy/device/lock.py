@@ -22,7 +22,7 @@ class Lock(DeviceV3):
     """A lock that works with V3 systems.
 
     Note that this class shouldn't be instantiated directly; it will be
-    instantiated as appropriate via :meth:`simplipy.API.get_systems`.
+    instantiated as appropriate via :meth:`simplipy.API.async_get_systems`.
 
     :param api: A :meth:`simplipy.API` object
     :type api: :meth:`simplipy.API`
@@ -113,7 +113,7 @@ class Lock(DeviceV3):
             return LockStates.locked
         return LockStates.unlocked
 
-    async def lock(self) -> None:
+    async def async_lock(self) -> None:
         """Lock the lock."""
         await self._request(
             "post",
@@ -126,7 +126,7 @@ class Lock(DeviceV3):
             "lockState"
         ] = self._InternalStates.locked.value
 
-    async def unlock(self) -> None:
+    async def async_unlock(self) -> None:
         """Unlock the lock."""
         await self._request(
             "post",

@@ -131,7 +131,7 @@ this:
     async def main() -> None:
         """Create the aiohttp session and run."""
         async with ClientSession() as session:
-            simplisafe = await simplipy.API.from_auth(
+            simplisafe = await simplipy.API.async_from_auth(
                 "<AUTHORIZATION_CODE>",
                 "<CODE_VERIFIER>",
                 session=session,
@@ -162,14 +162,14 @@ access token:
     async def main() -> None:
         """Create the aiohttp session and run."""
         async with ClientSession() as session:
-            simplisafe = await simplipy.API.from_auth(
+            simplisafe = await simplipy.API.async_from_auth(
                 "<AUTHORIZATION_CODE>",
                 "<CODE_VERIFIER>",
                 session=session,
             )
 
             # Sometime later:
-            new_simplisafe = await simplipy.API.from_refresh_token(
+            new_simplisafe = await simplipy.API.async_from_refresh_token(
                 simplisafe.refresh_token,
                 session=session,
             )

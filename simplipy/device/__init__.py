@@ -35,7 +35,7 @@ class Device:
     """A base SimpliSafe device.
 
     Note that this class shouldn't be instantiated directly; it will be instantiated as
-    appropriate via :meth:`simplipy.API.get_systems`.
+    appropriate via :meth:`simplipy.API.async_get_systems`.
 
     :param system: A :meth:`simplipy.system.System` object (or one of its subclasses)
     :type system: :meth:`simplipy.system.System`
@@ -75,7 +75,7 @@ class Device:
         """
         return self._device_type
 
-    async def update(self, cached: bool = True) -> None:
+    async def async_update(self, cached: bool = True) -> None:
         """Retrieve the latest state/properties for the device.
 
         The ``cached`` parameter determines whether the SimpliSafe Cloud uses the last
@@ -84,7 +84,7 @@ class Device:
         :param cached: Whether to used cached data.
         :type cached: ``bool``
         """
-        await self._system.update(
+        await self._system.async_update(
             include_subscription=False, include_settings=False, cached=cached
         )
 
@@ -93,7 +93,7 @@ class DeviceV3(Device):
     """A base device for V3 systems.
 
     Note that this class shouldn't be instantiated directly; it will be
-    instantiated as appropriate via :meth:`simplipy.API.get_systems`.
+    instantiated as appropriate via :meth:`simplipy.API.async_get_systems`.
     """
 
     @property

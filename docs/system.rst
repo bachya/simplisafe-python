@@ -26,14 +26,14 @@ To get all SimpliSafe™ systems associated with an account:
     async def main() -> None:
         """Create the aiohttp session and run."""
         async with ClientSession() as session:
-            simplisafe = await simplipy.API.from_auth(
+            simplisafe = await simplipy.API.async_from_auth(
                 "<AUTHORIZATION_CODE>",
                 "<CODE_VERIFIER>",
                 session=session,
             )
 
             # Get a dict of systems with the system ID as the key:
-            systems = await simplisafe.get_systems()
+            systems = await simplisafe.async_get_systems()
             # >>> {"1234abc": <simplipy.system.SystemV2 object>, ...}
 
 
@@ -176,7 +176,7 @@ automatically come with additional properties:
     system.wifi_strength
     # >>> -43
 
-V3 systems also come with a :meth:`set_properties <simplipy.system.v3.SystemV3.set_properties>`
+V3 systems also come with a :meth:`async_set_properties <simplipy.system.v3.SystemV3.async_set_properties>`
 method to update the following system properties:
 
 * ``alarm_duration`` (in seconds): 30-480
@@ -196,7 +196,7 @@ Note that volume properties can accept integers or constants defined in
 
     from simplipy.system.v3 import VOLUME_OFF, VOLUME_LOW, VOLUME_MEDIUM
 
-    await system.set_properties(
+    await system.async_set_properties(
         {
             "alarm_duration": 240,
             "alarm_volume": VOLUME_HIGH,
@@ -228,7 +228,7 @@ Refreshing the :meth:`System <simplipy.system.System>` object is done via the
 
 .. code:: python
 
-    await system.update()
+    await system.async_update()
 
 Note that this method can be supplied with four optional parameters (all of which
 default to ``True``):
@@ -243,7 +243,7 @@ refresh:
 
 .. code:: python
 
-    await system.update(include_system=False, include_settings=False, cached=False)
+    await system.async_update(include_system=False, include_settings=False, cached=False)
 
 There are two crucial differences between V2 and V3 systems when updating:
 
@@ -261,9 +261,9 @@ of three coroutines:
 
 .. code:: python
 
-    await system.set_away()
-    await system.set_home()
-    await system.set_off()
+    await system.async_set_away()
+    await system.async_set_home()
+    await system.async_set_off()
 
 
 Events
@@ -277,12 +277,12 @@ occurred with their system:
    from datetime import datetime, timedelta
 
    yesterday = datetime.now() - timedelta(days=1)
-    await system.get_events(
+    await system.async_get_events(
         from_timestamp=yesterday, num_events=2
     )
     # >>> [{"eventId": 123, ...}, {"eventId": 456, ...}]
 
-    await system.get_latest_event()
+    await system.async_get_latest_event()
     # >>> {"eventId": 987, ...}
 
 System Notifications
@@ -308,22 +308,22 @@ associated with a SimpliSafe™ account:
 .. code:: python
 
     # Get all PINs (retrieving fresh or from the cache):
-    await system.get_pins(cached=False)
+    await system.async_get_pins(cached=False)
     # >>> {"master": "1234", "duress": "9876"}
 
     # Set a new user PIN:
-    await system.set_pin("My New User", "1122")
-    await system.get_pins(cached=False)
+    await system.async_set_pin("My New User", "1122")
+    await system.async_get_pins(cached=False)
     # >>> {"master": "1234", "duress": "9876", "My New User": "1122"}
 
     # Remove a PIN (by value or by label)
-    await system.remove_pin("My New User")
-    await system.get_pins(cached=False)
+    await system.async_remove_pin("My New User")
+    await system.async_get_pins(cached=False)
     # >>> {"master": "1234", "duress": "9876"}
 
     # Set the master PIN (works for the duress PIN, too):
-    await system.set_pin("master", "9865")
-    await system.get_pins(cached=False)
+    await system.async_set_pin("master", "9865")
+    await system.async_get_pins(cached=False)
     # >>> {"master": "9865", "duress": "9876"}
 
 Remember that with V2 systems, many operations – including setting PINs – will cause

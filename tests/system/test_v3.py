@@ -32,10 +32,10 @@ from tests.common import (
 async def test_alarm_state(aresponses, v3_server):
     """Test that we can get the alarm state."""
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         assert system.state == SystemStates.off
 
@@ -53,12 +53,12 @@ async def test_clear_notifications(aresponses, v3_server, v3_settings_response):
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
-        await system.clear_notifications()
+        await system.async_clear_notifications()
         assert system.notifications == []
 
     aresponses.assert_plan_strictly_followed()
@@ -75,12 +75,12 @@ async def test_get_last_event(aresponses, latest_event_response, v3_server):
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
-        latest_event = await system.get_latest_event()
+        latest_event = await system.async_get_latest_event()
         assert latest_event["eventId"] == 1234567890
 
     aresponses.assert_plan_strictly_followed()
@@ -97,12 +97,12 @@ async def test_get_pins(aresponses, v3_server, v3_settings_response):
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
-        pins = await system.get_pins()
+        pins = await system.async_get_pins()
         assert len(pins) == 4
         assert pins["master"] == "1234"
         assert pins["duress"] == "9876"
@@ -113,13 +113,13 @@ async def test_get_pins(aresponses, v3_server, v3_settings_response):
 
 
 @pytest.mark.asyncio
-async def test_get_systems(aresponses, v3_server):
+async def test_async_get_systems(aresponses, v3_server):
     """Test the ability to get systems attached to a v3 account."""
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         assert len(systems) == 1
 
         system = systems[TEST_SYSTEM_ID]
@@ -143,15 +143,15 @@ async def test_empty_events(aresponses, events_response, v3_server):
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
 
         # Test the events key existing, but being empty:
         with pytest.raises(SimplipyError):
-            _ = await system.get_latest_event()
+            _ = await system.async_get_latest_event()
 
     aresponses.assert_plan_strictly_followed()
 
@@ -171,16 +171,16 @@ async def test_lock_state_update_bug(aresponses, caplog, v3_server, v3_state_res
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
 
-        await system.set_away()
+        await system.async_set_away()
         assert system.state == SystemStates.away
 
-        await system.update()
+        await system.async_update()
         assert any("Skipping system update" in e.message for e in caplog.records)
 
     aresponses.assert_plan_strictly_followed()
@@ -199,15 +199,15 @@ async def test_missing_events(aresponses, events_response, v3_server):
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
 
         # Test the events key existing, but being empty:
         with pytest.raises(SimplipyError):
-            _ = await system.get_latest_event()
+            _ = await system.async_get_latest_event()
 
     aresponses.assert_plan_strictly_followed()
 
@@ -229,15 +229,15 @@ async def test_no_state_change_on_failure(aresponses, v3_server):
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         assert system.state == SystemStates.off
 
         with pytest.raises(InvalidCredentialsError):
-            await system.set_away()
+            await system.async_set_away()
         assert system.state == SystemStates.off
 
     aresponses.assert_plan_strictly_followed()
@@ -254,10 +254,10 @@ async def test_properties(aresponses, v3_server, v3_settings_response):
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         assert system.alarm_duration == 240
         assert system.alarm_volume == VOLUME_HIGH
@@ -290,7 +290,7 @@ async def test_properties(aresponses, v3_server, v3_settings_response):
         system.settings_data["settings"]["normal"]["light"] = False
         system.settings_data["settings"]["normal"]["voicePrompts"] = 0
 
-        await system.set_properties(
+        await system.async_set_properties(
             {
                 "alarm_duration": 240,
                 "alarm_volume": VOLUME_HIGH,
@@ -327,14 +327,14 @@ async def test_remove_nonexistent_pin(aresponses, v3_server, v3_settings_respons
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
 
         with pytest.raises(PinError) as err:
-            await system.remove_pin("0000")
+            await system.async_remove_pin("0000")
             assert "Refusing to delete nonexistent PIN" in str(err)
 
     aresponses.assert_plan_strictly_followed()
@@ -373,16 +373,16 @@ async def test_remove_pin(aresponses, v3_server, v3_settings_response):
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
-        latest_pins = await system.get_pins()
+        latest_pins = await system.async_get_pins()
         assert len(latest_pins) == 4
 
-        await system.remove_pin("Test 2")
-        latest_pins = await system.get_pins()
+        await system.async_remove_pin("Test 2")
+        latest_pins = await system.async_get_pins()
         assert len(latest_pins) == 3
 
     aresponses.assert_plan_strictly_followed()
@@ -399,14 +399,14 @@ async def test_remove_reserved_pin(aresponses, v3_server, v3_settings_response):
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
 
         with pytest.raises(PinError) as err:
-            await system.remove_pin("master")
+            await system.async_remove_pin("master")
             assert "Refusing to delete reserved PIN" in str(err)
 
     aresponses.assert_plan_strictly_followed()
@@ -430,12 +430,12 @@ async def test_set_duplicate_pin(aresponses, v3_server, v3_settings_response):
 
     async with aiohttp.ClientSession() as session:
         with pytest.raises(PinError) as err:
-            simplisafe = await API.from_auth(
+            simplisafe = await API.async_from_auth(
                 TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
             )
-            systems = await simplisafe.get_systems()
+            systems = await simplisafe.async_get_systems()
             system = systems[TEST_SYSTEM_ID]
-            await system.set_pin("whatever", "1234")
+            await system.async_set_pin("whatever", "1234")
             assert "Refusing to create duplicate PIN" in str(err)
 
     aresponses.assert_plan_strictly_followed()
@@ -452,14 +452,14 @@ async def test_set_invalid_property(aresponses, v3_server, v3_settings_response)
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
 
         with pytest.raises(ValueError):
-            await system.set_properties({"Fake": "News"})
+            await system.async_set_properties({"Fake": "News"})
 
     aresponses.assert_plan_strictly_followed()
 
@@ -510,12 +510,12 @@ async def test_set_max_user_pins(
 
     async with aiohttp.ClientSession() as session:
         with pytest.raises(PinError) as err:
-            simplisafe = await API.from_auth(
+            simplisafe = await API.async_from_auth(
                 TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
             )
-            systems = await simplisafe.get_systems()
+            systems = await simplisafe.async_get_systems()
             system = systems[TEST_SYSTEM_ID]
-            await system.set_pin("whatever", "8121")
+            await system.async_set_pin("whatever", "8121")
             assert "Refusing to create more than" in str(err)
 
     aresponses.assert_plan_strictly_followed()
@@ -554,17 +554,17 @@ async def test_set_pin(aresponses, v3_server, v3_settings_response):
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
 
-        latest_pins = await system.get_pins()
+        latest_pins = await system.async_get_pins()
         assert len(latest_pins) == 4
 
-        await system.set_pin("whatever", "1274")
-        latest_pins = await system.get_pins()
+        await system.async_set_pin("whatever", "1274")
+        latest_pins = await system.async_get_pins()
         assert len(latest_pins) == 5
 
     aresponses.assert_plan_strictly_followed()
@@ -575,13 +575,13 @@ async def test_set_pin_wrong_chars(aresponses, v3_server):
     """Test throwing an error when setting a PIN with non-digits."""
     async with aiohttp.ClientSession() as session:
         with pytest.raises(PinError) as err:
-            simplisafe = await API.from_auth(
+            simplisafe = await API.async_from_auth(
                 TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
             )
-            systems = await simplisafe.get_systems()
+            systems = await simplisafe.async_get_systems()
             system = systems[TEST_SYSTEM_ID]
 
-            await system.set_pin("whatever", "abcd")
+            await system.async_set_pin("whatever", "abcd")
             assert "PINs can only contain numbers" in str(err)
 
     aresponses.assert_plan_strictly_followed()
@@ -592,13 +592,13 @@ async def test_set_pin_wrong_length(aresponses, v3_server):
     """Test throwing an error when setting a PIN with the wrong length."""
     async with aiohttp.ClientSession() as session:
         with pytest.raises(PinError) as err:
-            simplisafe = await API.from_auth(
+            simplisafe = await API.async_from_auth(
                 TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
             )
-            systems = await simplisafe.get_systems()
+            systems = await simplisafe.async_get_systems()
             system = systems[TEST_SYSTEM_ID]
 
-            await system.set_pin("whatever", "1122334455")
+            await system.async_set_pin("whatever", "1122334455")
             assert "digits long" in str(err)
 
     aresponses.assert_plan_strictly_followed()
@@ -635,19 +635,19 @@ async def test_set_states(aresponses, v3_server, v3_state_response):
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
 
-        await system.set_away()
+        await system.async_set_away()
         assert system.state == SystemStates.away
 
-        await system.set_home()
+        await system.async_set_home()
         assert system.state == SystemStates.home
 
-        await system.set_off()
+        await system.async_set_off()
         assert system.state == SystemStates.off
 
     aresponses.assert_plan_strictly_followed()
@@ -657,10 +657,10 @@ async def test_set_states(aresponses, v3_server, v3_state_response):
 async def test_system_notifications(aresponses, v3_server):
     """Test getting system notifications."""
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         assert len(system.notifications) == 1
 
@@ -693,14 +693,14 @@ async def test_unavailable_endpoint(
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
 
         with pytest.raises(EndpointUnavailableError):
-            await system.update(include_subscription=False, include_devices=False)
+            await system.async_update(include_subscription=False, include_devices=False)
 
     aresponses.assert_plan_strictly_followed()
 
@@ -734,13 +734,13 @@ async def test_update_system_data(
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
 
-        await system.update()
+        await system.async_update()
 
         assert system.serial == TEST_SYSTEM_SERIAL_NO
         assert system.system_id == TEST_SYSTEM_ID
@@ -778,7 +778,7 @@ async def test_update_error(
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE,
             TEST_CODE_VERIFIER,
             session=session,
@@ -786,10 +786,10 @@ async def test_update_error(
             request_retries=1,
         )
 
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
 
         with pytest.raises(RequestError):
-            await system.update()
+            await system.async_update()
 
     aresponses.assert_plan_strictly_followed()

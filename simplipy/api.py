@@ -28,7 +28,7 @@ from simplipy.websocket import WebsocketClient
 API_URL_HOSTNAME = "api.simplisafe.com"
 API_URL_BASE = f"https://{API_URL_HOSTNAME}/v1"
 
-DEFAULT_REQUEST_RETRIES = 4
+DEFAULT_async_request_RETRIES = 4
 DEFAULT_TIMEOUT = 10
 
 
@@ -36,7 +36,7 @@ class API:  # pylint: disable=too-many-instance-attributes
     """An API object to interact with the SimpliSafe cloud.
 
     Note that this class shouldn't be instantiated directly; instead, the
-    :meth:`simplipy.api.API.from_auth` and :meth:`simplipy.api.API.from_refresh_token`
+    :meth:`simplipy.api.API.async_from_auth` and :meth:`simplipy.api.API.async_from_refresh_token`
     methods should be used.
 
     :param session: The ``aiohttp`` ``ClientSession`` session used for all HTTP requests
@@ -49,7 +49,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         self,
         *,
         session: ClientSession,
-        request_retries: int = DEFAULT_REQUEST_RETRIES,
+        request_retries: int = DEFAULT_async_request_RETRIES,
     ) -> None:
         """Initialize."""
         self._refresh_token_listeners: list[Callable[..., None]] = []
@@ -68,18 +68,18 @@ class API:  # pylint: disable=too-many-instance-attributes
             ClientResponseError,
             logger=LOGGER,
             max_tries=request_retries,
-            on_backoff=self._handle_on_backoff,
-            on_giveup=self._handle_on_giveup,
-        )(self._request)
+            on_backoff=self._async_handle_on_backoff,
+            on_giveup=self._async_handle_on_giveup,
+        )(self._async_request)
 
     @classmethod
-    async def from_auth(
+    async def async_from_auth(
         cls,
         authorization_code: str,
         code_verifier: str,
         *,
         session: ClientSession,
-        request_retries: int = DEFAULT_REQUEST_RETRIES,
+        request_retries: int = DEFAULT_async_request_RETRIES,
     ) -> API:
         """Get an authenticated API object from an Authorization Code and Code Verifier.
 
@@ -96,7 +96,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         api = cls(session=session, request_retries=request_retries)
 
         try:
-            token_resp = await api._request(
+            token_resp = await api._async_request(
                 "post",
                 "oauth/token",
                 url_base=AUTH_URL_BASE,
@@ -116,16 +116,16 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         api.access_token = token_resp["access_token"]
         api.refresh_token = token_resp["refresh_token"]
-        await api._post_init()
+        await api._async_post_init()
         return api
 
     @classmethod
-    async def from_refresh_token(
+    async def async_from_refresh_token(
         cls,
         refresh_token: str,
         session: ClientSession,
         *,
-        request_retries: int = DEFAULT_REQUEST_RETRIES,
+        request_retries: int = DEFAULT_async_request_RETRIES,
     ) -> API:
         """Get an authenticated API object from a refresh token.
 
@@ -139,35 +139,35 @@ class API:  # pylint: disable=too-many-instance-attributes
         """
         api = cls(session=session, request_retries=request_retries)
         api.refresh_token = refresh_token
-        await api._refresh_access_token()
-        await api._post_init()
+        await api._async_refresh_access_token()
+        await api._async_post_init()
         return api
 
-    async def _handle_on_backoff(self, _: dict[str, Any]) -> None:
+    async def _async_handle_on_backoff(self, _: dict[str, Any]) -> None:
         """Handle a backoff retry."""
         err_info = sys.exc_info()
         err: ClientResponseError = err_info[1].with_traceback(err_info[2])  # type: ignore
 
         if err.status == 401 or err.status == 403:
             LOGGER.info("401 detected; attempting refresh token")
-            await self._refresh_access_token()
+            await self._async_refresh_access_token()
 
-    async def _handle_on_giveup(self, _: dict[str, Any]) -> None:
+    async def _async_handle_on_giveup(self, _: dict[str, Any]) -> None:
         """Handle a give up after retries are exhausted."""
         err_info = sys.exc_info()
         err = err_info[1].with_traceback(err_info[2])  # type: ignore
         raise RequestError(err) from err
 
-    async def _post_init(self) -> None:
+    async def _async_post_init(self) -> None:
         """Perform some post-init actions."""
-        auth_check_resp = await self._request("get", "api/authCheck")
+        auth_check_resp = await self._async_request("get", "api/authCheck")
         self.user_id = auth_check_resp["userId"]
         self.websocket = WebsocketClient(self)
 
-    async def _refresh_access_token(self) -> None:
+    async def _async_refresh_access_token(self) -> None:
         """Update access/refresh tokens from a refresh token."""
         try:
-            token_resp = await self._request(
+            token_resp = await self._async_request(
                 "post",
                 "oauth/token",
                 url_base=AUTH_URL_BASE,
@@ -189,7 +189,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         for callback in self._refresh_token_listeners:
             callback(self.refresh_token)
 
-    async def _request(
+    async def _async_request(
         self, method: str, endpoint: str, url_base: str = API_URL_BASE, **kwargs: Any
     ) -> dict[str, Any]:
         """Execute an API request."""
@@ -250,7 +250,7 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         return remove
 
-    async def get_systems(self) -> dict[int, SystemV2 | SystemV3]:
+    async def async_get_systems(self) -> dict[int, SystemV2 | SystemV3]:
         """Get systems associated to the associated SimpliSafe account.
 
         In the dict that is returned, the keys are the subscription ID and the values
@@ -260,7 +260,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         """
         systems: dict[int, SystemV2 | SystemV3] = {}
 
-        await self.update_subscription_data()
+        await self.async_update_subscription_data()
 
         for sid, subscription in self.subscription_data.items():
             if not subscription["activated"] != 0:
@@ -281,13 +281,13 @@ class API:  # pylint: disable=too-many-instance-attributes
 
             # Update the system, but don't include subscription data itself, since it
             # will already have been fetched when the API was first queried:
-            await system.update(include_subscription=False)
+            await system.async_update(include_subscription=False)
             system.generate_device_objects()
             systems[sid] = system
 
         return systems
 
-    async def update_subscription_data(self) -> None:
+    async def async_update_subscription_data(self) -> None:
         """Get the latest subscription data."""
         subscription_resp = await self.request(
             "get", f"users/{self.user_id}/subscriptions", params={"activeOnly": "true"}

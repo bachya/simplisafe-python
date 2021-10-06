@@ -26,12 +26,12 @@ async def test_get_pins(aresponses, v2_pins_response, v2_server):
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
-        pins = await system.get_pins()
+        pins = await system.async_get_pins()
 
         assert len(pins) == 4
         assert pins["master"] == "1234"
@@ -43,13 +43,13 @@ async def test_get_pins(aresponses, v2_pins_response, v2_server):
 
 
 @pytest.mark.asyncio
-async def test_get_systems(aresponses, v2_server, v2_subscriptions_response):
+async def test_async_get_systems(aresponses, v2_server, v2_subscriptions_response):
     """Test the ability to get systems attached to a v2 account."""
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         assert len(systems) == 1
 
         system = systems[TEST_SYSTEM_ID]
@@ -93,17 +93,17 @@ async def test_set_pin(aresponses, v2_pins_response, v2_server, v2_settings_resp
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
 
-        latest_pins = await system.get_pins()
+        latest_pins = await system.async_get_pins()
         assert len(latest_pins) == 4
 
-        await system.set_pin("whatever", "1275")
-        new_pins = await system.get_pins()
+        await system.async_set_pin("whatever", "1275")
+        new_pins = await system.async_get_pins()
         assert len(new_pins) == 5
 
     aresponses.assert_plan_strictly_followed()
@@ -140,19 +140,19 @@ async def test_set_states(aresponses, v2_server, v2_state_response):
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
 
-        await system.set_away()
+        await system.async_set_away()
         assert system.state == SystemStates.away
 
-        await system.set_home()
+        await system.async_set_home()
         assert system.state == SystemStates.home
 
-        await system.set_off()
+        await system.async_set_off()
         assert system.state == SystemStates.off
 
     aresponses.assert_plan_strictly_followed()
@@ -179,16 +179,16 @@ async def test_update_system_data(
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         assert system.serial == TEST_SYSTEM_SERIAL_NO
         assert system.system_id == TEST_SYSTEM_ID
         assert len(system.sensors) == 35
 
         # If this succeeds without throwing an exception, the update is successful:
-        await system.update()
+        await system.async_update()
 
     aresponses.assert_plan_strictly_followed()

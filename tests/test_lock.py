@@ -47,18 +47,18 @@ async def test_lock_unlock(aresponses, v3_lock_state_response, v3_server):
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         lock = system.locks[TEST_LOCK_ID]
         assert lock.state == LockStates.locked
 
-        await lock.unlock()
+        await lock.async_unlock()
         assert lock.state == LockStates.unlocked
 
-        await lock.lock()
+        await lock.async_lock()
         assert lock.state == LockStates.locked
 
     aresponses.assert_plan_strictly_followed()
@@ -68,10 +68,10 @@ async def test_lock_unlock(aresponses, v3_lock_state_response, v3_server):
 async def test_jammed(aresponses, v3_server):
     """Test that a jammed lock shows the correct state."""
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         lock = system.locks[TEST_LOCK_ID_2]
         assert lock.state is LockStates.jammed
@@ -100,18 +100,18 @@ async def test_no_state_change_on_failure(
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE,
             TEST_CODE_VERIFIER,
             session=session,
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         lock = system.locks[TEST_LOCK_ID]
         assert lock.state == LockStates.locked
 
         with pytest.raises(InvalidCredentialsError):
-            await lock.unlock()
+            await lock.async_unlock()
         assert lock.state == LockStates.locked
 
     aresponses.assert_plan_strictly_followed()
@@ -121,10 +121,10 @@ async def test_no_state_change_on_failure(
 async def test_properties(aresponses, v3_server):
     """Test that lock properties are created properly."""
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         lock = system.locks[TEST_LOCK_ID]
         assert not lock.disabled
@@ -143,10 +143,10 @@ async def test_properties(aresponses, v3_server):
 async def test_unknown_state(aresponses, caplog, v3_server):
     """Test handling a generic error during update."""
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         lock = system.locks[TEST_LOCK_ID_3]
         assert lock.state == LockStates.unknown
@@ -192,19 +192,19 @@ async def test_update(
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.from_auth(
+        simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        systems = await simplisafe.get_systems()
+        systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         lock = system.locks[TEST_LOCK_ID]
         assert lock.state == LockStates.locked
 
-        await lock.unlock()
+        await lock.async_unlock()
         assert lock.state == LockStates.unlocked
 
         # Simulate a manual lock and an update some time later:
-        await lock.update()
+        await lock.async_update()
         assert lock.state == LockStates.locked
 
     aresponses.assert_plan_strictly_followed()

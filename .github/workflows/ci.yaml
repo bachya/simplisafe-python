@@ -80,8 +80,7 @@ jobs:
           architecture: x64
 
       - run: |
-          python -m venv venv
-          venv/bin/pip install -r requirements_test.txt
+          pip install -r requirements_test.txt
 
       - uses: pre-commit/action@v2.0.0
         env:

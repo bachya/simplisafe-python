@@ -9,7 +9,6 @@ from simplipy.system import (
     DEFAULT_MAX_USER_PINS,
     System,
     SystemStates,
-    coerce_state_from_raw_value,
     get_device_type_from_data,
 )
 
@@ -43,14 +42,13 @@ class SystemV2(System):
 
     async def _async_set_state(self, value: SystemStates) -> None:
         """Set the state of the system."""
-        state_resp = await self._api.request(
+        await self._api.request(
             "post",
             f"subscriptions/{self.system_id}/state",
             params={"state": value.name},
         )
 
-        if state_resp["success"]:
-            self._state = coerce_state_from_raw_value(state_resp["requestedState"])
+        self._state = value
 
     async def _async_set_updated_pins(self, pins: dict) -> None:
         """Post new PINs."""

@@ -17,7 +17,6 @@ from simplipy.system import (
     DEFAULT_MAX_USER_PINS,
     System,
     SystemStates,
-    coerce_state_from_raw_value,
     get_device_type_from_data,
     guard_from_missing_data,
 )
@@ -345,11 +344,11 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
     async def _async_set_state(self, value: SystemStates) -> None:
         """Set the state of the system."""
-        state_resp = await self._api.request(
+        await self._api.request(
             "post", f"ss3/subscriptions/{self.system_id}/state/{value.name}"
         )
 
-        self._state = coerce_state_from_raw_value(state_resp["state"])
+        self._state = value
         self._last_state_change_dt = datetime.utcnow()
 
     async def _async_set_updated_pins(self, pins: dict) -> None:

@@ -232,6 +232,10 @@ async def test_no_state_change_on_failure(aresponses, v3_server):
         simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
+
+        # Manually set the expiration datetime to force a refresh token flow:
+        simplisafe._access_token_expire_dt = datetime.utcnow()
+
         systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         assert system.state == SystemStates.off

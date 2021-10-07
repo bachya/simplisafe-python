@@ -1,5 +1,6 @@
 """Define tests for the System object."""
 # pylint: disable=protected-access,too-many-arguments
+from datetime import datetime
 from unittest.mock import Mock
 
 import aiohttp
@@ -63,6 +64,10 @@ async def test_401_refresh_token_failure(
             simplisafe = await API.async_from_auth(
                 TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
             )
+
+            # Manually set the expiration datetime to force a refresh token flow:
+            simplisafe._access_token_expire_dt = datetime.utcnow()
+
             await simplisafe.async_get_systems()
 
     aresponses.assert_plan_strictly_followed()
@@ -112,6 +117,9 @@ async def test_401_refresh_token_success(
         simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
+
+        # Manually set the expiration datetime to force a refresh token flow:
+        simplisafe._access_token_expire_dt = datetime.utcnow()
 
         # If this succeeds without throwing an exception, the retry is successful:
         await simplisafe.async_get_systems()
@@ -200,14 +208,24 @@ async def test_client_async_from_refresh_token(
 async def test_refresh_token_listener_callback(
     api_token_response,
     aresponses,
+    caplog,
     server,
     v2_settings_response,
     v2_subscriptions_response,
 ):
     """Test that listener callbacks are executed correctly."""
+    import logging
+
+    caplog.set_level(logging.DEBUG)
     server.add(
         "api.simplisafe.com",
         f"/v1/users/{TEST_SUBSCRIPTION_ID}/subscriptions",
+        "get",
+        response=aresponses.Response(text="Unauthorized", status=401),
+    )
+    server.add(
+        "api.simplisafe.com",
+        f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/settings",
         "get",
         response=aresponses.Response(text="Unauthorized", status=401),
     )
@@ -244,6 +262,9 @@ async def test_refresh_token_listener_callback(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
 
+        # Manually set the expiration datetime to force a refresh token flow:
+        simplisafe._access_token_expire_dt = datetime.utcnow()
+
         # We'll hang onto one listener callback:
         simplisafe.add_refresh_token_listener(mock_listener_1)
         assert mock_listener_1.call_count == 0
@@ -254,6 +275,7 @@ async def test_refresh_token_listener_callback(
 
         await simplisafe.async_get_systems()
         mock_listener_1.assert_called_once_with("aabbcc11")
+        assert mock_listener_1.call_count == 1
         assert mock_listener_2.call_count == 0
 
 

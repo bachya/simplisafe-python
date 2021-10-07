@@ -170,7 +170,8 @@ class API:  # pylint: disable=too-many-instance-attributes
 
             # Since we might have multiple requests (each running their own retry
             # sequence) land here, we only refresh the access token if it hasn't
-            # been refreshed within the expiration window:
+            # been refreshed within the expiration window (and we lock the attempt so
+            # other requests can't try it at the same time):
             async with self._refresh_lock:
                 if datetime.utcnow() < self._access_token_expire_dt:
                     return

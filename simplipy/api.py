@@ -1,6 +1,7 @@
 """Define functionality for interacting with the SimpliSafe API."""
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timedelta
 from json.decoder import JSONDecodeError
 import sys
@@ -29,7 +30,7 @@ from simplipy.websocket import WebsocketClient
 API_URL_HOSTNAME = "api.simplisafe.com"
 API_URL_BASE = f"https://{API_URL_HOSTNAME}/v1"
 
-DEFAULT_EXPIRATION_PADDING = 60
+DEFAULT_EXPIRATION_PADDING = 300
 DEFAULT_REQUEST_RETRIES = 4
 DEFAULT_TIMEOUT = 10
 
@@ -69,6 +70,7 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         # These will get filled in after initial authentication:
         self._access_token_expire_dt: datetime | None = None
+        self._backoff_refresh_lock = asyncio.Lock()
         self.access_token: str | None = None
         self.refresh_token: str | None = None
         self.subscription_data: dict[int, Any] = {}
@@ -165,10 +167,15 @@ class API:  # pylint: disable=too-many-instance-attributes
         if err.status == 401 or err.status == 403:
             if TYPE_CHECKING:
                 assert self._access_token_expire_dt
-            if datetime.utcnow() >= self._access_token_expire_dt:
-                # Since we might have multiple requests (each running their own retry
-                # sequence) land here, we only refresh the access token if it hasn't
-                # been refreshed within the expiration window:
+
+            # Since we might have multiple requests (each running their own retry
+            # sequence) land here, we only refresh the access token if it hasn't
+            # been refreshed within the expiration window (and we lock the attempt so
+            # other requests can't try it at the same time):
+            async with self._backoff_refresh_lock:
+                if datetime.utcnow() < self._access_token_expire_dt:
+                    return
+
                 LOGGER.info("401 detected; attempting refresh token")
                 await self._async_refresh_access_token()
 

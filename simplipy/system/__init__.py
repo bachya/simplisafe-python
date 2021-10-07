@@ -67,15 +67,6 @@ class SystemStates(Enum):
     unknown = 99
 
 
-def coerce_state_from_raw_value(value: str) -> SystemStates:
-    """Return a proper state from a string input."""
-    try:
-        return SystemStates[convert_to_underscore(value)]
-    except KeyError:
-        LOGGER.error("Unknown raw system state: %s", value)
-        return SystemStates.unknown
-
-
 def get_device_type_from_data(device_data: dict[str, Any]) -> DeviceTypes:
     """Get the device type of a raw data payload."""
     try:
@@ -423,8 +414,12 @@ class System:
         ]
 
         # Set the current state:
-        self._state = coerce_state_from_raw_value(
-            self._api.subscription_data[self._sid]["location"]["system"].get(
-                "alarmState"
-            )
+        raw_state = self._api.subscription_data[self._sid]["location"]["system"].get(
+            "alarmState"
         )
+
+        try:
+            self._state = SystemStates[convert_to_underscore(raw_state)]
+        except KeyError:
+            LOGGER.error("Unknown raw system state: %s", raw_state)
+            self._state = SystemStates.unknown

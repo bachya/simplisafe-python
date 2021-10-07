@@ -30,7 +30,7 @@ from simplipy.websocket import WebsocketClient
 API_URL_HOSTNAME = "api.simplisafe.com"
 API_URL_BASE = f"https://{API_URL_HOSTNAME}/v1"
 
-DEFAULT_EXPIRATION_PADDING = 60
+DEFAULT_EXPIRATION_PADDING = 300
 DEFAULT_REQUEST_RETRIES = 4
 DEFAULT_TIMEOUT = 10
 

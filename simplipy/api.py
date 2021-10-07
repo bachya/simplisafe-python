@@ -1,9 +1,10 @@
 """Define functionality for interacting with the SimpliSafe API."""
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from json.decoder import JSONDecodeError
 import sys
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 from aiohttp import ClientSession
 from aiohttp.client_exceptions import ClientResponseError
@@ -28,8 +29,19 @@ from simplipy.websocket import WebsocketClient
 API_URL_HOSTNAME = "api.simplisafe.com"
 API_URL_BASE = f"https://{API_URL_HOSTNAME}/v1"
 
+DEFAULT_EXPIRATION_PADDING = 60
 DEFAULT_REQUEST_RETRIES = 4
 DEFAULT_TIMEOUT = 10
+
+
+def get_expiration_datetime(expires_in_seconds: int) -> datetime:
+    """Get a token expiration datetime as an offset of UTC now + a number of seconds.
+
+    Note that we pad the value to ensure the token doesn't expire without us knowing.
+    """
+    return datetime.utcnow() + (
+        timedelta(seconds=expires_in_seconds - DEFAULT_EXPIRATION_PADDING)
+    )
 
 
 class API:  # pylint: disable=too-many-instance-attributes
@@ -56,6 +68,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         self.session: ClientSession = session
 
         # These will get filled in after initial authentication:
+        self._access_token_expire_dt: datetime | None = None
         self.access_token: str | None = None
         self.refresh_token: str | None = None
         self.subscription_data: dict[int, Any] = {}
@@ -114,6 +127,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 raise InvalidCredentialsError("Invalid credentials") from err
             raise RequestError(err) from err
 
+        api._access_token_expire_dt = get_expiration_datetime(token_resp["expires_in"])
         api.access_token = token_resp["access_token"]
         api.refresh_token = token_resp["refresh_token"]
         await api._async_post_init()
@@ -149,8 +163,14 @@ class API:  # pylint: disable=too-many-instance-attributes
         err: ClientResponseError = err_info[1].with_traceback(err_info[2])  # type: ignore
 
         if err.status == 401 or err.status == 403:
-            LOGGER.info("401 detected; attempting refresh token")
-            await self._async_refresh_access_token()
+            if TYPE_CHECKING:
+                assert self._access_token_expire_dt
+            if datetime.utcnow() >= self._access_token_expire_dt:
+                # Since we might have multiple requests (each running their own retry
+                # sequence) land here, we only refresh the access token if it hasn't
+                # been refreshed within the expiration window:
+                LOGGER.info("401 detected; attempting refresh token")
+                await self._async_refresh_access_token()
 
     async def _async_handle_on_giveup(self, _: dict[str, Any]) -> None:
         """Handle a give up after retries are exhausted."""
@@ -183,6 +203,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 raise InvalidCredentialsError("Invalid refresh token") from err
             raise RequestError(err) from err
 
+        self._access_token_expire_dt = get_expiration_datetime(token_resp["expires_in"])
         self.access_token = token_resp["access_token"]
         self.refresh_token = token_resp["refresh_token"]
 

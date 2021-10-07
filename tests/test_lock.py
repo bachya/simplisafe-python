@@ -1,5 +1,7 @@
 """Define tests for the Lock objects."""
-# pylint: disable=unused-argument
+# pylint: disable=protected-access,unused-argument
+from datetime import datetime
+
 import aiohttp
 import pytest
 
@@ -105,6 +107,10 @@ async def test_no_state_change_on_failure(
             TEST_CODE_VERIFIER,
             session=session,
         )
+
+        # Manually set the expiration datetime to force a refresh token flow:
+        simplisafe._access_token_expire_dt = datetime.utcnow()
+
         systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         lock = system.locks[TEST_LOCK_ID]

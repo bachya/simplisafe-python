@@ -81,6 +81,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         self.request = backoff.on_exception(
             backoff.expo,
             ClientResponseError,
+            jitter=backoff.random_jitter,
             logger=LOGGER,
             max_tries=request_retries,
             on_backoff=self._async_handle_on_backoff,

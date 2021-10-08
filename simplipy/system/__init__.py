@@ -1,7 +1,6 @@
 """Define V2 and V3 SimpliSafe systems."""
 from __future__ import annotations
 
-import asyncio
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
@@ -388,14 +387,12 @@ class System:
         :param cached: Whether to used cached data.
         :type cached: ``bool``
         """
-        update_tasks = []
         if include_subscription:
-            update_tasks.append(self._async_update_subscription_data())
+            await self._async_update_subscription_data()
         if include_settings:
-            update_tasks.append(self._async_update_settings_data(cached))
+            await self._async_update_settings_data(cached)
         if include_devices:
-            update_tasks.append(self._async_update_device_data(cached))
-        await asyncio.gather(*update_tasks)
+            await self._async_update_device_data(cached)
 
         # Create notifications:
         self._notifications = [

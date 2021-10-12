@@ -1,5 +1,5 @@
 """Define tests for v3 System objects."""
-# pylint: disable=too-many-arguments,unused-argument
+# pylint: disable=protected-access,too-many-arguments,unused-argument
 from datetime import datetime
 import logging
 

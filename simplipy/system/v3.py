@@ -255,7 +255,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         )
 
     @property  # type: ignore
-    @guard_from_missing_data(True)
+    @guard_from_missing_data(False)
     def offline(self) -> bool:
         """Return whether the system is offline.
 

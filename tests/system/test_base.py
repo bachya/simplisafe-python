@@ -100,7 +100,7 @@ async def test_missing_property(
         )
         systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
-        assert system.offline is True
+        assert system.offline is False
         assert any(
             "SimpliSafe didn't return data for property: offline" in e.message
             for e in caplog.records

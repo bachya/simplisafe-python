@@ -289,7 +289,7 @@ async def test_missing_property(caplog, v3_server, v3_subscriptions_response):
 
         await system.update(include_settings=False, include_entities=False)
 
-        assert system.offline is True
+        assert system.offline is False
         assert any(
             "SimpliSafe didn't return data for property: offline" in e.message
             for e in caplog.records

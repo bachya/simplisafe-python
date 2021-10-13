@@ -102,7 +102,7 @@ steps from a command line:
 
    com.simplisafe.mobile://auth.simplisafe.com/ios/com.simplisafe.mobile/callback?code=<CODE>
 
-8. Copy the ``code`` parameter, return to your terminal, and paste it into the prompt.
+9. Copy the ``code`` parameter, return to your terminal, and paste it into the prompt.
    You should now see this message:
 
 .. code::

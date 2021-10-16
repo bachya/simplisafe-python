@@ -261,6 +261,8 @@ class WebsocketClient:
 
         LOGGER.debug("Received data from websocket server: %s", data)
 
+        self._watchdog.trigger()
+
         return cast(Dict[str, Any], data)
 
     async def _async_send_json(self, payload: dict[str, Any]) -> None:

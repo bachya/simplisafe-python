@@ -229,7 +229,7 @@ class WebsocketClient:
 
     @staticmethod
     def _add_listener(
-        listener_list: list, callback: Callable[..., None]
+        listener_list: list, callback: Callable[..., Any]
     ) -> Callable[..., None]:
         """Add a listener callback to a particular list."""
         listener_list.append(callback)
@@ -293,9 +293,7 @@ class WebsocketClient:
         else:
             self._loop.call_soon(listener, *args)
 
-    def add_connect_listener(
-        self, callback: Callable[..., None]
-    ) -> Callable[..., None]:
+    def add_connect_listener(self, callback: Callable[..., Any]) -> Callable[..., None]:
         """Add a listener callback to be called after connecting.
 
         :param callback: The method to call after connecting
@@ -304,7 +302,7 @@ class WebsocketClient:
         return self._add_listener(self._connect_listeners, callback)
 
     def add_disconnect_listener(
-        self, callback: Callable[..., None]
+        self, callback: Callable[..., Any]
     ) -> Callable[..., None]:
         """Add a listener callback to be called after disconnecting.
 
@@ -313,7 +311,7 @@ class WebsocketClient:
         """
         return self._add_listener(self._disconnect_listeners, callback)
 
-    def add_event_listener(self, callback: Callable[..., None]) -> Callable[..., None]:
+    def add_event_listener(self, callback: Callable[..., Any]) -> Callable[..., None]:
         """Add a listener callback to be called upon receiving an event.
 
         Note that callbacks should expect to receive a WebsocketEvent object as a

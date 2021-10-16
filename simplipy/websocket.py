@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
 WEBSOCKET_SERVER_URL = "wss://socketlink.prd.aser.simplisafe.com"
 
-DEFAULT_WATCHDOG_TIMEOUT = timedelta(minutes=1)
+DEFAULT_WATCHDOG_TIMEOUT = timedelta(minutes=5)
 
 EVENT_ALARM_CANCELED = "alarm_canceled"
 EVENT_ALARM_TRIGGERED = "alarm_triggered"

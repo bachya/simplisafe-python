@@ -98,7 +98,8 @@ steps from a command line:
 8. Return to ``Tab 1``. The browser will show an error about not being able to navigate
    to the page (if you still see a SimpliSafe authorization pending screen, wait a
    moment for the page to refresh). Ignore this error. Instead, take a look at the URL
-   and note the ``code`` parameter at the very end:
+   (making sure it starts with ``com.simplisafe.mobile``) and note the ``code``
+   parameter at the very end:
 
 .. code::
 

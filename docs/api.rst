@@ -15,7 +15,7 @@ API
 Websocket Communication
 -----------------------
 
-.. autoclass:: simplipy.websocket.Websocket
+.. autoclass:: simplipy.websocket.WebsocketClient
    :members:
 
 .. autoclass:: simplipy.websocket.WebsocketEvent

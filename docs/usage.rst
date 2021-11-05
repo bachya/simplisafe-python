@@ -83,8 +83,8 @@ steps from a command line:
 .. image:: images/ss-login-screen.png
    :width: 400
 
-6. Check your email; you should see an email from SimpliSafe™ asking you to verify the
-   new authentication request:
+6. You will be prompted to verify your account. Depending on what you have configured in
+   your SimpliSafe™ account, this could take the form of an email or an SMS:
 
 .. image:: images/ss-verification-email.png
    :width: 400
@@ -95,9 +95,15 @@ steps from a command line:
 .. image:: images/ss-verification-confirmed.png
    :width: 400
 
-8. Return to ``Tab 1``. The browser will show an error about not being able to navigate
-   to the page; ignore it. Instead, take a look at the URL and note the ``code``
-   parameter at the very end:
+8. Return to ``Tab 1``. You need to find an authorization code; the location of this
+   code will be different depending on which browser you use:
+
+   * Safari: ``Develop -> Show Web Inspector -> Network Tab`` (look for a reference to ``ErrorPage.html``)
+   * Edge: ``Developer -> Developer Tools -> Console Tab`` (look for a ``Failed to launch`` error)
+   * Chrome: ``Developer -> Developer Tools -> Console Tab`` (look for a ``Failed to launch`` error)
+
+   Look for a reference to a SimpliSafe™ iOS URL (starting with with
+   ``com.simplisafe.mobile``) and note the ``code`` parameter at the very end:
 
 .. code::
 

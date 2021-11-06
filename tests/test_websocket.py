@@ -160,45 +160,45 @@ async def test_listen_error_message_types(
 
 
 @pytest.mark.asyncio
-async def test_listener_callbacks(caplog, mock_api, ws_message_event, ws_messages):
-    """Test that listener callbacks are executed correctly."""
+async def test_callbacks(caplog, mock_api, ws_message_event, ws_messages):
+    """Test that callbacks are executed correctly."""
     caplog.set_level(logging.INFO)
 
-    mock_connect_listener = Mock()
-    mock_disconnect_listener = Mock()
-    mock_event_listener = Mock()
+    mock_connect_callback = Mock()
+    mock_disconnect_callback = Mock()
+    mock_event_callback = Mock()
 
-    async def async_mock_connect_listener():
-        """Define a mock async conenct listener."""
+    async def async_mock_connect_callback():
+        """Define a mock async conenct callback."""
         LOGGER.info("We are connected!")
 
     client = WebsocketClient(mock_api)
-    client.add_connect_listener(mock_connect_listener)
-    client.add_connect_listener(async_mock_connect_listener)
-    client.add_disconnect_listener(mock_disconnect_listener)
-    client.add_event_listener(mock_event_listener)
+    client.add_connect_callback(mock_connect_callback)
+    client.add_connect_callback(async_mock_connect_callback)
+    client.add_disconnect_callback(mock_disconnect_callback)
+    client.add_event_callback(mock_event_callback)
 
-    assert mock_connect_listener.call_count == 0
-    assert mock_disconnect_listener.call_count == 0
-    assert mock_event_listener.call_count == 0
+    assert mock_connect_callback.call_count == 0
+    assert mock_disconnect_callback.call_count == 0
+    assert mock_event_callback.call_count == 0
 
     await client.async_connect()
     assert client.connected
     await asyncio.sleep(1)
-    assert mock_connect_listener.call_count == 1
+    assert mock_connect_callback.call_count == 1
     assert any("We are connected!" in e.message for e in caplog.records)
 
     ws_messages.append(create_ws_message(ws_message_event))
     await client.async_listen()
     await asyncio.sleep(1)
     expected_event = websocket_event_from_payload(ws_message_event)
-    mock_event_listener.assert_called_once_with(expected_event)
+    mock_event_callback.assert_called_once_with(expected_event)
 
     # Add another message to the queue to keep the websocket open while we disconnect
     # from it:
     await client.async_disconnect()
     assert not client.connected
-    assert mock_disconnect_listener.call_count == 1
+    assert mock_disconnect_callback.call_count == 1
 
 
 @pytest.mark.asyncio
@@ -213,16 +213,16 @@ async def test_reconnect(mock_api):
 
 
 @pytest.mark.asyncio
-async def test_remove_listener_callback(mock_api):
-    """Test that a removed listener callback doesn't get executed."""
-    mock_listener = Mock()
+async def test_remove_callback_callback(mock_api):
+    """Test that a removed callback callback doesn't get executed."""
+    mock_callback = Mock()
     client = WebsocketClient(mock_api)
-    remove = client.add_connect_listener(mock_listener)
+    remove = client.add_connect_callback(mock_callback)
     remove()
 
     await client.async_connect()
     assert client.connected
-    assert mock_listener.call_count == 0
+    assert mock_callback.call_count == 0
 
     await client.async_disconnect()
     assert not client.connected

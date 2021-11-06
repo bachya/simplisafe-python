@@ -19,6 +19,7 @@ from simplipy.errors import (
 )
 from simplipy.system.v2 import SystemV2
 from simplipy.system.v3 import SystemV3
+from simplipy.util import schedule_callback
 from simplipy.util.auth import (
     AUTH_URL_BASE,
     AUTH_URL_HOSTNAME,
@@ -65,7 +66,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         request_retries: int = DEFAULT_REQUEST_RETRIES,
     ) -> None:
         """Initialize."""
-        self._refresh_token_listeners: list[Callable[..., None]] = []
+        self._refresh_token_callbacks: list[Callable[..., None]] = []
         self.session: ClientSession = session
 
         # These will get filled in after initial authentication:
@@ -215,8 +216,8 @@ class API:  # pylint: disable=too-many-instance-attributes
         self.access_token = token_resp["access_token"]
         self.refresh_token = token_resp["refresh_token"]
 
-        for callback in self._refresh_token_listeners:
-            callback(self.refresh_token)
+        for callback in self._refresh_token_callbacks:
+            schedule_callback(callback, self.refresh_token)
 
     async def _async_request(
         self, method: str, endpoint: str, url_base: str = API_URL_BASE, **kwargs: Any
@@ -261,21 +262,21 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         return data
 
-    def add_refresh_token_listener(
+    def add_refresh_token_callback(
         self, callback: Callable[..., None]
     ) -> Callable[..., None]:
-        """Add a listener that should be triggered when tokens are refreshed.
+        """Add a callback that should be triggered when tokens are refreshed.
 
         Note that callbacks should expect to receive a refresh token as a parameter.
 
         :param callback: The method to call after receiving an event.
         :type callback: ``Callable[..., None]``
         """
-        self._refresh_token_listeners.append(callback)
+        self._refresh_token_callbacks.append(callback)
 
         def remove() -> None:
             """Remove the callback."""
-            self._refresh_token_listeners.remove(callback)
+            self._refresh_token_callbacks.remove(callback)
 
         return remove
 

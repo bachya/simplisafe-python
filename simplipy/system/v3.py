@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from enum import Enum
 from typing import TYPE_CHECKING, Final, cast
 
 import voluptuous as vol
@@ -36,11 +37,6 @@ CONF_VOICE_PROMPT_VOLUME = "voice_prompt_volume"
 
 DEFAULT_LOCK_STATE_CHANGE_WINDOW = timedelta(seconds=15)
 
-VOLUME_OFF = 0
-VOLUME_LOW = 1
-VOLUME_MEDIUM = 2
-VOLUME_HIGH = 3
-VOLUMES = [VOLUME_OFF, VOLUME_LOW, VOLUME_MEDIUM, VOLUME_HIGH]
 
 SYSTEM_PROPERTIES_VALUE_MAP = {
     CONF_ALARM_DURATION: "alarmDuration",
@@ -65,13 +61,23 @@ MAX_EXIT_DELAY_AWAY: Final = 255
 MIN_EXIT_DELAY_HOME: Final = 0
 MAX_EXIT_DELAY_HOME: Final = 255
 
+
+class Volume(Enum):
+    """Define a representation of a SimpliSafe volume level."""
+
+    OFF = 0
+    LOW = 1
+    MEDIUM = 2
+    HIGH = 3
+
+
 SYSTEM_PROPERTIES_PAYLOAD_SCHEMA = vol.Schema(
     {
         vol.Optional(CONF_ALARM_DURATION): vol.All(
             vol.Coerce(int), vol.Range(min=MIN_ALARM_DURATION, max=MAX_ALARM_DURATION)
         ),
-        vol.Optional(CONF_ALARM_VOLUME): vol.All(vol.Coerce(int), vol.In(VOLUMES)),
-        vol.Optional(CONF_CHIME_VOLUME): vol.All(vol.Coerce(int), vol.In(VOLUMES)),
+        vol.Optional(CONF_ALARM_VOLUME): vol.All(Volume, lambda volume: volume.value),
+        vol.Optional(CONF_CHIME_VOLUME): vol.All(Volume, lambda volume: volume.value),
         vol.Optional(CONF_ENTRY_DELAY_AWAY): vol.All(
             vol.Coerce(int),
             vol.Range(min=MIN_ENTRY_DELAY_AWAY, max=MAX_ENTRY_DELAY_AWAY),
@@ -88,7 +94,7 @@ SYSTEM_PROPERTIES_PAYLOAD_SCHEMA = vol.Schema(
         ),
         vol.Optional(CONF_LIGHT): bool,
         vol.Optional(CONF_VOICE_PROMPT_VOLUME): vol.All(
-            vol.Coerce(int), vol.In(VOLUMES)
+            Volume, lambda volume: volume.value
         ),
     }
 )
@@ -435,25 +441,29 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         return pins
 
-    async def async_set_properties(self, properties: dict) -> None:
+    async def async_set_properties(
+        self, properties: dict[str, bool | int | Volume]
+    ) -> None:
         """Set various system properties.
+
+        Volume properties should take values from :meth:`simplipy.system.v3.Volume`.
 
         The following properties can be set:
            1. alarm_duration (in seconds): 30-480
-           2. alarm_volume: 0 (off), 1 (low), 2 (medium), 3 (high)
-           3. chime_volume: 0 (off), 1 (low), 2 (medium), 3 (high)
+           2. alarm_volume: Volume.OFF, Volume.LOW, Volume.MEDIUM, Volume.HIGH
+           3. chime_volume: Volume.OFF, Volume.LOW, Volume.MEDIUM, Volume.HIGH
            4. entry_delay_away (in seconds): 30-255
            5. entry_delay_home (in seconds): 0-255
            6. exit_delay_away (in seconds): 45-255
            7. exit_delay_home (in seconds): 0-255
            8. light: True or False
-           9. voice_prompt_volume: 0 (off), 1 (low), 2 (medium), 3 (high)
+           9. voice_prompt_volume: Volume.OFF, Volume.LOW, Volume.MEDIUM, Volume.HIGH
 
         :param properties: The system properties to set.
         :type properties: ``dict``
         """
         try:
-            SYSTEM_PROPERTIES_PAYLOAD_SCHEMA(properties)
+            parsed_properties = SYSTEM_PROPERTIES_PAYLOAD_SCHEMA(properties)
         except vol.Invalid as err:
             raise ValueError(
                 f"Using invalid values for system properties ({properties}): {err}"
@@ -465,7 +475,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
             json={
                 "normal": {
                     SYSTEM_PROPERTIES_VALUE_MAP[prop]: value
-                    for prop, value in properties.items()
+                    for prop, value in parsed_properties.items()
                 }
             },
         )

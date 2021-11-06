@@ -11,24 +11,24 @@ if TYPE_CHECKING:
 class DeviceTypes(Enum):
     """Device types based on internal SimpliSafe ID number."""
 
-    remote = 0
-    keypad = 1
-    keychain = 2
-    panic_button = 3
-    motion = 4
-    entry = 5
-    glass_break = 6
-    carbon_monoxide = 7
-    smoke = 8
-    leak = 9
-    temperature = 10
-    camera = 12
-    siren = 13
-    doorbell = 15
-    lock = 16
-    outdoor_camera = 17
-    lock_keypad = 253
-    unknown = 99
+    REMOTE = 0
+    KEYPAD = 1
+    KEYCHAIN = 2
+    PANIC_BUTTON = 3
+    MOTION = 4
+    ENTRY = 5
+    GLASS_BREAK = 6
+    CARBON_MONOXIDE = 7
+    SMOKE = 8
+    LEAK = 9
+    TEMPERATURE = 10
+    CAMERA = 12
+    SIREN = 13
+    DOORBELL = 15
+    LOCK = 16
+    OUTDOOR_CAMERA = 17
+    LOCK_KEYPAD = 253
+    UNKNOWN = 99
 
 
 class Device:

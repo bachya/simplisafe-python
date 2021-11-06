@@ -147,13 +147,13 @@ async def test_set_states(aresponses, v2_server, v2_state_response):
         system = systems[TEST_SYSTEM_ID]
 
         await system.async_set_away()
-        assert system.state == SystemStates.away
+        assert system.state == SystemStates.AWAY
 
         await system.async_set_home()
-        assert system.state == SystemStates.home
+        assert system.state == SystemStates.HOME
 
         await system.async_set_off()
-        assert system.state == SystemStates.off
+        assert system.state == SystemStates.OFF
 
     aresponses.assert_plan_strictly_followed()
 

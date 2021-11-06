@@ -147,7 +147,7 @@ async def test_properties(aresponses, v2_server):
         assert system.address == TEST_ADDRESS
         assert system.connection_type == "wifi"
         assert system.serial == TEST_SYSTEM_SERIAL_NO
-        assert system.state == SystemStates.off
+        assert system.state == SystemStates.OFF
         assert system.system_id == TEST_SYSTEM_ID
         assert system.temperature == 67
         assert system.version == 2

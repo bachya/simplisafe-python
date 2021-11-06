@@ -12,10 +12,10 @@ if TYPE_CHECKING:
 class LockStates(Enum):
     """States that a lock can be in."""
 
-    unlocked = 0
-    locked = 1
-    jammed = 2
-    unknown = 99
+    UNLOCKED = 0
+    LOCKED = 1
+    JAMMED = 2
+    UNKNOWN = 99
 
 
 class Lock(DeviceV3):
@@ -37,8 +37,8 @@ class Lock(DeviceV3):
     class _InternalStates(Enum):
         """Define an enum to map internal lock states to values we understand."""
 
-        locked = 1
-        unlocked = 2
+        LOCKED = 1
+        UNLOCKED = 2
 
     def __init__(
         self,
@@ -99,7 +99,7 @@ class Lock(DeviceV3):
         :rtype: :meth:`simplipy.lock.LockStates`
         """
         if bool(self._system.sensor_data[self._serial]["status"]["lockJamState"]):
-            return LockStates.jammed
+            return LockStates.JAMMED
 
         raw_state = self._system.sensor_data[self._serial]["status"]["lockState"]
 
@@ -107,11 +107,11 @@ class Lock(DeviceV3):
             internal_state = self._InternalStates(raw_state)
         except ValueError:
             LOGGER.error("Unknown raw lock state: %s", raw_state)
-            return LockStates.unknown
+            return LockStates.UNKNOWN
 
-        if internal_state == self._InternalStates.locked:
-            return LockStates.locked
-        return LockStates.unlocked
+        if internal_state == self._InternalStates.LOCKED:
+            return LockStates.LOCKED
+        return LockStates.UNLOCKED
 
     async def async_lock(self) -> None:
         """Lock the lock."""
@@ -124,7 +124,7 @@ class Lock(DeviceV3):
         # Update the internal state representation:
         self._system.sensor_data[self._serial]["status"][
             "lockState"
-        ] = self._InternalStates.locked.value
+        ] = self._InternalStates.LOCKED.value
 
     async def async_unlock(self) -> None:
         """Unlock the lock."""
@@ -137,4 +137,4 @@ class Lock(DeviceV3):
         # Update the internal state representation:
         self._system.sensor_data[self._serial]["status"][
             "lockState"
-        ] = self._InternalStates.unlocked.value
+        ] = self._InternalStates.UNLOCKED.value

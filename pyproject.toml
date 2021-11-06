@@ -80,7 +80,6 @@ sphinx-rtd-theme = "^1.0.0"
 types-pytz = "^2021.1.0"
 
 [tool.pylint.BASIC]
-class-const-naming-style = "any"
 expected-line-ending-format = "LF"
 
 [tool.pylint."MESSAGES CONTROL"]

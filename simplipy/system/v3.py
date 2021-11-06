@@ -364,7 +364,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
     async def _async_set_state(self, value: SystemStates) -> None:
         """Set the state of the system."""
         await self._api.request(
-            "post", f"ss3/subscriptions/{self.system_id}/state/{value.name}"
+            "post", f"ss3/subscriptions/{self.system_id}/state/{value.name.lower()}"
         )
 
         self._state = value
@@ -409,13 +409,13 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         """Generate device objects for this system."""
         for serial, sensor in self.sensor_data.items():
             sensor_type = get_device_type_from_data(sensor)
-            if sensor_type == DeviceTypes.lock:
+            if sensor_type == DeviceTypes.LOCK:
                 self.locks[serial] = Lock(self._api.request, self, sensor_type, serial)
             else:
                 self.sensors[serial] = SensorV3(self, sensor_type, serial)
 
         for serial in self.camera_data:
-            self.cameras[serial] = Camera(self, DeviceTypes.camera, serial)
+            self.cameras[serial] = Camera(self, DeviceTypes.CAMERA, serial)
 
     async def async_get_pins(self, cached: bool = True) -> dict[str, str]:
         """Return all of the set PINs, including master and duress.

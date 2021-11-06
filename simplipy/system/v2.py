@@ -45,7 +45,7 @@ class SystemV2(System):
         await self._api.request(
             "post",
             f"subscriptions/{self.system_id}/state",
-            params={"state": value.name},
+            params={"state": value.name.lower()},
         )
 
         self._state = value

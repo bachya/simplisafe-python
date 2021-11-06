@@ -74,7 +74,7 @@ properties:
 
     # Return the current state of the system:
     system.state
-    # >>> simplipy.system.SystemStates.away
+    # >>> simplipy.system.SystemStates.AWAY
 
     # Return the SimpliSafe™ identifier for this system
     # from the key:

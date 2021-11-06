@@ -37,7 +37,7 @@ async def test_alarm_state(aresponses, v3_server):
         )
         systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
-        assert system.state == SystemStates.off
+        assert system.state == SystemStates.OFF
 
     aresponses.assert_plan_strictly_followed()
 
@@ -178,7 +178,7 @@ async def test_lock_state_update_bug(aresponses, caplog, v3_server, v3_state_res
         system = systems[TEST_SYSTEM_ID]
 
         await system.async_set_away()
-        assert system.state == SystemStates.away
+        assert system.state == SystemStates.AWAY
 
         await system.async_update()
         assert any("Skipping system update" in e.message for e in caplog.records)
@@ -238,11 +238,11 @@ async def test_no_state_change_on_failure(aresponses, v3_server):
 
         systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
-        assert system.state == SystemStates.off
+        assert system.state == SystemStates.OFF
 
         with pytest.raises(InvalidCredentialsError):
             await system.async_set_away()
-        assert system.state == SystemStates.off
+        assert system.state == SystemStates.OFF
 
     aresponses.assert_plan_strictly_followed()
 
@@ -646,13 +646,13 @@ async def test_set_states(aresponses, v3_server, v3_state_response):
         system = systems[TEST_SYSTEM_ID]
 
         await system.async_set_away()
-        assert system.state == SystemStates.away
+        assert system.state == SystemStates.AWAY
 
         await system.async_set_home()
-        assert system.state == SystemStates.home
+        assert system.state == SystemStates.HOME
 
         await system.async_set_off()
-        assert system.state == SystemStates.off
+        assert system.state == SystemStates.OFF
 
     aresponses.assert_plan_strictly_followed()
 

@@ -27,7 +27,7 @@ All :meth:`Lock <simplipy.lock.Lock>` objects come with a standard set of proper
 
         # Return the state of the lock:
         lock.state
-        # >>> simplipy.lock.LockStates.locked
+        # >>> simplipy.lock.LockStates.LOCKED
 
         # Return whether the lock is in an error state:
         lock.error

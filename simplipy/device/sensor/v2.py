@@ -60,7 +60,7 @@ class SensorV2(Device):
 
         :rtype: ``bool``
         """
-        if self.type == DeviceTypes.entry:
+        if self.type == DeviceTypes.ENTRY:
             return cast(
                 bool,
                 self._system.sensor_data[self._serial].get("entryStatus", "closed")

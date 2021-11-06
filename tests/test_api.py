@@ -1,5 +1,6 @@
 """Define tests for the System object."""
 # pylint: disable=protected-access,too-many-arguments
+import asyncio
 from datetime import datetime
 from unittest.mock import Mock
 
@@ -270,6 +271,7 @@ async def test_refresh_token_callback(
         remove()
 
         await simplisafe.async_get_systems()
+        await asyncio.sleep(1)
         mock_callback_1.assert_called_once_with("aabbcc11")
         assert mock_callback_1.call_count == 1
         assert mock_callback_2.call_count == 0

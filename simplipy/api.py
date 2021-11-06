@@ -217,7 +217,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         self.refresh_token = token_resp["refresh_token"]
 
         for callback in self._refresh_token_callbacks:
-            schedule_callback(callback)
+            schedule_callback(callback, self.refresh_token)
 
     async def _async_request(
         self, method: str, endpoint: str, url_base: str = API_URL_BASE, **kwargs: Any

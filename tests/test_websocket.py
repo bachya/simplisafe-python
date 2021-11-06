@@ -184,7 +184,6 @@ async def test_callback(caplog, mock_api, ws_message_event, ws_messages):
 
     await client.async_connect()
     assert client.connected
-    await asyncio.sleep(1)
     assert mock_connect_callback.call_count == 1
     assert any("We are connected!" in e.message for e in caplog.records)
 

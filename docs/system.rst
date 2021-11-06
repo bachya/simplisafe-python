@@ -180,42 +180,35 @@ V3 systems also come with a :meth:`async_set_properties <simplipy.system.v3.Syst
 method to update the following system properties:
 
 * ``alarm_duration`` (in seconds): 30-480
-* ``alarm_volume``: 0 (off), 1 (low), 2 (medium), 3 (high)
-* ``chime_volume``: 0 (off), 1 (low), 2 (medium), 3 (high)
+* ``alarm_volume``: Volume.OFF, Volume.LOW, Volume.MEDIUM, Volume.HIGH
+* ``chime_volume``: Volume.OFF, Volume.LOW, Volume.MEDIUM, Volume.HIGH
 * ``entry_delay_away`` (in seconds): 30-255
 * ``entry_delay_home`` (in seconds): 0-255
 * ``exit_delay_away`` (in seconds): 45-255
 * ``exit_delay_home`` (in seconds): 0-255
 * ``light``: True or False
-* ``voice_prompt_volume``: 0 (off), 1 (low), 2 (medium), 3 (high)
+* ``voice_prompt_volume``: Volume.OFF, Volume.LOW, Volume.MEDIUM, Volume.HIGH
 
-Note that volume properties can accept integers or constants defined in
-``simplipy.system.v3.SystemV3``.
+Note that the ``simplipy.system.v3.Volume`` enum class should be used for volume
+properties.
 
 .. code:: python
 
-    from simplipy.system.v3 import VOLUME_OFF, VOLUME_LOW, VOLUME_MEDIUM
+    from simplipy.system.v3 import Volume
 
     await system.async_set_properties(
         {
             "alarm_duration": 240,
-            "alarm_volume": VOLUME_HIGH,
-            "chime_volume": VOLUME_MEDIUM,
+            "alarm_volume": Volume.HIGH,
+            "chime_volume": Volume.MEDIUM,
             "entry_delay_away": 30,
             "entry_delay_home": 30,
             "exit_delay_away": 60,
             "exit_delay_home": 0,
             "light": True,
-            "voice_prompt_volume": VOLUME_MEDIUM,
+            "voice_prompt_volume": Volume.MEDIUM,
         }
     )
-
-Note that entry and exit delay durations have limits imposed:
-
-* Entry Delay (``away``): 30–255 seconds
-* Entry Delay (``home``): 45–255 seconds
-* Exit Delay (``away``): 0–255 seconds
-* Exit Delay (``home``): 0–255 seconds
 
 Attempting to call these coroutines with a value beyond these limits will raise a
 :meth:`SimplipyError <simplipy.errors.SimplipyError>`.

@@ -77,6 +77,9 @@ Systems
 Utilities
 ---------
 
+.. automodule:: simplipy.util
+   :members:
+
 ``auth``
 ********
 

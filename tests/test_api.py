@@ -1,5 +1,6 @@
 """Define tests for the System object."""
 # pylint: disable=protected-access,too-many-arguments
+import asyncio
 from datetime import datetime
 from unittest.mock import Mock
 
@@ -205,18 +206,14 @@ async def test_client_async_from_refresh_token(
 
 
 @pytest.mark.asyncio
-async def test_refresh_token_listener_callback(
+async def test_refresh_token_callback(
     api_token_response,
     aresponses,
-    caplog,
     server,
     v2_settings_response,
     v2_subscriptions_response,
 ):
-    """Test that listener callbacks are executed correctly."""
-    import logging
-
-    caplog.set_level(logging.DEBUG)
+    """Test that callback callbacks are executed correctly."""
     server.add(
         "api.simplisafe.com",
         f"/v1/users/{TEST_SUBSCRIPTION_ID}/subscriptions",
@@ -254,8 +251,8 @@ async def test_refresh_token_listener_callback(
         response=aiohttp.web_response.json_response(v2_settings_response, status=200),
     )
 
-    mock_listener_1 = Mock()
-    mock_listener_2 = Mock()
+    mock_callback_1 = Mock()
+    mock_callback_2 = Mock()
 
     async with aiohttp.ClientSession() as session:
         simplisafe = await API.async_from_auth(
@@ -265,18 +262,19 @@ async def test_refresh_token_listener_callback(
         # Manually set the expiration datetime to force a refresh token flow:
         simplisafe._access_token_expire_dt = datetime.utcnow()
 
-        # We'll hang onto one listener callback:
-        simplisafe.add_refresh_token_listener(mock_listener_1)
-        assert mock_listener_1.call_count == 0
+        # We'll hang onto one callback callback:
+        simplisafe.add_refresh_token_callback(mock_callback_1)
+        assert mock_callback_1.call_count == 0
 
         # ..and delete the a second one before ever using it:
-        remove = simplisafe.add_refresh_token_listener(mock_listener_2)
+        remove = simplisafe.add_refresh_token_callback(mock_callback_2)
         remove()
 
         await simplisafe.async_get_systems()
-        mock_listener_1.assert_called_once_with("aabbcc11")
-        assert mock_listener_1.call_count == 1
-        assert mock_listener_2.call_count == 0
+        await asyncio.sleep(1)
+        mock_callback_1.assert_called_once_with("aabbcc11")
+        assert mock_callback_1.call_count == 1
+        assert mock_callback_2.call_count == 0
 
 
 @pytest.mark.asyncio

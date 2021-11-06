@@ -54,24 +54,37 @@ SYSTEM_PROPERTIES_VALUE_MAP = {
     CONF_VOICE_PROMPT_VOLUME: "voicePrompts",
 }
 
+MIN_ALARM_DURATION = 30
+MAX_ALARM_DURATION = 480
+MIN_ENTRY_DELAY_AWAY = 30
+MAX_ENTRY_DELAY_AWAY = 255
+MIN_ENTRY_DELAY_HOME = 0
+MAX_ENTRY_DELAY_HOME = 255
+MIN_EXIT_DELAY_AWAY = 45
+MAX_EXIT_DELAY_AWAY = 255
+MIN_EXIT_DELAY_HOME = 0
+MAX_EXIT_DELAY_HOME = 255
+
 SYSTEM_PROPERTIES_PAYLOAD_SCHEMA = vol.Schema(
     {
         vol.Optional(CONF_ALARM_DURATION): vol.All(
-            vol.Coerce(int), vol.Range(min=30, max=480)
+            vol.Coerce(int), vol.Range(min=MIN_ALARM_DURATION, max=MAX_ALARM_DURATION)
         ),
         vol.Optional(CONF_ALARM_VOLUME): vol.All(vol.Coerce(int), vol.In(VOLUMES)),
         vol.Optional(CONF_CHIME_VOLUME): vol.All(vol.Coerce(int), vol.In(VOLUMES)),
         vol.Optional(CONF_ENTRY_DELAY_AWAY): vol.All(
-            vol.Coerce(int), vol.Range(min=30, max=255)
+            vol.Coerce(int),
+            vol.Range(min=MIN_ENTRY_DELAY_AWAY, max=MAX_ENTRY_DELAY_AWAY),
         ),
         vol.Optional(CONF_ENTRY_DELAY_HOME): vol.All(
-            vol.Coerce(int), vol.Range(min=0, max=255)
+            vol.Coerce(int),
+            vol.Range(min=MIN_ENTRY_DELAY_HOME, max=MAX_ENTRY_DELAY_HOME),
         ),
         vol.Optional(CONF_EXIT_DELAY_AWAY): vol.All(
-            vol.Coerce(int), vol.Range(min=45, max=255)
+            vol.Coerce(int), vol.Range(min=MIN_EXIT_DELAY_AWAY, max=MAX_EXIT_DELAY_AWAY)
         ),
         vol.Optional(CONF_EXIT_DELAY_HOME): vol.All(
-            vol.Coerce(int), vol.Range(min=0, max=255)
+            vol.Coerce(int), vol.Range(min=MIN_EXIT_DELAY_HOME, max=MAX_EXIT_DELAY_HOME)
         ),
         vol.Optional(CONF_LIGHT): bool,
         vol.Optional(CONF_VOICE_PROMPT_VOLUME): vol.All(

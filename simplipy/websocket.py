@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 from dataclasses import InitVar, dataclass, field
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any, Callable, Dict, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, Final, cast
 
 from aiohttp import ClientWebSocketResponse, WSMsgType
 from aiohttp.client_exceptions import (
@@ -31,34 +31,34 @@ WEBSOCKET_SERVER_URL = "wss://socketlink.prd.aser.simplisafe.com"
 
 DEFAULT_WATCHDOG_TIMEOUT = timedelta(minutes=5)
 
-EVENT_ALARM_CANCELED = "alarm_canceled"
-EVENT_ALARM_TRIGGERED = "alarm_triggered"
-EVENT_ARMED_AWAY = "armed_away"
-EVENT_ARMED_AWAY_BY_KEYPAD = "armed_away_by_keypad"
-EVENT_ARMED_AWAY_BY_REMOTE = "armed_away_by_remote"
-EVENT_ARMED_HOME = "armed_home"
-EVENT_AUTOMATIC_TEST = "automatic_test"
-EVENT_AWAY_EXIT_DELAY_BY_KEYPAD = "away_exit_delay_by_keypad"
-EVENT_AWAY_EXIT_DELAY_BY_REMOTE = "away_exit_delay_by_remote"
-EVENT_CAMERA_MOTION_DETECTED = "camera_motion_detected"
-EVENT_CONNECTION_LOST = "connection_lost"
-EVENT_CONNECTION_RESTORED = "connection_restored"
-EVENT_DISARMED_BY_MASTER_PIN = "disarmed_by_master_pin"
-EVENT_DISARMED_BY_REMOTE = "disarmed_by_remote"
-EVENT_DOORBELL_DETECTED = "doorbell_detected"
-EVENT_DEVICE_TEST = "device_test"
-EVENT_ENTRY_DELAY = "entry_delay"
-EVENT_HOME_EXIT_DELAY = "home_exit_delay"
-EVENT_LOCK_ERROR = "lock_error"
-EVENT_LOCK_LOCKED = "lock_locked"
-EVENT_LOCK_UNLOCKED = "lock_unlocked"
-EVENT_POWER_OUTAGE = "power_outage"
-EVENT_POWER_RESTORED = "power_restored"
-EVENT_SECRET_ALERT_TRIGGERED = "secret_alert_triggered"
-EVENT_SENSOR_NOT_RESPONDING = "sensor_not_responding"
-EVENT_SENSOR_PAIRED_AND_NAMED = "sensor_paired_and_named"
-EVENT_SENSOR_RESTORED = "sensor_restored"
-EVENT_USER_INITIATED_TEST = "user_initiated_test"
+EVENT_ALARM_CANCELED: Final = "alarm_canceled"
+EVENT_ALARM_TRIGGERED: Final = "alarm_triggered"
+EVENT_ARMED_AWAY: Final = "armed_away"
+EVENT_ARMED_AWAY_BY_KEYPAD: Final = "armed_away_by_keypad"
+EVENT_ARMED_AWAY_BY_REMOTE: Final = "armed_away_by_remote"
+EVENT_ARMED_HOME: Final = "armed_home"
+EVENT_AUTOMATIC_TEST: Final = "automatic_test"
+EVENT_AWAY_EXIT_DELAY_BY_KEYPAD: Final = "away_exit_delay_by_keypad"
+EVENT_AWAY_EXIT_DELAY_BY_REMOTE: Final = "away_exit_delay_by_remote"
+EVENT_CAMERA_MOTION_DETECTED: Final = "camera_motion_detected"
+EVENT_CONNECTION_LOST: Final = "connection_lost"
+EVENT_CONNECTION_RESTORED: Final = "connection_restored"
+EVENT_DISARMED_BY_MASTER_PIN: Final = "disarmed_by_master_pin"
+EVENT_DISARMED_BY_REMOTE: Final = "disarmed_by_remote"
+EVENT_DOORBELL_DETECTED: Final = "doorbell_detected"
+EVENT_DEVICE_TEST: Final = "device_test"
+EVENT_ENTRY_DELAY: Final = "entry_delay"
+EVENT_HOME_EXIT_DELAY: Final = "home_exit_delay"
+EVENT_LOCK_ERROR: Final = "lock_error"
+EVENT_LOCK_LOCKED: Final = "lock_locked"
+EVENT_LOCK_UNLOCKED: Final = "lock_unlocked"
+EVENT_POWER_OUTAGE: Final = "power_outage"
+EVENT_POWER_RESTORED: Final = "power_restored"
+EVENT_SECRET_ALERT_TRIGGERED: Final = "secret_alert_triggered"
+EVENT_SENSOR_NOT_RESPONDING: Final = "sensor_not_responding"
+EVENT_SENSOR_PAIRED_AND_NAMED: Final = "sensor_paired_and_named"
+EVENT_SENSOR_RESTORED: Final = "sensor_restored"
+EVENT_USER_INITIATED_TEST: Final = "user_initiated_test"
 
 EVENT_MAPPING = {
     1110: EVENT_ALARM_TRIGGERED,

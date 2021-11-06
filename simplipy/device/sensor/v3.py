@@ -31,13 +31,13 @@ class SensorV3(DeviceV3):
         :rtype: ``bool``
         """
         if self.type in (
-            DeviceTypes.carbon_monoxide,
-            DeviceTypes.entry,
-            DeviceTypes.glass_break,
-            DeviceTypes.leak,
-            DeviceTypes.motion,
-            DeviceTypes.smoke,
-            DeviceTypes.temperature,
+            DeviceTypes.CARBON_MONOXIDE,
+            DeviceTypes.ENTRY,
+            DeviceTypes.GLASS_BREAK,
+            DeviceTypes.LEAK,
+            DeviceTypes.MOTION,
+            DeviceTypes.SMOKE,
+            DeviceTypes.TEMPERATURE,
         ):
             return cast(
                 bool,
@@ -56,7 +56,7 @@ class SensorV3(DeviceV3):
 
         :rtype: ``int``
         """
-        if self.type != DeviceTypes.temperature:
+        if self.type != DeviceTypes.TEMPERATURE:
             raise AttributeError("Non-temperature sensor cannot have a temperature")
 
         return cast(

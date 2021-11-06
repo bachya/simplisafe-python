@@ -75,7 +75,7 @@ def test_create_event(ws_message_event):
     assert event.changed_by == "Master PIN"
     assert event.sensor_name == ""
     assert event.sensor_serial == "abcdef12"
-    assert event.sensor_type == DeviceTypes.keypad
+    assert event.sensor_type == DeviceTypes.KEYPAD
 
 
 @pytest.mark.asyncio

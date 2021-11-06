@@ -21,6 +21,6 @@ async def test_properties_base(aresponses, v2_server):
         sensor = system.sensors["195"]
         assert sensor.name == "Garage Keypad"
         assert sensor.serial == "195"
-        assert sensor.type == DeviceTypes.keypad
+        assert sensor.type == DeviceTypes.KEYPAD
 
     aresponses.assert_plan_strictly_followed()

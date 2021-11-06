@@ -55,13 +55,13 @@ async def test_lock_unlock(aresponses, v3_lock_state_response, v3_server):
         systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         lock = system.locks[TEST_LOCK_ID]
-        assert lock.state == LockStates.locked
+        assert lock.state == LockStates.LOCKED
 
         await lock.async_unlock()
-        assert lock.state == LockStates.unlocked
+        assert lock.state == LockStates.UNLOCKED
 
         await lock.async_lock()
-        assert lock.state == LockStates.locked
+        assert lock.state == LockStates.LOCKED
 
     aresponses.assert_plan_strictly_followed()
 
@@ -76,7 +76,7 @@ async def test_jammed(aresponses, v3_server):
         systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         lock = system.locks[TEST_LOCK_ID_2]
-        assert lock.state is LockStates.jammed
+        assert lock.state is LockStates.JAMMED
 
     aresponses.assert_plan_strictly_followed()
 
@@ -114,11 +114,11 @@ async def test_no_state_change_on_failure(
         systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         lock = system.locks[TEST_LOCK_ID]
-        assert lock.state == LockStates.locked
+        assert lock.state == LockStates.LOCKED
 
         with pytest.raises(InvalidCredentialsError):
             await lock.async_unlock()
-        assert lock.state == LockStates.locked
+        assert lock.state == LockStates.LOCKED
 
     aresponses.assert_plan_strictly_followed()
 
@@ -140,7 +140,7 @@ async def test_properties(aresponses, v3_server):
         assert not lock.offline
         assert not lock.pin_pad_low_battery
         assert not lock.pin_pad_offline
-        assert lock.state is LockStates.locked
+        assert lock.state is LockStates.LOCKED
 
     aresponses.assert_plan_strictly_followed()
 
@@ -155,7 +155,7 @@ async def test_unknown_state(aresponses, caplog, v3_server):
         systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         lock = system.locks[TEST_LOCK_ID_3]
-        assert lock.state == LockStates.unknown
+        assert lock.state == LockStates.UNKNOWN
 
         assert any("Unknown raw lock state" in e.message for e in caplog.records)
 
@@ -204,13 +204,13 @@ async def test_update(
         systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         lock = system.locks[TEST_LOCK_ID]
-        assert lock.state == LockStates.locked
+        assert lock.state == LockStates.LOCKED
 
         await lock.async_unlock()
-        assert lock.state == LockStates.unlocked
+        assert lock.state == LockStates.UNLOCKED
 
         # Simulate a manual lock and an update some time later:
         await lock.async_update()
-        assert lock.state == LockStates.locked
+        assert lock.state == LockStates.LOCKED
 
     aresponses.assert_plan_strictly_followed()

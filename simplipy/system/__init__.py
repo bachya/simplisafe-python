@@ -49,18 +49,18 @@ class SystemNotification:
 class SystemStates(Enum):
     """States that the system can be in."""
 
-    alarm = 1
-    alarm_count = 2
-    away = 3
-    away_count = 4
-    entry_delay = 5
-    error = 6
-    exit_delay = 7
-    home = 8
-    home_count = 9
-    off = 10
-    test = 11
-    unknown = 99
+    ALARM = 1
+    ALARM_COUNT = 2
+    AWAY = 3
+    AWAY_COUNT = 4
+    ENTRY_DELAY = 5
+    ERROR = 6
+    EXIT_DELAY = 7
+    HOME = 8
+    HOME_COUNT = 9
+    OFF = 10
+    TEST = 11
+    UNKNOWN = 99
 
 
 def get_device_type_from_data(device_data: dict[str, Any]) -> DeviceTypes:
@@ -69,7 +69,7 @@ def get_device_type_from_data(device_data: dict[str, Any]) -> DeviceTypes:
         return DeviceTypes(device_data["type"])
     except ValueError:
         LOGGER.error("Unknown device type: %s", device_data["type"])
-        return DeviceTypes.unknown
+        return DeviceTypes.UNKNOWN
 
 
 def guard_from_missing_data(default_value: Any = None) -> Callable:
@@ -112,7 +112,7 @@ class System:
 
         # These will get filled in after initial update:
         self._notifications: list[SystemNotification] = []
-        self._state = SystemStates.unknown
+        self._state = SystemStates.UNKNOWN
         self.sensor_data: dict[str, dict[str, Any]] = {}
         self.sensors: dict[str, SensorV2 | SensorV3] = {}
 
@@ -320,15 +320,15 @@ class System:
 
     async def async_set_away(self) -> None:
         """Set the system in "Away" mode."""
-        await self._async_set_state(SystemStates.away)
+        await self._async_set_state(SystemStates.AWAY)
 
     async def async_set_home(self) -> None:
         """Set the system in "Home" mode."""
-        await self._async_set_state(SystemStates.home)
+        await self._async_set_state(SystemStates.HOME)
 
     async def async_set_off(self) -> None:
         """Set the system in "Off" mode."""
-        await self._async_set_state(SystemStates.off)
+        await self._async_set_state(SystemStates.OFF)
 
     async def async_set_pin(self, label: str, pin: str) -> None:
         """Set a PIN.
@@ -413,7 +413,7 @@ class System:
         )
 
         try:
-            self._state = SystemStates[convert_to_underscore(raw_state)]
+            self._state = SystemStates[convert_to_underscore(raw_state).upper()]
         except KeyError:
             LOGGER.error("Unknown raw system state: %s", raw_state)
-            self._state = SystemStates.unknown
+            self._state = SystemStates.UNKNOWN

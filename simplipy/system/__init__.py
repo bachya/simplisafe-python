@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
+from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, cast
 
 from simplipy.const import LOGGER
@@ -78,6 +79,7 @@ def guard_from_missing_data(default_value: Any = None) -> Callable:
     def decorator(func: Callable) -> Callable:
         """Decorate."""
 
+        @wraps(func)
         def wrapper(system: "System") -> Any:
             """Call the function and handle any issue."""
             try:

@@ -43,15 +43,15 @@ VOLUME_HIGH = 3
 VOLUMES = [VOLUME_OFF, VOLUME_LOW, VOLUME_MEDIUM, VOLUME_HIGH]
 
 SYSTEM_PROPERTIES_VALUE_MAP = {
-    "alarm_duration": "alarmDuration",
-    "alarm_volume": "alarmVolume",
-    "chime_volume": "doorChime",
-    "entry_delay_away": "entryDelayAway",
-    "entry_delay_home": "entryDelayHome",
-    "exit_delay_away": "exitDelayAway",
-    "exit_delay_home": "exitDelayHome",
-    "light": "light",
-    "voice_prompt_volume": "voicePrompts",
+    CONF_ALARM_DURATION: "alarmDuration",
+    CONF_ALARM_VOLUME: "alarmVolume",
+    CONF_CHIME_VOLUME: "doorChime",
+    CONF_ENTRY_DELAY_AWAY: "entryDelayAway",
+    CONF_ENTRY_DELAY_HOME: "entryDelayHome",
+    CONF_EXIT_DELAY_AWAY: "exitDelayAway",
+    CONF_EXIT_DELAY_HOME: "exitDelayHome",
+    CONF_LIGHT: "light",
+    CONF_VOICE_PROMPT_VOLUME: "voicePrompts",
 }
 
 SYSTEM_PROPERTIES_PAYLOAD_SCHEMA = vol.Schema(

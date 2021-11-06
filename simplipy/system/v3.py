@@ -161,15 +161,17 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
     @property  # type: ignore
     @guard_from_missing_data()
-    def alarm_volume(self) -> int:
+    def alarm_volume(self) -> Volume:
         """Return the volume level of the alarm.
 
         :rtype: ``int``
         """
-        return int(
-            self.settings_data["settings"]["normal"][
-                SYSTEM_PROPERTIES_VALUE_MAP["alarm_volume"]
-            ]
+        return Volume(
+            int(
+                self.settings_data["settings"]["normal"][
+                    SYSTEM_PROPERTIES_VALUE_MAP["alarm_volume"]
+                ]
+            )
         )
 
     @property  # type: ignore
@@ -183,15 +185,17 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
     @property  # type: ignore
     @guard_from_missing_data()
-    def chime_volume(self) -> int:
+    def chime_volume(self) -> Volume:
         """Return the volume level of the door chime.
 
         :rtype: ``int``
         """
-        return int(
-            self.settings_data["settings"]["normal"][
-                SYSTEM_PROPERTIES_VALUE_MAP["chime_volume"]
-            ]
+        return Volume(
+            int(
+                self.settings_data["settings"]["normal"][
+                    SYSTEM_PROPERTIES_VALUE_MAP["chime_volume"]
+                ]
+            )
         )
 
     @property  # type: ignore
@@ -308,16 +312,17 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
     @property  # type: ignore
     @guard_from_missing_data()
-    def voice_prompt_volume(self) -> int:
+    def voice_prompt_volume(self) -> Volume:
         """Return the volume level of the voice prompt.
 
         :rtype: ``int``
         """
-        return cast(
-            int,
-            self.settings_data["settings"]["normal"][
-                SYSTEM_PROPERTIES_VALUE_MAP["voice_prompt_volume"]
-            ],
+        return Volume(
+            int(
+                self.settings_data["settings"]["normal"][
+                    SYSTEM_PROPERTIES_VALUE_MAP["voice_prompt_volume"]
+                ]
+            )
         )
 
     @property  # type: ignore

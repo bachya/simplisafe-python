@@ -264,9 +264,9 @@ async def test_properties(aresponses, v3_server, v3_settings_response):
         systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         assert system.alarm_duration == 240
-        assert system.alarm_volume == Volume.HIGH.value
+        assert system.alarm_volume == Volume.HIGH
         assert system.battery_backup_power_level == 5293
-        assert system.chime_volume == Volume.MEDIUM.value
+        assert system.chime_volume == Volume.MEDIUM
         assert system.connection_type == "wifi"
         assert system.entry_delay_away == 30
         assert system.entry_delay_home == 30
@@ -277,7 +277,7 @@ async def test_properties(aresponses, v3_server, v3_settings_response):
         assert system.offline is False
         assert system.power_outage is False
         assert system.rf_jamming is False
-        assert system.voice_prompt_volume == Volume.MEDIUM.value
+        assert system.voice_prompt_volume == Volume.MEDIUM
         assert system.wall_power_level == 5933
         assert system.wifi_ssid == "MY_WIFI"
         assert system.wifi_strength == -49
@@ -308,14 +308,14 @@ async def test_properties(aresponses, v3_server, v3_settings_response):
             }
         )
         assert system.alarm_duration == 240
-        assert system.alarm_volume == Volume.HIGH.value
-        assert system.chime_volume == Volume.MEDIUM.value
+        assert system.alarm_volume == Volume.HIGH
+        assert system.chime_volume == Volume.MEDIUM
         assert system.entry_delay_away == 30
         assert system.entry_delay_home == 30
         assert system.exit_delay_away == 60
         assert system.exit_delay_home == 0
         assert system.light is True
-        assert system.voice_prompt_volume == Volume.MEDIUM.value
+        assert system.voice_prompt_volume == Volume.MEDIUM
 
     aresponses.assert_plan_strictly_followed()
 

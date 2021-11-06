@@ -33,14 +33,14 @@ Disconnecting
 Responding to Events
 --------------------
 
-Users respond to events by defining listeners (synchronous functions *or* coroutines).
+Users respond to events by defining callbacks (synchronous functions *or* coroutines).
 The following events exist:
 
 * ``connect``: occurs when the websocket connection is established
 * ``disconnect``: occurs when the websocket connection is terminated
 * ``event``: occurs when any data is transmitted from the SimpliSafe™ cloud
 
-Note that you can register as many listeners as you'd like.
+Note that you can register as many callbacks as you'd like.
 
 ``connect``
 ***********
@@ -54,10 +54,10 @@ Note that you can register as many listeners as you'd like.
     def connect_handler():
         print("I connected to the websocket")
 
-    remove_1 = simplisafe.websocket.add_connect_listener(async_connect_handler)
-    remove_2 = simplisafe.websocket.add_connect_listener(connect_handler)
+    remove_1 = simplisafe.websocket.add_connect_callback(async_connect_handler)
+    remove_2 = simplisafe.websocket.add_connect_callback(connect_handler)
 
-    # remove_1 and remove_2 are functions that, when called, remove the listener.
+    # remove_1 and remove_2 are functions that, when called, remove the callback.
 
 ``disconnect``
 **************
@@ -71,10 +71,10 @@ Note that you can register as many listeners as you'd like.
     def connect_handler():
         print("I disconnected from the websocket")
 
-    remove_1 = simplisafe.websocket.add_disconnect_listener(async_connect_handler)
-    remove_2 = simplisafe.websocket.add_disconnect_listener(connect_handler)
+    remove_1 = simplisafe.websocket.add_disconnect_callback(async_connect_handler)
+    remove_2 = simplisafe.websocket.add_disconnect_callback(connect_handler)
 
-    # remove_1 and remove_2 are functions that, when called, remove the listener.
+    # remove_1 and remove_2 are functions that, when called, remove the callback.
 
 ``event``
 *********
@@ -88,15 +88,15 @@ Note that you can register as many listeners as you'd like.
     def connect_handler():
         print(f"I received a SimpliSafe™ event: {event}")
 
-    remove_1 = simplisafe.websocket.add_event_listener(async_connect_handler)
-    remove_2 = simplisafe.websocket.add_event_listener(connect_handler)
+    remove_1 = simplisafe.websocket.add_event_callback(async_connect_handler)
+    remove_2 = simplisafe.websocket.add_event_callback(connect_handler)
 
-    # remove_1 and remove_2 are functions that, when called, remove the listener.
+    # remove_1 and remove_2 are functions that, when called, remove the callback.
 
 Response Format
 ===============
 
-The ``event`` argument provided to event listeners is a
+The ``event`` argument provided to event callbacks is a
 :meth:`simplipy.websocket.WebsocketEvent` object, which comes with several properties:
 
 * ``changed_by``: the PIN that caused the event (in the case of arming/disarming/etc.)

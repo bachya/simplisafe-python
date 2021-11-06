@@ -22,6 +22,7 @@ from simplipy.errors import (
     InvalidMessageError,
     NotConnectedError,
 )
+from simplipy.util import schedule_callback
 from simplipy.util.dt import utc_from_timestamp
 
 if TYPE_CHECKING:
@@ -116,11 +117,7 @@ class Watchdog:
     def _on_expire(self) -> None:
         """Log and act when the watchdog expires."""
         LOGGER.info("Websocket watchdog expired")
-
-        if asyncio.iscoroutinefunction(self._action):
-            asyncio.create_task(self._action())
-        else:
-            self._loop.call_soon(self._action())
+        schedule_callback(self._action)
 
     def cancel(self) -> None:
         """Cancel the watchdog."""
@@ -213,9 +210,9 @@ class WebsocketClient:
     def __init__(self, api: API) -> None:
         """Initialize."""
         self._api = api
-        self._connect_listeners: list[Callable[..., None]] = []
-        self._disconnect_listeners: list[Callable[..., None]] = []
-        self._event_listeners: list[Callable[..., None]] = []
+        self._connect_callbacks: list[Callable[..., None]] = []
+        self._disconnect_callbacks: list[Callable[..., None]] = []
+        self._event_callbacks: list[Callable[..., None]] = []
         self._loop = asyncio.get_running_loop()
         self._watchdog = Watchdog(self.async_reconnect)
 
@@ -228,15 +225,15 @@ class WebsocketClient:
         return self._client is not None and not self._client.closed
 
     @staticmethod
-    def _add_listener(
-        listener_list: list, callback: Callable[..., Any]
+    def _add_callback(
+        callback_list: list, callback: Callable[..., Any]
     ) -> Callable[..., None]:
-        """Add a listener callback to a particular list."""
-        listener_list.append(callback)
+        """Add a callback callback to a particular list."""
+        callback_list.append(callback)
 
         def remove() -> None:
             """Remove the callback."""
-            listener_list.remove(callback)
+            callback_list.remove(callback)
 
         return remove
 
@@ -283,36 +280,29 @@ class WebsocketClient:
         """Parse an incoming message."""
         if message["type"] == "com.simplisafe.event.standard":
             event = websocket_event_from_payload(message)
-            for listener in self._event_listeners:
-                self._schedule_listener_call(listener, event)
+            for callback in self._event_callbacks:
+                schedule_callback(callback, event)
 
-    def _schedule_listener_call(self, listener: Callable[..., Any], *args: Any) -> None:
-        """Schedule a listener to be called."""
-        if asyncio.iscoroutinefunction(listener):
-            asyncio.create_task(listener(*args))
-        else:
-            self._loop.call_soon(listener, *args)
-
-    def add_connect_listener(self, callback: Callable[..., Any]) -> Callable[..., None]:
-        """Add a listener callback to be called after connecting.
+    def add_connect_callback(self, callback: Callable[..., Any]) -> Callable[..., None]:
+        """Add a callback callback to be called after connecting.
 
         :param callback: The method to call after connecting
         :type callback: ``Callable[..., None]``
         """
-        return self._add_listener(self._connect_listeners, callback)
+        return self._add_callback(self._connect_callbacks, callback)
 
-    def add_disconnect_listener(
+    def add_disconnect_callback(
         self, callback: Callable[..., Any]
     ) -> Callable[..., None]:
-        """Add a listener callback to be called after disconnecting.
+        """Add a callback callback to be called after disconnecting.
 
         :param callback: The method to call after disconnecting
         :type callback: ``Callable[..., None]``
         """
-        return self._add_listener(self._disconnect_listeners, callback)
+        return self._add_callback(self._disconnect_callbacks, callback)
 
-    def add_event_listener(self, callback: Callable[..., Any]) -> Callable[..., None]:
-        """Add a listener callback to be called upon receiving an event.
+    def add_event_callback(self, callback: Callable[..., Any]) -> Callable[..., None]:
+        """Add a callback callback to be called upon receiving an event.
 
         Note that callbacks should expect to receive a WebsocketEvent object as a
         parameter.
@@ -320,7 +310,7 @@ class WebsocketClient:
         :param callback: The method to call after receiving an event.
         :type callback: ``Callable[..., None]``
         """
-        return self._add_listener(self._event_listeners, callback)
+        return self._add_callback(self._event_callbacks, callback)
 
     async def async_connect(self) -> None:
         """Connect to the websocket server."""
@@ -333,8 +323,8 @@ class WebsocketClient:
 
         LOGGER.info("Connected to websocket server")
 
-        for listener in self._connect_listeners:
-            self._schedule_listener_call(listener)
+        for callback in self._connect_callbacks:
+            schedule_callback(callback)
 
         self._watchdog.trigger()
 
@@ -346,8 +336,8 @@ class WebsocketClient:
 
         LOGGER.info("Disconnected from websocket server")
 
-        for listener in self._disconnect_listeners:
-            self._schedule_listener_call(listener)
+        for callback in self._disconnect_callbacks:
+            schedule_callback(callback)
 
     async def async_listen(self) -> None:
         """Start listening to the websocket server."""
@@ -384,8 +374,8 @@ class WebsocketClient:
         finally:
             LOGGER.debug("Listen completed; cleaning up")
 
-            for listener in self._disconnect_listeners:
-                self._schedule_listener_call(listener)
+            for callback in self._disconnect_callbacks:
+                schedule_callback(callback)
 
     async def async_reconnect(self) -> None:
         """Reconnect (and re-listen, if appropriate) to the websocket."""

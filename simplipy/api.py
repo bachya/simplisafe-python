@@ -297,7 +297,6 @@ class API:  # pylint: disable=too-many-instance-attributes
                 LOGGER.info("Skipping inactive subscription: %s", sid)
                 continue
 
-            # if "system" not in subscription["location"]:
             if not subscription["location"].get("system"):
                 LOGGER.error("Skipping subscription with missing system data: %s", sid)
                 continue

@@ -34,6 +34,46 @@ from .common import create_ws_message
 
 
 @pytest.mark.asyncio
+async def test_callbacks(caplog, mock_api, ws_message_event, ws_messages):
+    """Test that callbacks are executed correctly."""
+    caplog.set_level(logging.INFO)
+
+    mock_connect_callback = Mock()
+    mock_disconnect_callback = Mock()
+    mock_event_callback = Mock()
+
+    async def async_mock_connect_callback():
+        """Define a mock async conenct callback."""
+        LOGGER.info("We are connected!")
+
+    client = WebsocketClient(mock_api)
+    client.add_connect_callback(mock_connect_callback)
+    client.add_connect_callback(async_mock_connect_callback)
+    client.add_disconnect_callback(mock_disconnect_callback)
+    client.add_event_callback(mock_event_callback)
+
+    assert mock_connect_callback.call_count == 0
+    assert mock_disconnect_callback.call_count == 0
+    assert mock_event_callback.call_count == 0
+
+    await client.async_connect()
+    assert client.connected
+    await asyncio.sleep(1)
+    assert mock_connect_callback.call_count == 1
+    assert any("We are connected!" in e.message for e in caplog.records)
+
+    ws_messages.append(create_ws_message(ws_message_event))
+    await client.async_listen()
+    await asyncio.sleep(1)
+    expected_event = websocket_event_from_payload(ws_message_event)
+    mock_event_callback.assert_called_once_with(expected_event)
+
+    await client.async_disconnect()
+    assert not client.connected
+    assert mock_disconnect_callback.call_count == 1
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "error",
     [
@@ -60,6 +100,9 @@ async def test_connect_disconnect(mock_api):
 
     await client.async_connect()
     assert client.connected
+
+    # Attempt to connect again, which should just return:
+    await client.async_connect()
 
     await client.async_disconnect()
     assert not client.connected
@@ -157,48 +200,6 @@ async def test_listen_error_message_types(
 
     with pytest.raises(exception):
         await client.async_listen()
-
-
-@pytest.mark.asyncio
-async def test_callbacks(caplog, mock_api, ws_message_event, ws_messages):
-    """Test that callbacks are executed correctly."""
-    caplog.set_level(logging.INFO)
-
-    mock_connect_callback = Mock()
-    mock_disconnect_callback = Mock()
-    mock_event_callback = Mock()
-
-    async def async_mock_connect_callback():
-        """Define a mock async conenct callback."""
-        LOGGER.info("We are connected!")
-
-    client = WebsocketClient(mock_api)
-    client.add_connect_callback(mock_connect_callback)
-    client.add_connect_callback(async_mock_connect_callback)
-    client.add_disconnect_callback(mock_disconnect_callback)
-    client.add_event_callback(mock_event_callback)
-
-    assert mock_connect_callback.call_count == 0
-    assert mock_disconnect_callback.call_count == 0
-    assert mock_event_callback.call_count == 0
-
-    await client.async_connect()
-    assert client.connected
-    await asyncio.sleep(1)
-    assert mock_connect_callback.call_count == 1
-    assert any("We are connected!" in e.message for e in caplog.records)
-
-    ws_messages.append(create_ws_message(ws_message_event))
-    await client.async_listen()
-    await asyncio.sleep(1)
-    expected_event = websocket_event_from_payload(ws_message_event)
-    mock_event_callback.assert_called_once_with(expected_event)
-
-    # Add another message to the queue to keep the websocket open while we disconnect
-    # from it:
-    await client.async_disconnect()
-    assert not client.connected
-    assert mock_disconnect_callback.call_count == 1
 
 
 @pytest.mark.asyncio

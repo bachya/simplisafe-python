@@ -226,8 +226,6 @@ async def ws_client_fixture(
 
     ws_client.receive.side_effect = receive
 
-    ws_client.send_json.side_effect = Mock()
-
     async def reset_close():
         """Reset the websocket client close method."""
         ws_client.closed = True

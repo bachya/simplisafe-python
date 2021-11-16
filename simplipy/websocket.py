@@ -116,9 +116,8 @@ class Watchdog:
 
     def _on_expire(self) -> None:
         """Log and act when the watchdog expires."""
-        if self._timer_task and not self._timer_task.cancelled():
-            LOGGER.info("Websocket watchdog expired")
-            schedule_callback(self._action)
+        LOGGER.info("Websocket watchdog expired")
+        schedule_callback(self._action)
 
     def cancel(self) -> None:
         """Cancel the watchdog."""
@@ -327,10 +326,10 @@ class WebsocketClient:
 
         LOGGER.info("Connected to websocket server")
 
+        self._watchdog.trigger()
+
         for callback in self._connect_callbacks:
             schedule_callback(callback)
-
-        self._watchdog.trigger()
 
     async def async_disconnect(self) -> None:
         """Disconnect from the websocket server."""
@@ -377,6 +376,8 @@ class WebsocketClient:
             pass
         finally:
             LOGGER.debug("Listen completed; cleaning up")
+
+            self._watchdog.cancel()
 
             for callback in self._disconnect_callbacks:
                 schedule_callback(callback)

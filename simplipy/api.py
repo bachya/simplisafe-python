@@ -39,10 +39,11 @@ DEFAULT_TIMEOUT = 10
 def get_expiration_datetime(expires_in_seconds: int) -> datetime:
     """Get a token expiration datetime as an offset of UTC now + a number of seconds.
 
-    Note that we pad the value to ensure the token doesn't expire without us knowing.
+    Note that we add some padding to the datetime. This ensures that multiple tasks
+    attempting to refresh within microseconds of one another are turned away.
     """
     return datetime.utcnow() + (
-        timedelta(seconds=expires_in_seconds - DEFAULT_EXPIRATION_PADDING)
+        timedelta(seconds=expires_in_seconds + DEFAULT_EXPIRATION_PADDING)
     )
 
 
@@ -175,7 +176,7 @@ class API:  # pylint: disable=too-many-instance-attributes
             # been refreshed within the expiration window (and we lock the attempt so
             # other requests can't try it at the same time):
             async with self._backoff_refresh_lock:
-                if datetime.utcnow() < self._access_token_expire_dt:
+                if datetime.utcnow() <= self._access_token_expire_dt:
                     return
 
                 LOGGER.info("401 detected; attempting refresh token")

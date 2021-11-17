@@ -42,7 +42,7 @@ class SystemV2(System):
 
     async def _async_set_state(self, value: SystemStates) -> None:
         """Set the state of the system."""
-        await self._api.request(
+        await self._api.async_request(
             "post",
             f"subscriptions/{self.system_id}/state",
             params={"state": value.name.lower()},
@@ -52,7 +52,7 @@ class SystemV2(System):
 
     async def _async_set_updated_pins(self, pins: dict) -> None:
         """Post new PINs."""
-        await self._api.request(
+        await self._api.async_request(
             "post",
             f"subscriptions/{self.system_id}/pins",
             json=create_pin_payload(pins),
@@ -60,7 +60,7 @@ class SystemV2(System):
 
     async def _async_update_device_data(self, cached: bool = True) -> None:
         """Update sensors to the latest values."""
-        sensor_resp = await self._api.request(
+        sensor_resp = await self._api.async_request(
             "get",
             f"subscriptions/{self.system_id}/settings",
             params={"settingsType": "all", "cached": str(cached).lower()},
@@ -91,7 +91,7 @@ class SystemV2(System):
         :type cached: ``bool``
         :rtype: ``dict[str, str]``
         """
-        pins_resp = await self._api.request(
+        pins_resp = await self._api.async_request(
             "get",
             f"subscriptions/{self.system_id}/pins",
             params={"settingsType": "all", "cached": str(cached).lower()},

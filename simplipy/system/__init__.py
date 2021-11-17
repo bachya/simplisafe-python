@@ -239,7 +239,7 @@ class System:
         longer visible in the SimpliSafe mobile and web apps.
         """
         if self._notifications:
-            await self._api.request(
+            await self._api.async_request(
                 "delete", f"subscriptions/{self.system_id}/messages"
             )
             self._notifications = []
@@ -267,7 +267,7 @@ class System:
         if num_events:
             params["numEvents"] = num_events
 
-        events_resp = await self._api.request(
+        events_resp = await self._api.async_request(
             "get", f"subscriptions/{self.system_id}/events", params=params
         )
 

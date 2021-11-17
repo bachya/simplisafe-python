@@ -80,7 +80,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         self.websocket: WebsocketClient | None = None
 
         # Implement a version of the request coroutine, but with backoff/retry logic:
-        self.request = backoff.on_exception(
+        self.async_request = backoff.on_exception(
             backoff.expo,
             ClientResponseError,
             jitter=backoff.random_jitter,
@@ -319,7 +319,7 @@ class API:  # pylint: disable=too-many-instance-attributes
 
     async def async_update_subscription_data(self) -> None:
         """Get the latest subscription data."""
-        subscription_resp = await self.request(
+        subscription_resp = await self.async_request(
             "get", f"users/{self.user_id}/subscriptions", params={"activeOnly": "true"}
         )
         self.subscription_data = {

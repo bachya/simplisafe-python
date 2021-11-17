@@ -182,13 +182,6 @@ class API:  # pylint: disable=too-many-instance-attributes
                 LOGGER.info("401 detected; attempting refresh token")
                 await self._async_refresh_access_token()
 
-    @staticmethod
-    def _handle_on_giveup(_: dict[str, Any]) -> None:
-        """Handle a give up after retries are exhausted."""
-        err_info = sys.exc_info()
-        err = err_info[1].with_traceback(err_info[2])  # type: ignore
-        raise RequestError(err) from err
-
     async def _async_post_init(self) -> None:
         """Perform some post-init actions."""
         auth_check_resp = await self._async_request("get", "api/authCheck")
@@ -263,6 +256,13 @@ class API:  # pylint: disable=too-many-instance-attributes
             resp.raise_for_status()
 
         return data
+
+    @staticmethod
+    def _handle_on_giveup(_: dict[str, Any]) -> None:
+        """Handle a give up after retries are exhausted."""
+        err_info = sys.exc_info()
+        err = err_info[1].with_traceback(err_info[2])  # type: ignore
+        raise RequestError(err) from err
 
     def add_refresh_token_callback(
         self, callback: Callable[..., None]

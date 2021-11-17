@@ -368,7 +368,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
     async def _async_set_state(self, value: SystemStates) -> None:
         """Set the state of the system."""
-        await self._api.request(
+        await self._api.async_request(
             "post", f"ss3/subscriptions/{self.system_id}/state/{value.name.lower()}"
         )
 
@@ -377,7 +377,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
     async def _async_set_updated_pins(self, pins: dict) -> None:
         """Post new PINs."""
-        self.settings_data = await self._api.request(
+        self.settings_data = await self._api.async_request(
             "post",
             f"ss3/subscriptions/{self.system_id}/settings/pins",
             json=create_pin_payload(pins),
@@ -385,7 +385,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
     async def _async_update_device_data(self, cached: bool = True) -> None:
         """Update sensors to the latest values."""
-        sensor_resp = await self._api.request(
+        sensor_resp = await self._api.async_request(
             "get",
             f"ss3/subscriptions/{self.system_id}/sensors",
             params={"forceUpdate": str(not cached).lower()},
@@ -396,7 +396,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
     async def _async_update_settings_data(self, cached: bool = True) -> None:
         """Get all system settings."""
-        settings_resp = await self._api.request(
+        settings_resp = await self._api.async_request(
             "get",
             f"ss3/subscriptions/{self.system_id}/settings/normal",
             params={"forceUpdate": str(not cached).lower()},
@@ -415,7 +415,9 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         for serial, sensor in self.sensor_data.items():
             sensor_type = get_device_type_from_data(sensor)
             if sensor_type == DeviceTypes.LOCK:
-                self.locks[serial] = Lock(self._api.request, self, sensor_type, serial)
+                self.locks[serial] = Lock(
+                    self._api.async_request, self, sensor_type, serial
+                )
             else:
                 self.sensors[serial] = SensorV3(self, sensor_type, serial)
 
@@ -474,7 +476,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
                 f"Using invalid values for system properties ({properties}): {err}"
             ) from None
 
-        settings_resp = await self._api.request(
+        settings_resp = await self._api.async_request(
             "post",
             f"ss3/subscriptions/{self.system_id}/settings/normal",
             json={

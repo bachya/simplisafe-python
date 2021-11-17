@@ -87,7 +87,7 @@ class API:  # pylint: disable=too-many-instance-attributes
             logger=LOGGER,
             max_tries=request_retries,
             on_backoff=self._async_handle_on_backoff,
-            on_giveup=self._async_handle_on_giveup,
+            on_giveup=self._handle_on_giveup,
         )(self._async_request)
 
     @classmethod
@@ -128,7 +128,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 },
             )
         except ClientResponseError as err:
-            if err.status == 401 or err.status == 403:
+            if err.status in (401, 403):
                 raise InvalidCredentialsError("Invalid credentials") from err
             raise RequestError(err) from err
 
@@ -167,7 +167,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         err_info = sys.exc_info()
         err: ClientResponseError = err_info[1].with_traceback(err_info[2])  # type: ignore
 
-        if err.status == 401 or err.status == 403:
+        if err.status in (401, 403):
             if TYPE_CHECKING:
                 assert self._access_token_expire_dt
 
@@ -182,7 +182,8 @@ class API:  # pylint: disable=too-many-instance-attributes
                 LOGGER.info("401 detected; attempting refresh token")
                 await self._async_refresh_access_token()
 
-    async def _async_handle_on_giveup(self, _: dict[str, Any]) -> None:
+    @staticmethod
+    def _handle_on_giveup(_: dict[str, Any]) -> None:
         """Handle a give up after retries are exhausted."""
         err_info = sys.exc_info()
         err = err_info[1].with_traceback(err_info[2])  # type: ignore
@@ -209,7 +210,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 },
             )
         except ClientResponseError as err:
-            if err.status == 401 or err.status == 403:
+            if err.status in (401, 403):
                 raise InvalidCredentialsError("Invalid refresh token") from err
             raise RequestError(err) from err
 

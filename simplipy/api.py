@@ -258,15 +258,18 @@ class API:  # pylint: disable=too-many-instance-attributes
 
     def _wrap_request_method(self, request_retries: int) -> Callable:
         """Wrap the request method in backoff/retry logic."""
-        return cast(Callable, backoff.on_exception(
-            backoff.expo,
-            ClientResponseError,
-            jitter=backoff.random_jitter,
-            logger=LOGGER,
-            max_tries=request_retries,
-            on_backoff=self._async_handle_on_backoff,
-            on_giveup=self._handle_on_giveup,
-        )(self._async_request))
+        return cast(
+            Callable,
+            backoff.on_exception(
+                backoff.expo,
+                ClientResponseError,
+                jitter=backoff.random_jitter,
+                logger=LOGGER,
+                max_tries=request_retries,
+                on_backoff=self._async_handle_on_backoff,
+                on_giveup=self._handle_on_giveup,
+            )(self._async_request),
+        )
 
     def disable_request_retries(self) -> None:
         """Disable the request retry mechanism."""

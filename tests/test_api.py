@@ -278,45 +278,20 @@ async def test_refresh_token_callback(
 
 
 @pytest.mark.asyncio
-async def test_request_error_failed_retry(aresponses, server):
-    """Test that a RequestError that fails multiple times still raises."""
-    server.add(
-        "api.simplisafe.com",
-        f"/v1/users/{TEST_SUBSCRIPTION_ID}/subscriptions",
-        "get",
-        response=aresponses.Response(text="Conflict", status=409),
-    )
-    server.add(
-        "api.simplisafe.com",
-        f"/v1/users/{TEST_SUBSCRIPTION_ID}/subscriptions",
-        "get",
-        response=aresponses.Response(text="Conflict", status=409),
-    )
-
-    async with aiohttp.ClientSession() as session:
-        simplisafe = await API.async_from_auth(
-            TEST_AUTHORIZATION_CODE,
-            TEST_CODE_VERIFIER,
-            session=session,
-            # Set so that our tests don't take too long:
-            request_retries=1,
-        )
-
-        with pytest.raises(RequestError):
-            await simplisafe.async_get_systems()
-
-    aresponses.assert_plan_strictly_followed()
-
-
-@pytest.mark.asyncio
-async def test_request_error_successful_retry(
+async def test_request_retry(
     api_token_response,
     aresponses,
     server,
     v2_settings_response,
     v2_subscriptions_response,
 ):
-    """Test that a RequestError can be successfully retried."""
+    """Test that request retries work."""
+    server.add(
+        "api.simplisafe.com",
+        f"/v1/users/{TEST_SUBSCRIPTION_ID}/subscriptions",
+        "get",
+        response=aresponses.Response(text="Conflict", status=409),
+    )
     server.add(
         "api.simplisafe.com",
         f"/v1/users/{TEST_SUBSCRIPTION_ID}/subscriptions",
@@ -348,6 +323,13 @@ async def test_request_error_successful_retry(
         simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
+
+        simplisafe.disable_request_retries()
+
+        with pytest.raises(RequestError):
+            await simplisafe.async_get_systems()
+
+        simplisafe.enable_request_retries()
 
         # If this succeeds without throwing an exception, the retry is successful:
         await simplisafe.async_get_systems()

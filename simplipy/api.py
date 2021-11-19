@@ -5,7 +5,7 @@ import asyncio
 from datetime import datetime, timedelta
 from json.decoder import JSONDecodeError
 import sys
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, cast
 
 from aiohttp import ClientSession
 from aiohttp.client_exceptions import ClientResponseError
@@ -68,6 +68,7 @@ class API:  # pylint: disable=too-many-instance-attributes
     ) -> None:
         """Initialize."""
         self._refresh_token_callbacks: list[Callable[..., None]] = []
+        self._request_retries = request_retries
         self.session: ClientSession = session
 
         # These will get filled in after initial authentication:
@@ -79,16 +80,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         self.user_id: int | None = None
         self.websocket: WebsocketClient | None = None
 
-        # Implement a version of the request coroutine, but with backoff/retry logic:
-        self.async_request = backoff.on_exception(
-            backoff.expo,
-            ClientResponseError,
-            jitter=backoff.random_jitter,
-            logger=LOGGER,
-            max_tries=request_retries,
-            on_backoff=self._async_handle_on_backoff,
-            on_giveup=self._handle_on_giveup,
-        )(self._async_request)
+        self.async_request = self._wrap_request_method(self._request_retries)
 
     @classmethod
     async def async_from_auth(
@@ -263,6 +255,29 @@ class API:  # pylint: disable=too-many-instance-attributes
         err_info = sys.exc_info()
         err = err_info[1].with_traceback(err_info[2])  # type: ignore
         raise RequestError(err) from err
+
+    def _wrap_request_method(self, request_retries: int) -> Callable:
+        """Wrap the request method in backoff/retry logic."""
+        return cast(
+            Callable,
+            backoff.on_exception(
+                backoff.expo,
+                ClientResponseError,
+                jitter=backoff.random_jitter,
+                logger=LOGGER,
+                max_tries=request_retries,
+                on_backoff=self._async_handle_on_backoff,
+                on_giveup=self._handle_on_giveup,
+            )(self._async_request),
+        )
+
+    def disable_request_retries(self) -> None:
+        """Disable the request retry mechanism."""
+        self.async_request = self._wrap_request_method(1)
+
+    def enable_request_retries(self) -> None:
+        """Enable the request retry mechanism."""
+        self.async_request = self._wrap_request_method(self._request_retries)
 
     def add_refresh_token_callback(
         self, callback: Callable[..., None]

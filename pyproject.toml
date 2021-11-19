@@ -39,7 +39,7 @@ warn_unused_ignores = true
 
 [tool.poetry]
 name = "simplisafe-python"
-version = "2021.11.1"
+version = "2021.11.2"
 description = "A Python3, async interface to the SimpliSafe API"
 readme = "README.md"
 authors = ["Aaron Bach <bachya1208@gmail.com>"]

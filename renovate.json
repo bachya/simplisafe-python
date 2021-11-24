@@ -1,0 +1,10 @@
+{
+  "extends": [
+    "config:base",
+    "group:all",
+    "schedule:monthly",
+    ":disableDependencyDashboard"
+  ],
+  "labels": ["dependencies"],
+  "separateMinorPatch": true
+}

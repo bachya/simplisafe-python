@@ -60,7 +60,7 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-aiohttp = "^3.7.4.post0"
+aiohttp = ">=3.8.0"
 backoff = "^1.11.1"
 docutils = "<0.18"
 python = "^3.8.0"

@@ -1,4 +1,4 @@
-aiohttp==3.7.4.post0
+aiohttp>=3.8.0
 aresponses==2.1.4
 asynctest==0.13.0
 backoff==1.11.1

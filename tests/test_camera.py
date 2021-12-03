@@ -4,6 +4,7 @@ import aiohttp
 import pytest
 
 from simplipy import API
+from simplipy.device.camera import CameraTypes
 
 from .common import (
     TEST_AUTHORIZATION_CODE,
@@ -33,10 +34,10 @@ async def test_properties(aresponses, v3_server):
         assert not camera.shutter_open_when_off
         assert not camera.shutter_open_when_home
         assert camera.shutter_open_when_away
-        assert camera.camera_type == "camera"
+        assert camera.camera_type == CameraTypes.CAMERA
 
         error_camera = system.cameras[TEST_CAMERA_ID_2]
-        assert error_camera.camera_type == "unknown"
+        assert error_camera.camera_type == CameraTypes.UNKNOWN
 
     aresponses.assert_plan_strictly_followed()
 

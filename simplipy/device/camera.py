@@ -1,6 +1,7 @@
 """Define SimpliSafe cameras (SimpliCams)."""
 from __future__ import annotations
 
+from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, cast
 from urllib.parse import urlencode
 
@@ -10,20 +11,25 @@ from simplipy.device import DeviceV3
 if TYPE_CHECKING:
     from simplipy.system.v3 import SystemV3
 
-MEDIA_URL_BASE = "https://media.simplisafe.com/v1"
-DEFAULT_VIDEO_WIDTH = 1280
 DEFAULT_AUDIO_ENCODING = "AAC"
+DEFAULT_MEDIA_URL_BASE = "https://media.simplisafe.com/v1"
+DEFAULT_VIDEO_WIDTH = 1280
 
-CAMERA_MODEL_CAMERA = "camera"
-CAMERA_MODEL_DOORBELL = "doorbell"
-CAMERA_MODEL_OUTDOOR_CAMERA = "outdoor camera"
-CAMERA_MODEL_UNKNOWN = "unknown"
+
+class CameraTypes(Enum):
+    """Define camera types based on internal SimpliSafe ID number."""
+
+    CAMERA = 0
+    DOORBELL = 1
+    OUTDOOR_CAMERA = 2
+    UNKNOWN = 99
+
 
 MODEL_TO_TYPE = {
-    "SS001": CAMERA_MODEL_CAMERA,
-    "SS002": CAMERA_MODEL_DOORBELL,
-    "SS003": CAMERA_MODEL_CAMERA,
-    "SSOBCM4": CAMERA_MODEL_OUTDOOR_CAMERA,
+    "SS001": CameraTypes.CAMERA,
+    "SS002": CameraTypes.DOORBELL,
+    "SS003": CameraTypes.CAMERA,
+    "SSOBCM4": CameraTypes.OUTDOOR_CAMERA,
 }
 
 
@@ -43,7 +49,7 @@ class Camera(DeviceV3):
         )
 
     @property
-    def camera_type(self) -> str:
+    def camera_type(self) -> CameraTypes:
         """Return the type of camera.
 
         :rtype: ``str``
@@ -55,7 +61,7 @@ class Camera(DeviceV3):
                 "Unknown camera type: %s",
                 self._system.camera_data[self._serial]["model"],
             )
-            return CAMERA_MODEL_UNKNOWN
+            return CameraTypes.UNKNOWN
 
     @property
     def name(self) -> str:
@@ -131,4 +137,4 @@ class Camera(DeviceV3):
         :rtype: ``str``
         """
         url_params = {"x": width, "audioEncoding": audio_encoding, **kwargs}
-        return f"{MEDIA_URL_BASE}/{self.serial}/flv?{urlencode(url_params)}"
+        return f"{DEFAULT_MEDIA_URL_BASE}/{self.serial}/flv?{urlencode(url_params)}"

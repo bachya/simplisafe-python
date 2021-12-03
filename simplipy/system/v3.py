@@ -37,7 +37,6 @@ CONF_VOICE_PROMPT_VOLUME = "voice_prompt_volume"
 
 DEFAULT_LOCK_STATE_CHANGE_WINDOW = timedelta(seconds=15)
 
-
 SYSTEM_PROPERTIES_VALUE_MAP = {
     CONF_ALARM_DURATION: "alarmDuration",
     CONF_ALARM_VOLUME: "alarmVolume",

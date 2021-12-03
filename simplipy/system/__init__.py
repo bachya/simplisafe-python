@@ -18,8 +18,6 @@ from simplipy.util.string import convert_to_underscore
 if TYPE_CHECKING:
     from simplipy.api import API
 
-EVENT_SYSTEM_NOTIFICATION = "system_notification"
-
 CONF_DEFAULT = "default"
 CONF_DURESS_PIN = "duress"
 CONF_MASTER_PIN = "master"

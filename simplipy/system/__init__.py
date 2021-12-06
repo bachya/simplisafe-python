@@ -230,18 +230,6 @@ class System:
         """Update subscription data."""
         await self._api.async_update_subscription_data()
 
-    async def async_clear_notifications(self) -> None:
-        """Clear all active notifications.
-
-        This will remove the notifications from SimpliSafe's cloud, meaning they will no
-        longer visible in the SimpliSafe mobile and web apps.
-        """
-        if self._notifications:
-            await self._api.async_request(
-                "delete", f"subscriptions/{self.system_id}/messages"
-            )
-            self._notifications = []
-
     def generate_device_objects(self) -> None:
         """Generate device objects for this system."""
         raise NotImplementedError()

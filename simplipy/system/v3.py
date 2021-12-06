@@ -423,6 +423,18 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         for serial in self.camera_data:
             self.cameras[serial] = Camera(self, DeviceTypes.CAMERA, serial)
 
+    async def async_clear_notifications(self) -> None:
+        """Clear all active notifications.
+
+        This will remove the notifications from SimpliSafe's cloud, meaning they will no
+        longer visible in the SimpliSafe mobile and web apps.
+        """
+        if self._notifications:
+            await self._api.async_request(
+                "delete", f"ss3/subscriptions/{self.system_id}/messages"
+            )
+            self._notifications = []
+
     async def async_get_pins(self, cached: bool = True) -> dict[str, str]:
         """Return all of the set PINs, including master and duress.
 

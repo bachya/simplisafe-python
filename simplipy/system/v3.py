@@ -351,19 +351,11 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         """
         return cast(int, self.settings_data["basestationStatus"]["wifiRssi"])
 
-    def _generate_camera_data(self) -> dict[str, dict]:
-        """Generate usable, hashable camera data from subscription data.
-
-        This method exists because the SimpliSafe API includes camera data with the
-        subscription (and not with other devices); by splitting this out, we can
-        separate this action from updating the subscription data itself.
-        """
-        return {
-            camera["uuid"]: camera
-            for camera in self._api.subscription_data[self._sid]["location"][
-                "system"
-            ].get("cameras", [])
-        }
+    async def _async_clear_notifications(self) -> None:
+        """Clear active notifications."""
+        await self._api.async_request(
+            "delete", f"ss3/subscriptions/{self.system_id}/messages"
+        )
 
     async def _async_set_state(self, value: SystemStates) -> None:
         """Set the state of the system."""
@@ -409,6 +401,20 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         await super()._async_update_subscription_data()
         self.camera_data = self._generate_camera_data()
 
+    def _generate_camera_data(self) -> dict[str, dict]:
+        """Generate usable, hashable camera data from subscription data.
+
+        This method exists because the SimpliSafe API includes camera data with the
+        subscription (and not with other devices); by splitting this out, we can
+        separate this action from updating the subscription data itself.
+        """
+        return {
+            camera["uuid"]: camera
+            for camera in self._api.subscription_data[self._sid]["location"][
+                "system"
+            ].get("cameras", [])
+        }
+
     def generate_device_objects(self) -> None:
         """Generate device objects for this system."""
         for serial, sensor in self.sensor_data.items():
@@ -422,18 +428,6 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
         for serial in self.camera_data:
             self.cameras[serial] = Camera(self, DeviceTypes.CAMERA, serial)
-
-    async def async_clear_notifications(self) -> None:
-        """Clear all active notifications.
-
-        This will remove the notifications from SimpliSafe's cloud, meaning they will no
-        longer visible in the SimpliSafe mobile and web apps.
-        """
-        if self._notifications:
-            await self._api.async_request(
-                "delete", f"ss3/subscriptions/{self.system_id}/messages"
-            )
-            self._notifications = []
 
     async def async_get_pins(self, cached: bool = True) -> dict[str, str]:
         """Return all of the set PINs, including master and duress.

@@ -16,6 +16,28 @@ from tests.common import (
 
 
 @pytest.mark.asyncio
+async def test_clear_notifications(aresponses, v2_server, v2_settings_response):
+    """Test clearing all active notifications."""
+    v2_server.add(
+        "api.simplisafe.com",
+        f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/messages",
+        "delete",
+        response=aiohttp.web_response.json_response(v2_settings_response, status=200),
+    )
+
+    async with aiohttp.ClientSession() as session:
+        simplisafe = await API.async_from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
+        )
+        systems = await simplisafe.async_get_systems()
+        system = systems[TEST_SYSTEM_ID]
+        await system.async_clear_notifications()
+        assert system.notifications == []
+
+    aresponses.assert_plan_strictly_followed()
+
+
+@pytest.mark.asyncio
 async def test_get_pins(aresponses, v2_pins_response, v2_server):
     """Test getting PINs associated with a V2 system."""
     v2_server.add(

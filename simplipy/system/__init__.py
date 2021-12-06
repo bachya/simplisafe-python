@@ -210,6 +210,10 @@ class System:
             self._api.subscription_data[self._sid]["location"]["system"]["version"],
         )
 
+    async def _async_clear_notifications(self) -> None:
+        """Clear active notifications."""
+        raise NotImplementedError()
+
     async def _async_set_state(self, value: SystemStates) -> None:
         """Raise if calling this undefined based method."""
         raise NotImplementedError()
@@ -229,6 +233,16 @@ class System:
     async def _async_update_subscription_data(self) -> None:
         """Update subscription data."""
         await self._api.async_update_subscription_data()
+
+    async def async_clear_notifications(self) -> None:
+        """Clear all active notifications.
+
+        This will remove the notifications from SimpliSafe's cloud, meaning they will no
+        longer visible in the SimpliSafe mobile and web apps.
+        """
+        if self._notifications:
+            await self._async_clear_notifications()
+            self._notifications = []
 
     def generate_device_objects(self) -> None:
         """Generate device objects for this system."""

@@ -44,10 +44,10 @@ async def test_alarm_state(aresponses, v3_server):
 
 @pytest.mark.asyncio
 async def test_clear_notifications(aresponses, v3_server, v3_settings_response):
-    """Test getting the latest event."""
+    """Test clearing all active notifications."""
     v3_server.add(
         "api.simplisafe.com",
-        f"/v1/subscriptions/{TEST_SUBSCRIPTION_ID}/messages",
+        f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/messages",
         "delete",
         response=aiohttp.web_response.json_response(v3_settings_response, status=200),
     )

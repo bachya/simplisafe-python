@@ -40,6 +40,12 @@ def create_pin_payload(pins: dict) -> dict[str, dict[str, dict[str, str]]]:
 class SystemV2(System):
     """Define a V2 (original) system."""
 
+    async def _async_clear_notifications(self) -> None:
+        """Clear active notifications."""
+        await self._api.async_request(
+            "delete", f"subscriptions/{self.system_id}/messages"
+        )
+
     async def _async_set_state(self, value: SystemStates) -> None:
         """Set the state of the system."""
         await self._api.async_request(

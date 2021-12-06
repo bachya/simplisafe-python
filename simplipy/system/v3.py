@@ -351,19 +351,11 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         """
         return cast(int, self.settings_data["basestationStatus"]["wifiRssi"])
 
-    def _generate_camera_data(self) -> dict[str, dict]:
-        """Generate usable, hashable camera data from subscription data.
-
-        This method exists because the SimpliSafe API includes camera data with the
-        subscription (and not with other devices); by splitting this out, we can
-        separate this action from updating the subscription data itself.
-        """
-        return {
-            camera["uuid"]: camera
-            for camera in self._api.subscription_data[self._sid]["location"][
-                "system"
-            ].get("cameras", [])
-        }
+    async def _async_clear_notifications(self) -> None:
+        """Clear active notifications."""
+        await self._api.async_request(
+            "delete", f"ss3/subscriptions/{self.system_id}/messages"
+        )
 
     async def _async_set_state(self, value: SystemStates) -> None:
         """Set the state of the system."""
@@ -408,6 +400,20 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         """Update subscription data."""
         await super()._async_update_subscription_data()
         self.camera_data = self._generate_camera_data()
+
+    def _generate_camera_data(self) -> dict[str, dict]:
+        """Generate usable, hashable camera data from subscription data.
+
+        This method exists because the SimpliSafe API includes camera data with the
+        subscription (and not with other devices); by splitting this out, we can
+        separate this action from updating the subscription data itself.
+        """
+        return {
+            camera["uuid"]: camera
+            for camera in self._api.subscription_data[self._sid]["location"][
+                "system"
+            ].get("cameras", [])
+        }
 
     def generate_device_objects(self) -> None:
         """Generate device objects for this system."""

@@ -228,7 +228,7 @@ class WebsocketClient:
     def _add_callback(
         callback_list: list, callback: Callable[..., Any]
     ) -> Callable[..., None]:
-        """Add a callback callback to a particular list."""
+        """Add a callback to a particular list."""
         callback_list.append(callback)
 
         def remove() -> None:
@@ -284,7 +284,7 @@ class WebsocketClient:
                 schedule_callback(callback, event)
 
     def add_connect_callback(self, callback: Callable[..., Any]) -> Callable[..., None]:
-        """Add a callback callback to be called after connecting.
+        """Add a callback to be called after connecting.
 
         :param callback: The method to call after connecting
         :type callback: ``Callable[..., None]``
@@ -294,7 +294,7 @@ class WebsocketClient:
     def add_disconnect_callback(
         self, callback: Callable[..., Any]
     ) -> Callable[..., None]:
-        """Add a callback callback to be called after disconnecting.
+        """Add a callback to be called after disconnecting.
 
         :param callback: The method to call after disconnecting
         :type callback: ``Callable[..., None]``
@@ -302,7 +302,7 @@ class WebsocketClient:
         return self._add_callback(self._disconnect_callbacks, callback)
 
     def add_event_callback(self, callback: Callable[..., Any]) -> Callable[..., None]:
-        """Add a callback callback to be called upon receiving an event.
+        """Add a callback to be called upon receiving an event.
 
         Note that callbacks should expect to receive a WebsocketEvent object as a
         parameter.

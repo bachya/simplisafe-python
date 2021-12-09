@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime
 from json.decoder import JSONDecodeError
 import sys
 from typing import TYPE_CHECKING, Any, Callable, cast
@@ -31,20 +31,9 @@ from simplipy.websocket import WebsocketClient
 API_URL_HOSTNAME = "api.simplisafe.com"
 API_URL_BASE = f"https://{API_URL_HOSTNAME}/v1"
 
-DEFAULT_EXPIRATION_PADDING = 300
 DEFAULT_REQUEST_RETRIES = 4
 DEFAULT_TIMEOUT = 10
-
-
-def get_expiration_datetime(expires_in_seconds: int) -> datetime:
-    """Get a token expiration datetime as an offset of UTC now + a number of seconds.
-
-    Note that we add some padding to the datetime. This ensures that multiple tasks
-    attempting to refresh within microseconds of one another are turned away.
-    """
-    return datetime.utcnow() + (
-        timedelta(seconds=expires_in_seconds + DEFAULT_EXPIRATION_PADDING)
-    )
+DEFAULT_TOKEN_EXPIRATION_WINDOW = 5
 
 
 class API:  # pylint: disable=too-many-instance-attributes
@@ -72,8 +61,8 @@ class API:  # pylint: disable=too-many-instance-attributes
         self.session: ClientSession = session
 
         # These will get filled in after initial authentication:
-        self._access_token_expire_dt: datetime | None = None
         self._backoff_refresh_lock = asyncio.Lock()
+        self._token_last_refreshed: datetime | None = None
         self.access_token: str | None = None
         self.refresh_token: str | None = None
         self.subscription_data: dict[int, Any] = {}
@@ -124,7 +113,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 raise InvalidCredentialsError("Invalid credentials") from err
             raise RequestError(err) from err
 
-        api._access_token_expire_dt = get_expiration_datetime(token_resp["expires_in"])
+        api._token_last_refreshed = datetime.utcnow()
         api.access_token = token_resp["access_token"]
         api.refresh_token = token_resp["refresh_token"]
         await api._async_post_init()
@@ -161,14 +150,17 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         if err.status in (401, 403):
             if TYPE_CHECKING:
-                assert self._access_token_expire_dt
+                assert self._token_last_refreshed
+
+            # Calculate the window between now and the last time the token was
+            window = (self._token_last_refreshed - datetime.utcnow()).total_seconds()
 
             # Since we might have multiple requests (each running their own retry
             # sequence) land here, we only refresh the access token if it hasn't
-            # been refreshed within the expiration window (and we lock the attempt so
-            # other requests can't try it at the same time):
+            # been refreshed within the window (and we lock the attempt so other
+            # requests can't try it at the same time):
             async with self._backoff_refresh_lock:
-                if datetime.utcnow() <= self._access_token_expire_dt:
+                if window < DEFAULT_TOKEN_EXPIRATION_WINDOW:
                     return
 
                 LOGGER.info("401 detected; attempting refresh token")
@@ -199,7 +191,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 raise InvalidCredentialsError("Invalid refresh token") from err
             raise RequestError(err) from err
 
-        self._access_token_expire_dt = get_expiration_datetime(token_resp["expires_in"])
+        self._token_last_refreshed = datetime.utcnow()
         self.access_token = token_resp["access_token"]
         self.refresh_token = token_resp["refresh_token"]
 

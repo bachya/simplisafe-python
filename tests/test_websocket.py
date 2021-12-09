@@ -215,7 +215,7 @@ async def test_reconnect(mock_api):
 
 @pytest.mark.asyncio
 async def test_remove_callback_callback(mock_api):
-    """Test that a removed callback callback doesn't get executed."""
+    """Test that a removed callback doesn't get executed."""
     mock_callback = Mock()
     client = WebsocketClient(mock_api)
     remove = client.add_connect_callback(mock_callback)

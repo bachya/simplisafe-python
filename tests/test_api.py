@@ -69,7 +69,7 @@ async def test_401_refresh_token_failure(
         )
 
         # Manually set the expiration datetime to force a refresh token flow:
-        simplisafe._token_last_refreshed = datetime.utcnow() + timedelta(seconds=30)
+        simplisafe._token_last_refreshed = datetime.utcnow() - timedelta(seconds=30)
 
         with pytest.raises(InvalidCredentialsError):
             await simplisafe.async_get_systems()
@@ -123,7 +123,7 @@ async def test_401_refresh_token_success(
         )
 
         # Manually set the expiration datetime to force a refresh token flow:
-        simplisafe._token_last_refreshed = datetime.utcnow() + timedelta(seconds=30)
+        simplisafe._token_last_refreshed = datetime.utcnow() - timedelta(seconds=30)
 
         # If this succeeds without throwing an exception, the retry is successful:
         await simplisafe.async_get_systems()
@@ -263,7 +263,7 @@ async def test_refresh_token_callback(
         )
 
         # Manually set the expiration datetime to force a refresh token flow:
-        simplisafe._token_last_refreshed = datetime.utcnow() + timedelta(seconds=30)
+        simplisafe._token_last_refreshed = datetime.utcnow() - timedelta(seconds=30)
 
         # We'll hang onto one callback:
         simplisafe.add_refresh_token_callback(mock_callback_1)

@@ -109,7 +109,7 @@ async def test_no_state_change_on_failure(
         )
 
         # Manually set the expiration datetime to force a refresh token flow:
-        simplisafe._token_last_refreshed = datetime.utcnow() + timedelta(seconds=30)
+        simplisafe._token_last_refreshed = datetime.utcnow() - timedelta(seconds=30)
 
         systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]

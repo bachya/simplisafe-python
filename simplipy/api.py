@@ -148,12 +148,14 @@ class API:  # pylint: disable=too-many-instance-attributes
         err_info = sys.exc_info()
         err: ClientResponseError = err_info[1].with_traceback(err_info[2])  # type: ignore
 
+        LOGGER.debug("Error during request attempt: %s", err)
+
         if err.status in (401, 403):
             if TYPE_CHECKING:
                 assert self._token_last_refreshed
 
             # Calculate the window between now and the last time the token was
-            window = (self._token_last_refreshed - datetime.utcnow()).total_seconds()
+            window = (datetime.utcnow() - self._token_last_refreshed).total_seconds()
 
             # Since we might have multiple requests (each running their own retry
             # sequence) land here, we only refresh the access token if it hasn't
@@ -161,6 +163,7 @@ class API:  # pylint: disable=too-many-instance-attributes
             # requests can't try it at the same time):
             async with self._backoff_refresh_lock:
                 if window < DEFAULT_TOKEN_EXPIRATION_WINDOW:
+                    LOGGER.debug("Skipping refresh attempt since window hasn't busted")
                     return
 
                 LOGGER.info("401 detected; attempting refresh token")

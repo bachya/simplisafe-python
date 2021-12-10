@@ -69,7 +69,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         self.user_id: int | None = None
         self.websocket: WebsocketClient | None = None
 
-        self.async_request = self._wrap_request_method(self._request_retries)
+        self.enable_request_retries()
 
     @classmethod
     async def async_from_auth(

@@ -64,6 +64,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         self._backoff_refresh_lock = asyncio.Lock()
         self._token_last_refreshed: datetime | None = None
         self.access_token: str | None = None
+        self.async_request: Callable | None = None
         self.refresh_token: str | None = None
         self.subscription_data: dict[int, Any] = {}
         self.user_id: int | None = None
@@ -331,6 +332,9 @@ class API:  # pylint: disable=too-many-instance-attributes
 
     async def async_update_subscription_data(self) -> None:
         """Get the latest subscription data."""
+        if TYPE_CHECKING:
+            assert self.async_request
+
         subscription_resp = await self.async_request(
             "get", f"users/{self.user_id}/subscriptions", params={"activeOnly": "true"}
         )

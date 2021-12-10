@@ -155,6 +155,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 assert self._token_last_refreshed
 
             # Calculate the window between now and the last time the token was
+            # refreshed:
             window = (datetime.utcnow() - self._token_last_refreshed).total_seconds()
 
             # Since we might have multiple requests (each running their own retry

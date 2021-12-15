@@ -21,7 +21,7 @@ Python Versions
 SimpliSafe™ Plans
 -----------------
 
-SimpliSafe™ several `monitoring plans <https://support.simplisafe.com/hc/en-us/articles/360023809972-What-are-the-service-plan-options->`_. Only the **Standard** and **Interactive** plans work with this library.
+SimpliSafe™ offers several `monitoring plans <https://support.simplisafe.com/hc/en-us/articles/360023809972-What-are-the-service-plan-options->`_. Only the **Standard** and **Interactive** plans work with this library.
 
 
 Please note that only Interactive plans can access sensor values and set the

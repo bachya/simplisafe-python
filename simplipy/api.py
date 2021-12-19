@@ -276,7 +276,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         self.async_request = self._wrap_request_method(self._request_retries)
 
     def add_refresh_token_callback(
-        self, callback: Callable[..., None]
+        self, callback: Callable[..., Any]
     ) -> Callable[..., None]:
         """Add a callback that should be triggered when tokens are refreshed.
 

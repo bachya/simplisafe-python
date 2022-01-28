@@ -1,7 +1,7 @@
 """Define V2 and V3 SimpliSafe systems."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+import dataclasses
 from datetime import datetime
 from enum import Enum
 from functools import wraps
@@ -27,7 +27,7 @@ MAX_PIN_LENGTH = 4
 RESERVED_PIN_LABELS = {CONF_DURESS_PIN, CONF_MASTER_PIN}
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class SystemNotification:
     """Define a representation of a system notification."""
 
@@ -93,7 +93,7 @@ def guard_from_missing_data(default_value: Any = None) -> Callable:
     return decorator
 
 
-class System:
+class System:  # pylint: disable=too-many-public-methods
     """Define a system.
 
     Note that this class shouldn't be instantiated directly; it will be instantiated as
@@ -233,6 +233,23 @@ class System:
     async def _async_update_subscription_data(self) -> None:
         """Update subscription data."""
         await self._api.async_update_subscription_data()
+
+    def as_dict(self) -> dict[str, Any]:
+        """Return dictionary version of this device."""
+        return {
+            "address": self.address,
+            "alarm_going_off": self.alarm_going_off,
+            "connection_type": self.connection_type,
+            "notifications": [
+                dataclasses.asdict(notification) for notification in self.notifications
+            ],
+            "serial": self.serial,
+            "state": self.state.value,
+            "system_id": self.system_id,
+            "temperature": self.temperature,
+            "version": self.version,
+            "sensors": [sensor.as_dict() for sensor in self.sensors.values()],
+        }
 
     async def async_clear_notifications(self) -> None:
         """Clear all active notifications.

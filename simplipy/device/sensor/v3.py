@@ -1,5 +1,7 @@
 """Define a v3 (new) SimpliSafe sensor."""
-from typing import cast
+from __future__ import annotations
+
+from typing import Any, cast
 
 from simplipy.device import DeviceTypes, DeviceV3
 
@@ -62,3 +64,16 @@ class SensorV3(DeviceV3):
         return cast(
             int, self._system.sensor_data[self._serial]["status"]["temperature"]
         )
+
+    def as_dict(self) -> dict[str, Any]:
+        """Return dictionary version of this device."""
+        data: dict[str, Any] = {
+            **super().as_dict(),
+            "trigger_instantly": self.trigger_instantly,
+            "triggered": self.triggered,
+        }
+
+        if self.type == DeviceTypes.TEMPERATURE:
+            data["temperature"] = self.temperature
+
+        return data

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import TYPE_CHECKING, Final, cast
+from typing import TYPE_CHECKING, Any, Final, cast
 
 import voluptuous as vol
 
@@ -413,6 +413,31 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
             for camera in self._api.subscription_data[self._sid]["location"][
                 "system"
             ].get("cameras", [])
+        }
+
+    def as_dict(self) -> dict[str, Any]:
+        """Return dictionary version of this device."""
+        return {
+            **super().as_dict(),
+            "alarm_duration": self.alarm_duration,
+            "alarm_volume": self.alarm_volume.value,
+            "battery_backup_power_level": self.battery_backup_power_level,
+            "cameras": [camera.as_dict() for camera in self.cameras.values()],
+            "chime_volume": self.chime_volume.value,
+            "entry_delay_away": self.entry_delay_away,
+            "entry_delay_home": self.entry_delay_home,
+            "exit_delay_away": self.exit_delay_away,
+            "exit_delay_home": self.exit_delay_home,
+            "gsm_strength": self.gsm_strength,
+            "light": self.light,
+            "locks": [lock.as_dict() for lock in self.locks.values()],
+            "offline": self.offline,
+            "power_outage": self.power_outage,
+            "rf_jamming": self.rf_jamming,
+            "voice_prompt_volume": self.voice_prompt_volume.value,
+            "wall_power_level": self.wall_power_level,
+            "wifi_ssid": self.wifi_ssid,
+            "wifi_strength": self.wifi_strength,
         }
 
     def generate_device_objects(self) -> None:

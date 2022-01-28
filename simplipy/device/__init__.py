@@ -75,6 +75,14 @@ class Device:
         """
         return self._device_type
 
+    def as_dict(self) -> dict[str, Any]:
+        """Return dictionary version of this device."""
+        return {
+            "name": self.name,
+            "serial": self.serial,
+            "type": self.type.value,
+        }
+
     async def async_update(self, cached: bool = True) -> None:
         """Retrieve the latest state/properties for the device.
 
@@ -132,3 +140,13 @@ class DeviceV3(Device):
         :rtype: ``dict``
         """
         return cast(Dict[str, Any], self._system.sensor_data[self._serial]["setting"])
+
+    def as_dict(self) -> dict[str, Any]:
+        """Return dictionary version of this device."""
+        return {
+            **super().as_dict(),
+            "error": self.error,
+            "low_battery": self.low_battery,
+            "offline": self.offline,
+            "settings": self.settings,
+        }

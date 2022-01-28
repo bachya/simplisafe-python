@@ -1,6 +1,8 @@
 """Define a SimpliSafe lock."""
+from __future__ import annotations
+
 from enum import Enum
-from typing import TYPE_CHECKING, Awaitable, Callable, cast
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, cast
 
 from simplipy.const import LOGGER
 from simplipy.device import DeviceTypes, DeviceV3
@@ -112,6 +114,17 @@ class Lock(DeviceV3):
         if internal_state == self._InternalStates.LOCKED:
             return LockStates.LOCKED
         return LockStates.UNLOCKED
+
+    def as_dict(self) -> dict[str, Any]:
+        """Return dictionary version of this device."""
+        return {
+            **super().as_dict(),
+            "disabled": self.disabled,
+            "lock_low_battery": self.lock_low_battery,
+            "pin_pad_low_battery": self.pin_pad_low_battery,
+            "pin_pad_offline": self.pin_pad_offline,
+            "state": self.state.value,
+        }
 
     async def async_lock(self) -> None:
         """Lock the lock."""

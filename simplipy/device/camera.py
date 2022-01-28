@@ -126,6 +126,20 @@ class Camera(DeviceV3):
             bool, self._system.camera_data[self._serial]["subscription"]["enabled"]
         )
 
+    def as_dict(self) -> dict[str, Any]:
+        """Return dictionary version of this device."""
+        return {
+            "camera_settings": self.camera_settings,
+            "camera_type": self.camera_type.value,
+            "name": self.name,
+            "serial": self.serial,
+            "shutter_open_when_away": self.shutter_open_when_away,
+            "shutter_open_when_home": self.shutter_open_when_home,
+            "shutter_open_when_off": self.shutter_open_when_off,
+            "status": self.status,
+            "subscription_enabled": self.subscription_enabled,
+        }
+
     def video_url(
         self,
         width: int = DEFAULT_VIDEO_WIDTH,

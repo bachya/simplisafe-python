@@ -22,7 +22,7 @@ from tests.common import (
 @pytest.mark.asyncio
 async def test_deactivated_system(aresponses, server, subscriptions_response):
     """Test that API.async_get_systems doesn't return deactivated systems."""
-    subscriptions_response["subscriptions"][0]["activated"] = 0
+    subscriptions_response["subscriptions"][0]["status"]["isActive"] = False
 
     server.add(
         "api.simplisafe.com",

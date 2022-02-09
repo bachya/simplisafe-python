@@ -2,13 +2,13 @@
 # pylint: disable=protected-access,too-many-arguments
 import asyncio
 from datetime import datetime, timedelta
-from unittest.mock import Mock
+from unittest.mock import AsyncMock, Mock, patch
 
 import aiohttp
 import pytest
 
 from simplipy import API
-from simplipy.errors import InvalidCredentialsError, RequestError
+from simplipy.errors import InvalidCredentialsError, RequestError, SimplipyError
 
 from .common import (
     TEST_ACCESS_TOKEN,
@@ -42,12 +42,9 @@ async def test_401_bad_credentials(aresponses, invalid_authorization_code_respon
 
 @pytest.mark.asyncio
 async def test_401_refresh_token_failure(
-    aresponses, caplog, invalid_refresh_token_response, server
+    aresponses, invalid_refresh_token_response, server
 ):
     """Test that an error is raised when refresh token and reauth both fail."""
-    import logging
-
-    caplog.set_level(logging.DEBUG)
     server.add(
         "api.simplisafe.com",
         f"/v1/users/{TEST_SUBSCRIPTION_ID}/subscriptions",
@@ -181,6 +178,17 @@ async def test_client_async_from_authorization_code(
 
 
 @pytest.mark.asyncio
+async def test_client_async_from_authorization_code_unknown_error():
+    """Test an unknown error while creating a client from an authorization code."""
+    with patch("simplipy.API._async_request", AsyncMock(side_effect=Exception)):
+        async with aiohttp.ClientSession() as session:
+            with pytest.raises(SimplipyError):
+                await API.async_from_auth(
+                    TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
+                )
+
+
+@pytest.mark.asyncio
 async def test_client_async_from_refresh_token(
     api_token_response, aresponses, auth_check_response
 ):
@@ -206,6 +214,15 @@ async def test_client_async_from_refresh_token(
         assert simplisafe.refresh_token == TEST_REFRESH_TOKEN
 
     aresponses.assert_plan_strictly_followed()
+
+
+@pytest.mark.asyncio
+async def test_client_async_from_refresh_token_unknown_error():
+    """Test an unknown error while creating a client from a refresh token."""
+    with patch("simplipy.API._async_request", AsyncMock(side_effect=Exception)):
+        async with aiohttp.ClientSession() as session:
+            with pytest.raises(SimplipyError):
+                await API.async_from_refresh_token(TEST_REFRESH_TOKEN, session=session)
 
 
 @pytest.mark.asyncio

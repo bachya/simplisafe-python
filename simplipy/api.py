@@ -16,6 +16,7 @@ from simplipy.errors import (
     EndpointUnavailableError,
     InvalidCredentialsError,
     RequestError,
+    SimplipyError,
 )
 from simplipy.system.v2 import SystemV2
 from simplipy.system.v3 import SystemV3
@@ -112,6 +113,8 @@ class API:  # pylint: disable=too-many-instance-attributes
             if err.status in (401, 403):
                 raise InvalidCredentialsError("Invalid credentials") from err
             raise RequestError(err) from err
+        except Exception as err:  # pylint: disable=broad-except
+            raise SimplipyError(err) from err
 
         api._token_last_refreshed = datetime.utcnow()
         api.access_token = token_resp["access_token"]
@@ -123,8 +126,8 @@ class API:  # pylint: disable=too-many-instance-attributes
     async def async_from_refresh_token(
         cls,
         refresh_token: str,
-        session: ClientSession,
         *,
+        session: ClientSession,
         request_retries: int = DEFAULT_REQUEST_RETRIES,
     ) -> API:
         """Get an authenticated API object from a refresh token.
@@ -194,6 +197,8 @@ class API:  # pylint: disable=too-many-instance-attributes
             if err.status in (401, 403):
                 raise InvalidCredentialsError("Invalid refresh token") from err
             raise RequestError(err) from err
+        except Exception as err:  # pylint: disable=broad-except
+            raise SimplipyError(err) from err
 
         self._token_last_refreshed = datetime.utcnow()
         self.access_token = token_resp["access_token"]

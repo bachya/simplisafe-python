@@ -5,7 +5,7 @@ import asyncio
 from datetime import datetime
 from json.decoder import JSONDecodeError
 import sys
-from typing import TYPE_CHECKING, Any, Callable, cast
+from typing import Any, Callable, cast
 
 from aiohttp import ClientSession
 from aiohttp.client_exceptions import ClientResponseError
@@ -154,8 +154,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         LOGGER.debug("Error during request attempt: %s", err)
 
         if err.status in (401, 403):
-            if TYPE_CHECKING:
-                assert self._token_last_refreshed
+            assert self._token_last_refreshed
 
             # Calculate the window between now and the last time the token was
             # refreshed:

@@ -185,6 +185,11 @@ database, etc.), retrieve it later when needed, and pass it to
 :meth:`async_from_refresh_token <simplipy.api.API.async_from_refresh_token>`. Be aware
 that refresh tokens can only be used once!
 
+After a new :meth:`API <simplipy.api.API>` object is created via 
+:meth:`async_from_refresh_token <simplipy.api.API.async_from_refresh_token>`, it comes
+with its own, new refresh token; this can be used to follow the same re-authentication
+process into perpetuity.
+
 Note that you do not need to worry about refreshing the access token within an
 :meth:`API <simplipy.api.API>` object's normal operations (if, for instance, you have an
 application that runs for longer than an access token's lifespan); that is handled for

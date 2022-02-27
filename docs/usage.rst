@@ -166,8 +166,9 @@ access token:
                 session=session,
             )
 
-            # Sometime later:
-            new_simplisafe = await simplipy.API.async_from_refresh_token(
+            # ...
+
+            simplisafe = await simplipy.API.async_from_refresh_token(
                 simplisafe.refresh_token,
                 session=session,
             )
@@ -176,6 +177,12 @@ access token:
 
 
     asyncio.run(main())
+
+This is effectively replacing the existing ``simplisafe`` object with a new one that has
+been authenticated with the previous one's refresh token. In case where ``simplipy`` is
+called ad hoc (say, via a script that runs on a schedule), the common practice is to
+store ``simplisafe.refresh_token`` somewhere (a filesystem, a database, etc.) and
+retrieve it later when needed. Be aware that refresh tokens can only be used once!
 
 Note that you do not need to worry about refreshing the access token within an
 :meth:`API <simplipy.api.API>` object's normal operations; that is handled for you. The

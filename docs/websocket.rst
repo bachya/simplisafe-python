@@ -7,7 +7,7 @@ events from a user's SimpliSafe™ system. This websocket can be accessed via th
 
 .. code:: python
 
-    simplisafe.websocket
+    api.websocket
     # >>> <simplipy.websocket.Websocket object>
 
 Connecting
@@ -15,20 +15,20 @@ Connecting
 
 .. code:: python
 
-    await simplisafe.websocket.async_connect()
+    await api.websocket.async_connect()
 
 Then, once you are connected to the websocket, you can start listening for events:
 
 .. code:: python
 
-    await simplisafe.websocket.async_listen()
+    await api.websocket.async_listen()
 
 Disconnecting
 -------------
 
 .. code:: python
 
-    await simplisafe.websocket.async_disconnect()
+    await api.websocket.async_disconnect()
 
 Responding to Events
 --------------------
@@ -54,8 +54,8 @@ Note that you can register as many callbacks as you'd like.
     def connect_handler():
         print("I connected to the websocket")
 
-    remove_1 = simplisafe.websocket.add_connect_callback(async_connect_handler)
-    remove_2 = simplisafe.websocket.add_connect_callback(connect_handler)
+    remove_1 = api.websocket.add_connect_callback(async_connect_handler)
+    remove_2 = api.websocket.add_connect_callback(connect_handler)
 
     # remove_1 and remove_2 are functions that, when called, remove the callback.
 
@@ -71,8 +71,8 @@ Note that you can register as many callbacks as you'd like.
     def connect_handler():
         print("I disconnected from the websocket")
 
-    remove_1 = simplisafe.websocket.add_disconnect_callback(async_connect_handler)
-    remove_2 = simplisafe.websocket.add_disconnect_callback(connect_handler)
+    remove_1 = api.websocket.add_disconnect_callback(async_connect_handler)
+    remove_2 = api.websocket.add_disconnect_callback(connect_handler)
 
     # remove_1 and remove_2 are functions that, when called, remove the callback.
 
@@ -88,8 +88,8 @@ Note that you can register as many callbacks as you'd like.
     def connect_handler():
         print(f"I received a SimpliSafe™ event: {event}")
 
-    remove_1 = simplisafe.websocket.add_event_callback(async_connect_handler)
-    remove_2 = simplisafe.websocket.add_event_callback(connect_handler)
+    remove_1 = api.websocket.add_event_callback(async_connect_handler)
+    remove_2 = api.websocket.add_event_callback(connect_handler)
 
     # remove_1 and remove_2 are functions that, when called, remove the callback.
 

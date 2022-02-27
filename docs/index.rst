@@ -28,7 +28,6 @@ and more.
    lock
    camera
    websocket
-   advanced
    api
 
 * :ref:`genindex`

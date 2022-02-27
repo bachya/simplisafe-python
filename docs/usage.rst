@@ -142,6 +142,23 @@ this:
 
 **REMINDER:** this Authorization Code and Code Verifier can only be used once. 
 
+The :meth:`API <simplipy.api.API>` object contains several sensitive properties to be
+aware of:
+
+.. code:: python
+
+    # Return the current access token:
+    api.access_token
+    # >>> 7s9yasdh9aeu21211add
+
+    # Return the current refresh token:
+    api.refresh_token
+    # >>> 896sad86gudas87d6asd
+
+    # Return the SimpliSafe™ user ID associated with this account:
+    api.user_id
+    # >>> 1234567
+
 Refreshing the Access Token
 ***************************
 
@@ -170,16 +187,6 @@ access token:
 
     asyncio.run(main())
 
-Where does the refresh token come from? When the :meth:`API <simplipy.api.API>` is first
-created by :meth:`async_from_auth <simplipy.api.API.async_from_auth>`, it comes with a
-``refresh_token`` property:
-
-.. code:: python
-
-    # Return the street address of the system:
-    api.refresh_token
-    # >>> abcde1234
-
 The common practice is to store ``api.refresh_token`` somewhere (a filesystem, a
 database, etc.), retrieve it later when needed, and pass it to
 :meth:`async_from_refresh_token <simplipy.api.API.async_from_refresh_token>`. Be aware
@@ -194,3 +201,8 @@ Note that you do not need to worry about refreshing the access token within an
 :meth:`API <simplipy.api.API>` object's normal operations (if, for instance, you have an
 application that runs for longer than an access token's lifespan); that is handled for
 you transparently.
+
+**VERY IMPORTANT NOTE: It is vitally important that you do not let these tokens leave
+your control.** If exposed, savvy attackers could use them to view and alter your
+system's state. **You have been warned; proper usage of these properties is solely your
+responsibility.**

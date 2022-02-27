@@ -129,7 +129,7 @@ this:
     async def main() -> None:
         """Create the aiohttp session and run."""
         async with ClientSession() as session:
-            simplisafe = await simplipy.API.async_from_auth(
+            api = await simplipy.API.async_from_auth(
                 "<AUTHORIZATION_CODE>",
                 "<CODE_VERIFIER>",
                 session=session,
@@ -160,15 +160,8 @@ access token:
     async def main() -> None:
         """Create the aiohttp session and run."""
         async with ClientSession() as session:
-            simplisafe = await simplipy.API.async_from_auth(
-                "<AUTHORIZATION_CODE>",
-                "<CODE_VERIFIER>",
-                session=session,
-            )
-
-            # Sometime later:
-            new_simplisafe = await simplipy.API.async_from_refresh_token(
-                simplisafe.refresh_token,
+            api = await simplipy.API.async_from_refresh_token(
+                "<REFRESH_TOKEN>"
                 session=session,
             )
 
@@ -177,7 +170,22 @@ access token:
 
     asyncio.run(main())
 
+Where does the refresh token come from? When the :meth:`API <simplipy.api.API>` is first
+created by :meth:`async_from_auth <simplipy.api.API.async_from_auth>`, it comes with a
+``refresh_token`` property:
+
+.. code:: python
+
+    # Return the street address of the system:
+    api.refresh_token
+    # >>> abcde1234
+
+The common practice is to store ``api.refresh_token`` somewhere (a filesystem, a
+database, etc.), retrieve it later when needed, and pass it to
+:meth:`async_from_refresh_token <simplipy.api.API.async_from_refresh_token>`. Be aware
+that refresh tokens can only be used once!
+
 Note that you do not need to worry about refreshing the access token within an
-:meth:`API <simplipy.api.API>` object's normal operations; that is handled for you. The
-primary reason you would interface with the refresh token yourself is when you need to
-create a new object (as above).
+:meth:`API <simplipy.api.API>` object's normal operations (if, for instance, you have an
+application that runs for longer than an access token's lifespan); that is handled for
+you transparently.

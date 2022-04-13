@@ -3,13 +3,15 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime
+from enum import Enum
 from json.decoder import JSONDecodeError
 import sys
 from typing import Any, Callable, cast
 
-from aiohttp import ClientSession
+from aiohttp import ClientResponse, ClientSession
 from aiohttp.client_exceptions import ClientResponseError
 import backoff
+from yarl import URL
 
 from simplipy.const import DEFAULT_USER_AGENT, LOGGER
 from simplipy.errors import (
@@ -17,32 +19,52 @@ from simplipy.errors import (
     InvalidCredentialsError,
     RequestError,
     SimplipyError,
+    Verify2FAError,
+    Verify2FAPending,
 )
 from simplipy.system.v2 import SystemV2
 from simplipy.system.v3 import SystemV3
 from simplipy.util import schedule_callback
-from simplipy.util.auth import (
-    AUTH_URL_BASE,
-    AUTH_URL_HOSTNAME,
-    DEFAULT_CLIENT_ID,
-    DEFAULT_REDIRECT_URI,
-)
+from simplipy.util.auth import get_auth0_code_challenge, get_auth0_code_verifier
 from simplipy.websocket import WebsocketClient
 
 API_URL_HOSTNAME = "api.simplisafe.com"
 API_URL_BASE = f"https://{API_URL_HOSTNAME}/v1"
 
+AUTH_URL_HOSTNAME = "auth.simplisafe.com"
+AUTH_URL_BASE = f"https://{AUTH_URL_HOSTNAME}"
+
+DEFAULT_AUTH0_CLIENT = (
+    "eyJuYW1lIjoiQXV0aDAuc3dpZnQiLCJlbnYiOnsiaU"
+    "9TIjoiMTUuMCIsInN3aWZ0IjoiNS54In0sInZlcnNpb24iOiIxLjMzLjAifQ"
+)
+DEFAULT_CLIENT_ID = "42aBZ5lYrVW12jfOuu3CQROitwxg9sN5"
+DEFAULT_REDIRECT_URI = (
+    "com.simplisafe.mobile://auth.simplisafe.com/ios/com.simplisafe.mobile/callback"
+)
 DEFAULT_REQUEST_RETRIES = 4
+DEFAULT_SCOPE = (
+    "offline_access email openid https://api.simplisafe.com/scopes/user:platform"
+)
 DEFAULT_TIMEOUT = 10
 DEFAULT_TOKEN_EXPIRATION_WINDOW = 5
 
 
+class AuthStates(Enum):
+    """Define an API object authenticate state."""
+
+    UNAUTHENTICATED = 0
+    PENDING_2FA_EMAIL = 1
+    PENDING_2FA_SMS = 2
+    AUTHENTICATED = 3
+
+
 class API:  # pylint: disable=too-many-instance-attributes
-    """An API object to interact with the SimpliSafe cloud.
+    """Define an API object to interact with the SimpliSafe cloud.
 
     Note that this class shouldn't be instantiated directly; instead, the
-    :meth:`simplipy.api.API.async_from_auth` and :meth:`simplipy.api.API.async_from_refresh_token`
-    methods should be used.
+    :meth:`simplipy.api.API.async_from_credentials` and
+    :meth:`simplipy.api.API.async_from_refresh_token` methods should be used.
 
     :param session: The ``aiohttp`` ``ClientSession`` session used for all HTTP requests
     :type session: ``aiohttp.client.ClientSession``
@@ -63,8 +85,11 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         # These will get filled in after initial authentication:
         self._backoff_refresh_lock = asyncio.Lock()
+        self._code_verifier: str = get_auth0_code_verifier()
+        self._login_verification_url: str | None = None
         self._token_last_refreshed: datetime | None = None
         self.access_token: str | None = None
+        self.auth_state: AuthStates = AuthStates.UNAUTHENTICATED
         self.refresh_token: str | None = None
         self.subscription_data: dict[int, Any] = {}
         self.user_id: int | None = None
@@ -73,20 +98,20 @@ class API:  # pylint: disable=too-many-instance-attributes
         self.async_request = self._wrap_request_method(self._request_retries)
 
     @classmethod
-    async def async_from_auth(
+    async def async_from_credentials(
         cls,
-        authorization_code: str,
-        code_verifier: str,
+        username: str,
+        password: str,
         *,
         session: ClientSession,
         request_retries: int = DEFAULT_REQUEST_RETRIES,
     ) -> API:
-        """Get an authenticated API object from an Authorization Code and Code Verifier.
+        """Get an authenticated API object from a username and password.
 
-        :param authorization_code: The Authorization Code
-        :type authorization_code: ``str``
-        :param code_verifier: The Code Verifier
-        :type code_verifier: ``str``
+        :param username: A SimpliSafe account username/email address
+        :type username: ``str``
+        :param password: A SimpliSafe account password
+        :type password: ``str``
         :param session: The ``aiohttp`` ``ClientSession`` session used for all HTTP requests
         :type session: ``aiohttp.client.ClientSession``
         :param request_retries: The default number of request retries to use
@@ -95,31 +120,67 @@ class API:  # pylint: disable=too-many-instance-attributes
         """
         api = cls(session=session, request_retries=request_retries)
 
+        # Generate a SimpliSafe Auth0 auth URL:
+        code_challenge = get_auth0_code_challenge(api._code_verifier)
+
+        # Determine the login URL:
         try:
-            token_resp = await api._async_request(
-                "post",
-                "oauth/token",
-                url_base=AUTH_URL_BASE,
-                headers={"Host": AUTH_URL_HOSTNAME},
-                json={
-                    "grant_type": "authorization_code",
+            auth0_resp = await session.request(
+                "get",
+                f"{AUTH_URL_BASE}/authorize",
+                allow_redirects=False,
+                headers={
+                    "Accept": "text/html",
+                    "User-Agent": DEFAULT_USER_AGENT,
+                },
+                params={
+                    "audience": f"https://{API_URL_HOSTNAME}/",
+                    "auth0Client": DEFAULT_AUTH0_CLIENT,
                     "client_id": DEFAULT_CLIENT_ID,
-                    "code_verifier": code_verifier,
-                    "code": authorization_code,
+                    "code_challenge": code_challenge,
+                    "code_challenge_method": "S256",
                     "redirect_uri": DEFAULT_REDIRECT_URI,
+                    "response_mode": "query",
+                    "response_type": "code",
+                    "scope": DEFAULT_SCOPE,
                 },
             )
+            auth0_resp.raise_for_status()
         except ClientResponseError as err:
-            if err.status in (401, 403):
-                raise InvalidCredentialsError("Invalid credentials") from err
-            raise RequestError(err) from err
-        except Exception as err:  # pylint: disable=broad-except
-            raise SimplipyError(err) from err
+            raise SimplipyError(
+                f"Error while determining the Auth0 login URL: {err}"
+            ) from err
 
-        api._token_last_refreshed = datetime.utcnow()
-        api.access_token = token_resp["access_token"]
-        api.refresh_token = token_resp["refresh_token"]
-        await api._async_post_init()
+        # Attempt to login:
+        login_resp = await session.request(
+            "post",
+            f"{AUTH_URL_BASE}{auth0_resp.headers['Location']}",
+            data={
+                "password": password,
+                "username": username,
+            },
+        )
+
+        body = await login_resp.text()
+        LOGGER.debug("Login attempt response body: %s", body)
+
+        if "invalid_user_password" in body:
+            raise InvalidCredentialsError("Invalid username/password")
+        if "too-many-sms" in body:
+            raise Verify2FAError("SMS 2FA limit per hour exceeded; try again later")
+
+        api._login_verification_url = login_resp.url.human_repr()
+        assert api._login_verification_url
+
+        # From what we can tell, SimpliSAfe requires 2FA on all accounts; unless we can
+        # detect a more specific method, assume the user is using email-based 2FA:
+        if "mfa-sms-challenge" in api._login_verification_url:
+            api.auth_state = AuthStates.PENDING_2FA_SMS
+        else:
+            api.auth_state = AuthStates.PENDING_2FA_EMAIL
+
+        # At the stage, the API object is created, but is not ready to be used until
+        # 2FA is resolved:
         return api
 
     @classmethod
@@ -137,7 +198,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         :param session: The ``aiohttp`` ``ClientSession`` session used for all HTTP requests
         :type session: ``aiohttp.client.ClientSession``
         :param request_retries: The default number of request retries to use
-        :type request_retries: ``int``
+        :typ request_retries: ``int``
         :rtype: :meth:`simplipy.api.API`
         """
         api = cls(session=session, request_retries=request_retries)
@@ -145,6 +206,46 @@ class API:  # pylint: disable=too-many-instance-attributes
         await api._async_refresh_access_token()
         await api._async_post_init()
         return api
+
+    async def _async_complete_login(
+        self, login_verification_resp: ClientResponse
+    ) -> None:
+        """Complete the login process after 2FA verification."""
+        try:
+            auth_resume_resp = await self.session.request(
+                "get",
+                f"{AUTH_URL_BASE}{login_verification_resp.headers['Location']}",
+                allow_redirects=False,
+            )
+            auth_resume_resp.raise_for_status()
+        except ClientResponseError as err:
+            raise SimplipyError(
+                f"Error while attempting to get authorization code: {err}"
+            ) from err
+
+        auth_code_url = URL(auth_resume_resp.headers["Location"])
+        auth_code = auth_code_url.query["code"]
+
+        try:
+            token_resp = await self.session.request(
+                "post",
+                f"{AUTH_URL_BASE}/oauth/token",
+                json={
+                    "grant_type": "authorization_code",
+                    "client_id": DEFAULT_CLIENT_ID,
+                    "code_verifier": self._code_verifier,
+                    "code": auth_code,
+                    "redirect_uri": DEFAULT_REDIRECT_URI,
+                },
+            )
+            token_resp.raise_for_status()
+        except ClientResponseError as err:
+            raise SimplipyError(
+                f"Unknown error while attempting getting access token: {err}"
+            ) from err
+
+        await self._async_save_token_data_from_response(token_resp)
+        await self._async_post_init()
 
     async def _async_handle_on_backoff(self, _: dict[str, Any]) -> None:
         """Handle a backoff retry."""
@@ -174,39 +275,37 @@ class API:  # pylint: disable=too-many-instance-attributes
 
     async def _async_post_init(self) -> None:
         """Perform some post-init actions."""
-        auth_check_resp = await self._async_request("get", "api/authCheck")
+        self.auth_state = AuthStates.AUTHENTICATED
+        auth_check_resp = await self._async_api_request("get", "api/authCheck")
         self.user_id = auth_check_resp["userId"]
         self.websocket = WebsocketClient(self)
 
     async def _async_refresh_access_token(self) -> None:
         """Update access/refresh tokens from a refresh token."""
         try:
-            token_resp = await self._async_request(
+            token_resp = await self.session.request(
                 "post",
-                "oauth/token",
-                url_base=AUTH_URL_BASE,
-                headers={"Host": AUTH_URL_HOSTNAME},
+                f"{AUTH_URL_BASE}/oauth/token",
                 json={
                     "grant_type": "refresh_token",
                     "client_id": DEFAULT_CLIENT_ID,
                     "refresh_token": self.refresh_token,
                 },
             )
+            token_resp.raise_for_status()
         except ClientResponseError as err:
             if err.status in (401, 403):
                 raise InvalidCredentialsError("Invalid refresh token") from err
-            raise RequestError(err) from err
-        except Exception as err:  # pylint: disable=broad-except
-            raise SimplipyError(err) from err
+            raise RequestError(
+                f"Request error while attempting to refresh access token: {err}"
+            ) from err
 
-        self._token_last_refreshed = datetime.utcnow()
-        self.access_token = token_resp["access_token"]
-        self.refresh_token = token_resp["refresh_token"]
+        await self._async_save_token_data_from_response(token_resp)
 
         for callback in self._refresh_token_callbacks:
             schedule_callback(callback, self.refresh_token)
 
-    async def _async_request(
+    async def _async_api_request(
         self, method: str, endpoint: str, url_base: str = API_URL_BASE, **kwargs: Any
     ) -> dict[str, Any]:
         """Execute an API request."""
@@ -217,7 +316,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         if self.access_token:
             kwargs["headers"]["Authorization"] = f"Bearer {self.access_token}"
 
-        data: dict[str, Any] | str = {}
+        data: dict[str, Any] = {}
         async with self.session.request(
             method, f"{url_base}/{endpoint}", **kwargs
         ) as resp:
@@ -225,17 +324,6 @@ class API:  # pylint: disable=too-many-instance-attributes
                 data = await resp.json(content_type=None)
             except JSONDecodeError:
                 message = await resp.text()
-                data = {"error": message}
-
-            if isinstance(data, str):
-                # In some cases, the SimpliSafe API will return a quoted string
-                # in its response body (e.g., "\"Unauthorized\""), which is
-                # technically valid JSON. Additionally, SimpliSafe sets that
-                # response's Content-Type header to application/json (#smh).
-                # Together, these factors will allow a non-true-JSON  payload to
-                # escape the try/except above. So, if we get here, we use the
-                # string value (with quotes removed) to raise an error:
-                message = data.replace('"', "")
                 data = {"error": message}
 
             LOGGER.debug("Data received from /%s: %s", endpoint, data)
@@ -248,6 +336,15 @@ class API:  # pylint: disable=too-many-instance-attributes
             resp.raise_for_status()
 
         return data
+
+    async def _async_save_token_data_from_response(
+        self, token_resp: ClientResponse
+    ) -> None:
+        """Save token data from a token response."""
+        token_data = await token_resp.json()
+        self._token_last_refreshed = datetime.utcnow()
+        self.access_token = token_data["access_token"]
+        self.refresh_token = token_data["refresh_token"]
 
     @staticmethod
     def _handle_on_giveup(_: dict[str, Any]) -> None:
@@ -268,7 +365,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 max_tries=request_retries,
                 on_backoff=self._async_handle_on_backoff,
                 on_giveup=self._handle_on_giveup,
-            )(self._async_request),
+            )(self._async_api_request),
         )
 
     def disable_request_retries(self) -> None:
@@ -342,3 +439,46 @@ class API:  # pylint: disable=too-many-instance-attributes
             subscription["sid"]: subscription
             for subscription in subscription_resp["subscriptions"]
         }
+
+    async def async_verify_2fa_email(self) -> None:
+        """Verify that email-based 2FA has succeeded and mark the API as ready."""
+        if self.auth_state != AuthStates.PENDING_2FA_EMAIL:
+            raise ValueError("API object is not awaiting email-based 2FA verification")
+
+        login_verification_resp = await self.session.request(
+            "post", self._login_verification_url
+        )
+
+        body = await login_verification_resp.text()
+        LOGGER.debug("Email-based 2FA attempt response body: %s", body)
+
+        if "Verification Pending" in body:
+            raise Verify2FAPending("Email-based 2FA verification still pending")
+        if "Verification Successful" not in body:
+            raise Verify2FAError("Unknown error during email-based 2FA verification")
+
+        await self._async_complete_login(login_verification_resp)
+
+    async def async_verify_2fa_sms(self, code: str) -> None:
+        """Verify that email-based 2FA has been successful and mark the API as ready.
+
+        :param code: An SMS 2FA code to try
+        :type code: ``str``
+        """
+        if self.auth_state != AuthStates.PENDING_2FA_SMS:
+            raise ValueError("API object is not awaiting SMS-based 2FA verification")
+
+        login_verification_resp = await self.session.request(
+            "post",
+            self._login_verification_url,
+            allow_redirects=False,
+            data={"code": code},
+        )
+
+        body = await login_verification_resp.text()
+        LOGGER.debug("SMS-based 2FA attempt response body: %s", body)
+
+        if "invalid-code" in body:
+            raise InvalidCredentialsError("Invalid SMS 2FA code")
+
+        await self._async_complete_login(login_verification_resp)

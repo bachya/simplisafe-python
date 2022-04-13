@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="robots" content="noindex, nofollow"/>
+    <link rel="stylesheet" href="/static/css/main.min.css"/>
+    `
+    <link rel="shortcut icon" type="image/x-icon" href="https://simplisafe.com/favicon.ico"/>\n` +
+    <style id="custom-styles-container">
+      body {
+        background: #F6F6F5;
+        font-family: ulp-font, -apple-system, BlinkMacSystemFont, Roboto, Helvetica, sans-serif;
+      }
+      
+.main-wrapper {
+        background: #F6F6F5;
+      }
+      
+.ulp-alert.danger {
+        background: #D00E17;
+      }
+      
+.ulp-alert.success {
+        background: #0A8852;
+      }
+      
+.ulp-button-default {
+        background-color: #0081ad;
+        color: #ffffff;
+      }
+      
+.ulp-button-success {
+        background-color: #0A8852;
+      }
+      
+.ulp-button-error {
+        background-color: #D00E17;
+      }
+      
+.ss-link-btn {
+        display: block;
+        line-height: 52px;
+        line-height: var(--button-height);
+      }
+      
+.ulp-button:disabled {
+        background: #d5d8d9;
+        color: #fff;
+      }
+    </style>
+    <style>
+      By default,
+      hide features for javascript-disabled browsing *//* We use !important to override any css with higher specificity */ /* It is also overriden by the styles in <noscript> in the header file */
+      .no-js {
+        display: none !important;
+      }
+    </style>
+    <noscript>
+      <style>
+        We use !important to override the default for js enabled *//* If the display should be other than block, it should be defined specifically here */
+        .js-required {
+          display: none !important;
+        }
+        
+.no-js {
+          display: block !important;
+        }
+      </style>
+    </noscript>
+    <title>SimpliSafe Two-Step Verification</title>
+  </head>
+  <body>
+    <div class="main-wrapper _page-background">
+      <main class="ulp-outer login">
+        <section class="ulp-box no-badge">
+          <div class="ulp-box-inner _prompt-box">
+            <div class="ulp-main">
+              <header class="ulp-header _prompt-header">
+                <img class="header-logo _header-logo" id="prompt-logo-center" src="https://webapp.simplisafe.com/res/img/1/ss-logo.svg" alt="Welcome"/>
+                <h1 class="header-title _header-title">Verification Successful</h1>
+                <div class="header-description _header-description">
+                  <p class="text-simple _text ">You will be redirected momentarily...</p>
+                </div>
+              </header>
+              <div class="ulp-container _prompt-body">
+                <script type="text/javascript">
+                  var formEnabled = true;
+                  function submitForm() {
+                    formEnabled = false;
+                    " document.getElementById(continue-btn).disabled = true;\n" + " document.getElementById(success-form).submit();\n" +
+                  }
+                </script>
+                <script type="text/javascript">
+                  function autoSubmitForm() {
+                    if (! formEnabled) 
+                      return;
+                    
+                    if (!document.hidden) {
+                      submitForm();
+                    } else {
+                      setTimeout(autoSubmitForm, 2000);
+                    }
+                  }
+                  setTimeout(autoSubmitForm, 2000);
+                </script>
+                <form method="post" action="https://auth.simplisafe.com/continue?state=***" id="success-form">
+                  <input type="hidden" name="token" value="***"/>
+                  <div class="button-bar">
+                    <button type="submit" class="ulp-button ulp-button-default _button _button-default _button-login" id="continue-btn" onclick="submitForm()">
+                      Continue
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

@@ -31,92 +31,7 @@ the current system state.
 Accessing the API
 -----------------
 
-Starting in 2021, SimpliSafe™  began to implement an OAuth-based form of authentication.
-To use this library, you must handshake with the SimpliSafe™  API; although this process
-cannot be 100% accomplished programmatically, the procedure is fairly straightforward.
-
-Authentication
-**************
-
-``simplipy`` comes with a helper script to get you started. To use it, follow these
-steps from a command line:
-
-1. Clone the ``simplipy`` Git repo and ``cd`` into it:
-
-.. code:: bash
-
-    $ git clone https://github.com/bachya/simplisafe-python.git
-    $ cd simplisafe-python/
-
-2. Set up and activate a Python virtual environment:
-
-.. code:: bash
-
-    $ python3 -m virtualenv .venv
-    $ source .venv/bin/activate
-
-3. Initialize the dev environment for ``simplipy``:
-
-.. code:: bash
-
-    $ script/setup
-
-4. Run the ``auth`` script:
-
-.. code:: bash
-
-    $ script/auth
-
-5. This will open your browser to a SimpliSafe™ login page. Once you log in with your
-   credentials, you will see a "Verification Pending" webpage (we'll call this
-   ``Tab 1``):
-
-.. image:: images/ss-login-screen.png
-   :width: 400
-
-6. You will be prompted to verify your account. Depending on what you have configured in
-   your SimpliSafe™ account, this could take the form of an email or an SMS:
-
-.. image:: images/ss-verification-email.png
-   :width: 400
-
-7. Once you click the "Verify Device" link, a new browser tab (``Tab 2``) will open
-   and notify you that the verification is successful:
-
-.. image:: images/ss-verification-confirmed.png
-   :width: 400
-
-8. Return to ``Tab 1``. You need to find an authorization code; the location of this
-   code will be different depending on which browser you use:
-
-   * Safari: ``Develop -> Show Web Inspector -> Network Tab`` (look for a reference to ``ErrorPage.html``)
-   * Edge: ``Developer -> Developer Tools -> Console Tab`` (look for a ``Failed to launch`` error)
-   * Chrome: ``Developer -> Developer Tools -> Console Tab`` (look for a ``Failed to launch`` error)
-
-   Look for a reference to a SimpliSafe™ iOS URL (starting with with
-   ``com.simplisafe.mobile``) and note the ``code`` parameter at the very end:
-
-.. code::
-
-   com.simplisafe.mobile://auth.simplisafe.com/ios/com.simplisafe.mobile/callback?code=<CODE>
-
-9. Copy the ``code`` parameter, return to your terminal, and paste it into the prompt.
-   You should now see this message:
-
-.. code::
-
-   You are now ready to use the SimpliSafe API!
-   Authorization Code: <CODE>
-   Code Verifier: <VERIFIER>
-
-These one-time values are now ready to be used to instantiate an
-:meth:`API <simplipy.api.API>` object.
-
-Creating an API Object
-**********************
-
-Once you have an Authorization Code and Code Verifier, you can create an API object like
-this:
+First, authenticate using your SimpliSafe username/email and password:
 
 .. code:: python
 
@@ -129,18 +44,86 @@ this:
     async def main() -> None:
         """Create the aiohttp session and run."""
         async with ClientSession() as session:
-            api = await simplipy.API.async_from_auth(
-                "<AUTHORIZATION_CODE>",
-                "<CODE_VERIFIER>",
+            api = await simplipy.API.async_from_credentials(
+                "<USERNAME>"
+                "<PASSWORD>"
                 session=session,
             )
-
-            # ...
 
 
     asyncio.run(main())
 
-**REMINDER:** this Authorization Code and Code Verifier can only be used once. 
+
+This will create an object that is in a "pending" state, meaning that it now awaits
+two-factor authentication. You can find the type of two-factor authentication by looking
+at the ``auth_state`` property:
+
+.. code:: python
+
+    # If your account uses email-based two-factor authentication:
+    api.auth_state
+    # >>> simplipy.api.AuthStates.PENDING_2FA_EMAIL 
+
+    # If your account uses SMS-based two-factor authentication:
+    api.auth_state
+    # >>> simplipy.api.AuthStates.PENDING_2FA_SMS 
+
+Performing Email-Based Two-Factor Authentication
+*************************************************
+
+This type of two-factor authentication requires you to click a link in an email from
+SimpliSafe. At any point, you can see if two-factor authentication has been completed:
+
+.. code:: python
+
+    api.async_verify_2fa_email()
+
+If the two-factor authentication hasn't succeeded yet, ``simplipy`` will raise a
+:meth:`Verify2FAPending  <simplipy.errors.Verify2FAPending>` exception. If it has
+succeeded, the :meth:`API  <simplipy.api.API>` object is ready to use.
+
+A common pattern in this scenario would be to loop and regularly test for authentication
+(eventually timing out as appropriate):
+
+.. code:: python
+
+   try:
+      async with timeout(30):
+         try:
+            await api.async_verify_2fa_email()
+         except Verify2FAPending as err:
+            print("Authentication not yet completed")
+            await asyncio.sleep(3)
+   except asyncio.TimeoutError as err:
+      print("Timed out waiting for authentication")
+
+   # Ready to use!
+
+Performing SMS-Based Two-Factor Authentication
+**********************************************
+
+This type of two-factor authentication requires you to input a code received via SMS.
+SimpliSafe. After you receive the code, you use it like this:
+
+.. code:: python
+
+    api.async_verify_2fa_sms("<CODE>")
+
+If the two-factor authentication hasn't succeeded yet, ``simplipy`` will raise a
+:meth:`InvalidCredentialsError  <simplipy.errors.InvalidCredentialsError>` exception.
+If it has succeeded, the :meth:`API  <simplipy.api.API>` object is ready to use.
+
+.. code:: python
+
+   try:
+      await api.async_verify_2fa_sms("<CODE>")
+   except InvalidCredentialsError as err:
+      print("Invalid SMS 2FA code")
+
+   # Ready to use!
+
+Key API Object Properties
+*************************
 
 The :meth:`API <simplipy.api.API>` object contains several sensitive properties to be
 aware of:

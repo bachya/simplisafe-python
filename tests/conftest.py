@@ -55,6 +55,42 @@ def latest_event_response_fixture():
     return json.loads(load_fixture("latest_event_response.json"))
 
 
+@pytest.fixture(name="login_resp_invalid_code", scope="session")
+def login_resp_invalid_code_fixture():
+    """Define a fixture to return an invalid SMS-based 2FA code."""
+    return load_fixture("login_resp_invalid_code.html")
+
+
+@pytest.fixture(name="login_resp_invalid_username_password", scope="session")
+def login_resp_invalid_username_password_fixture():
+    """Define a fixture to return an invalid username/password response."""
+    return load_fixture("login_resp_invalid_username_password.html")
+
+
+@pytest.fixture(name="login_resp_sms_exceeded", scope="session")
+def login_resp_sms_exceeded_fixture():
+    """Define a fixture to return a SMS exceeded response."""
+    return load_fixture("login_resp_sms_exceeded.html")
+
+
+@pytest.fixture(name="login_resp_verification_pending_email", scope="session")
+def login_resp_verification_pending_email_fixture():
+    """Define a fixture to return a pending login response (email)."""
+    return load_fixture("login_resp_verification_pending_email.html")
+
+
+@pytest.fixture(name="login_resp_verification_pending_sms", scope="session")
+def login_resp_verification_pending_sms_fixture():
+    """Define a fixture to return a pending login response (SMS)."""
+    return load_fixture("login_resp_verification_pending_sms.html")
+
+
+@pytest.fixture(name="login_resp_verification_successful", scope="session")
+def login_resp_verification_successful_fixture():
+    """Define a fixture to return a successful login response."""
+    return load_fixture("login_resp_verification_successful.html")
+
+
 @pytest.fixture(name="mock_api")
 def mock_api_fixture(ws_client_session):
     """Define a fixture to return a mock simplipy.API object."""
@@ -66,21 +102,69 @@ def mock_api_fixture(ws_client_session):
 
 
 @pytest.fixture(name="server")
-async def server_fixture(api_token_response, auth_check_response):
+async def server_fixture(
+    api_token_response,
+    auth_check_response,
+    login_resp_verification_pending_email,
+    login_resp_verification_successful,
+):
     """Define a fixture that returns an authenticated API connection."""
     async with aresponses.ResponsesMockServer() as server:
         server.add(
             "auth.simplisafe.com",
+            "/authorize",
+            "get",
+            response=aresponses.Response(
+                text=None,
+                status=302,
+                headers={"Location": "/u/login?state=12345"},
+            ),
+        )
+        server.add(
+            "auth.simplisafe.com",
+            "/u/login",
+            "post",
+            response=aresponses.Response(
+                text=login_resp_verification_pending_email,
+                status=200,
+            ),
+        )
+        server.add(
+            "auth.simplisafe.com",
+            "/u/login",
+            "post",
+            response=aresponses.Response(
+                text=login_resp_verification_successful,
+                status=200,
+                headers={"Location": "/authorize/resume?state=12345"},
+            ),
+        )
+        server.add(
+            "auth.simplisafe.com",
+            "/authorize/resume",
+            "get",
+            response=aresponses.Response(
+                text=None,
+                status=200,
+                headers={"Location": "https://webapp.simplisafe.com/new?code=12345"},
+            ),
+        )
+        server.add(
+            "auth.simplisafe.com",
             "/oauth/token",
             "post",
-            response=aiohttp.web_response.json_response(api_token_response, status=200),
+            response=aiohttp.web_response.json_response(
+                api_token_response,
+                status=200,
+            ),
         )
         server.add(
             "api.simplisafe.com",
             "/v1/api/authCheck",
             "get",
             response=aiohttp.web_response.json_response(
-                auth_check_response, status=200
+                auth_check_response,
+                status=200,
             ),
         )
         yield server

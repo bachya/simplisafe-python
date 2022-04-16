@@ -1,4 +1,4 @@
-"""Define tests for the System object."""
+"""Define base API tests."""
 # pylint: disable=protected-access,too-many-arguments
 import asyncio
 from datetime import datetime, timedelta
@@ -7,34 +7,80 @@ from unittest.mock import AsyncMock, Mock, patch
 import aiohttp
 import pytest
 
-from simplipy import API
-from simplipy.errors import InvalidCredentialsError, RequestError, SimplipyError
+from simplipy.api import API
+from simplipy.errors import (
+    InvalidCredentialsError,
+    RequestError,
+    SimplipyError,
+    Verify2FAError,
+)
 
 from .common import (
     TEST_ACCESS_TOKEN,
-    TEST_AUTHORIZATION_CODE,
-    TEST_CODE_VERIFIER,
+    TEST_PASSWORD,
     TEST_REFRESH_TOKEN,
     TEST_SUBSCRIPTION_ID,
+    TEST_USERNAME,
 )
 
 
 @pytest.mark.asyncio
-async def test_401_bad_credentials(aresponses, invalid_authorization_code_response):
-    """Test that an InvalidCredentialsError is raised with an invalid auth code."""
+async def test_2fa_sms_exceeded(aresponses, login_resp_sms_exceeded):
+    """Test that a "SMS limit exceeded" 2FA error is caught."""
     aresponses.add(
         "auth.simplisafe.com",
-        "/oauth/token",
+        "/authorize",
+        "get",
+        response=aresponses.Response(
+            text=None,
+            status=302,
+            headers={"Location": "/u/login?state=12345"},
+        ),
+    )
+    aresponses.add(
+        "auth.simplisafe.com",
+        "/u/login",
         "post",
-        response=aiohttp.web_response.json_response(
-            invalid_authorization_code_response, status=401
+        response=aresponses.Response(
+            text=login_resp_sms_exceeded,
+            status=400,
+        ),
+    )
+
+    async with aiohttp.ClientSession() as session:
+        with pytest.raises(Verify2FAError):
+            await API.async_from_credentials(
+                TEST_USERNAME, TEST_PASSWORD, session=session
+            )
+
+
+@pytest.mark.asyncio
+async def test_401_bad_credentials(aresponses, login_resp_invalid_username_password):
+    """Test invalid credentials."""
+    aresponses.add(
+        "auth.simplisafe.com",
+        "/authorize",
+        "get",
+        response=aresponses.Response(
+            text=None,
+            status=302,
+            headers={"Location": "/u/login?state=12345"},
+        ),
+    )
+    aresponses.add(
+        "auth.simplisafe.com",
+        "/u/login",
+        "post",
+        response=aresponses.Response(
+            text=login_resp_invalid_username_password,
+            status=400,
         ),
     )
 
     async with aiohttp.ClientSession() as session:
         with pytest.raises(InvalidCredentialsError):
-            await API.async_from_auth(
-                TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
+            await API.async_from_credentials(
+                TEST_USERNAME, TEST_PASSWORD, session=session
             )
 
     aresponses.assert_plan_strictly_followed()
@@ -56,14 +102,16 @@ async def test_401_refresh_token_failure(
         "/oauth/token",
         "post",
         response=aiohttp.web_response.json_response(
-            invalid_refresh_token_response, status=403
+            invalid_refresh_token_response,
+            status=403,
         ),
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.async_from_auth(
-            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
+        simplisafe = await API.async_from_credentials(
+            TEST_USERNAME, TEST_PASSWORD, session=session
         )
+        await simplisafe.async_verify_2fa_email()
 
         # Manually set the expiration datetime to force a refresh token flow:
         simplisafe._token_last_refreshed = datetime.utcnow() - timedelta(seconds=30)
@@ -78,6 +126,7 @@ async def test_401_refresh_token_failure(
 async def test_401_refresh_token_success(
     api_token_response,
     aresponses,
+    auth_check_response,
     server,
     v2_settings_response,
     v2_subscriptions_response,
@@ -101,6 +150,12 @@ async def test_401_refresh_token_success(
     )
     server.add(
         "api.simplisafe.com",
+        "/v1/api/authCheck",
+        "get",
+        response=aiohttp.web_response.json_response(auth_check_response, status=200),
+    )
+    server.add(
+        "api.simplisafe.com",
         f"/v1/users/{TEST_SUBSCRIPTION_ID}/subscriptions",
         "get",
         response=aiohttp.web_response.json_response(
@@ -115,9 +170,10 @@ async def test_401_refresh_token_success(
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.async_from_auth(
-            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
+        simplisafe = await API.async_from_credentials(
+            TEST_USERNAME, TEST_PASSWORD, session=session
         )
+        await simplisafe.async_verify_2fa_email()
 
         # Manually set the expiration datetime to force a refresh token flow:
         simplisafe._token_last_refreshed = datetime.utcnow() - timedelta(seconds=30)
@@ -131,61 +187,33 @@ async def test_401_refresh_token_success(
 
 
 @pytest.mark.asyncio
-async def test_403_bad_credentials(aresponses, invalid_authorization_code_response):
+async def test_403_bad_credentials(aresponses, login_resp_invalid_username_password):
     """Test that an InvalidCredentialsError is raised with a 403."""
     aresponses.add(
         "auth.simplisafe.com",
-        "/oauth/token",
+        "/authorize",
+        "get",
+        response=aresponses.Response(
+            text=None,
+            status=302,
+            headers={"Location": "/u/login?state=12345"},
+        ),
+    )
+    aresponses.add(
+        "auth.simplisafe.com",
+        "/u/login",
         "post",
-        response=aiohttp.web_response.json_response(
-            invalid_authorization_code_response, status=403
+        response=aresponses.Response(
+            text=login_resp_invalid_username_password,
+            status=400,
         ),
     )
 
     async with aiohttp.ClientSession() as session:
         with pytest.raises(InvalidCredentialsError):
-            await API.async_from_auth(
-                TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
+            await API.async_from_credentials(
+                TEST_USERNAME, TEST_PASSWORD, session=session
             )
-
-
-@pytest.mark.asyncio
-async def test_client_async_from_authorization_code(
-    api_token_response, aresponses, auth_check_response
-):
-    """Test creating a client from an authorization code."""
-    aresponses.add(
-        "auth.simplisafe.com",
-        "/oauth/token",
-        "post",
-        response=aiohttp.web_response.json_response(api_token_response, status=200),
-    )
-    aresponses.add(
-        "api.simplisafe.com",
-        "/v1/api/authCheck",
-        "get",
-        response=aiohttp.web_response.json_response(auth_check_response, status=200),
-    )
-
-    async with aiohttp.ClientSession() as session:
-        simplisafe = await API.async_from_auth(
-            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
-        )
-        assert simplisafe.access_token == TEST_ACCESS_TOKEN
-        assert simplisafe.refresh_token == TEST_REFRESH_TOKEN
-
-    aresponses.assert_plan_strictly_followed()
-
-
-@pytest.mark.asyncio
-async def test_client_async_from_authorization_code_unknown_error():
-    """Test an unknown error while creating a client from an authorization code."""
-    with patch("simplipy.API._async_request", AsyncMock(side_effect=Exception)):
-        async with aiohttp.ClientSession() as session:
-            with pytest.raises(SimplipyError):
-                await API.async_from_auth(
-                    TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
-                )
 
 
 @pytest.mark.asyncio
@@ -219,7 +247,7 @@ async def test_client_async_from_refresh_token(
 @pytest.mark.asyncio
 async def test_client_async_from_refresh_token_unknown_error():
     """Test an unknown error while creating a client from a refresh token."""
-    with patch("simplipy.API._async_request", AsyncMock(side_effect=Exception)):
+    with patch("simplipy.API._async_api_request", AsyncMock(side_effect=Exception)):
         async with aiohttp.ClientSession() as session:
             with pytest.raises(SimplipyError):
                 await API.async_from_refresh_token(TEST_REFRESH_TOKEN, session=session)
@@ -275,9 +303,10 @@ async def test_refresh_token_callback(
     mock_callback_2 = Mock()
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.async_from_auth(
-            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
+        simplisafe = await API.async_from_credentials(
+            TEST_USERNAME, TEST_PASSWORD, session=session
         )
+        await simplisafe.async_verify_2fa_email()
 
         # Manually set the expiration datetime to force a refresh token flow:
         simplisafe._token_last_refreshed = datetime.utcnow() - timedelta(seconds=30)
@@ -340,10 +369,10 @@ async def test_request_retry(
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.async_from_auth(
-            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
+        simplisafe = await API.async_from_credentials(
+            TEST_USERNAME, TEST_PASSWORD, session=session
         )
-
+        await simplisafe.async_verify_2fa_email()
         simplisafe.disable_request_retries()
 
         with pytest.raises(RequestError):
@@ -358,23 +387,138 @@ async def test_request_retry(
 
 
 @pytest.mark.asyncio
-async def test_string_response(aresponses):
-    """Test that a quoted stringn response is handled correctly."""
+async def test_unknown_auth0_url(aresponses):
+    """Test that an error while obtaining the Auth0 login URL is caught."""
+    aresponses.add(
+        "auth.simplisafe.com",
+        "/authorize",
+        "get",
+        response=aresponses.Response(
+            text=None,
+            status=400,
+        ),
+    )
+
+    async with aiohttp.ClientSession() as session:
+        with pytest.raises(SimplipyError):
+            await API.async_from_credentials(
+                TEST_USERNAME, TEST_PASSWORD, session=session
+            )
+
+
+@pytest.mark.asyncio
+async def test_unknown_resume_url(
+    aresponses,
+    login_resp_verification_pending_email,
+    login_resp_verification_successful,
+):
+    """Test that an error while obtaining the Auth0 post-auth resume URL is caught."""
+    aresponses.add(
+        "auth.simplisafe.com",
+        "/authorize",
+        "get",
+        response=aresponses.Response(
+            text=None,
+            status=302,
+            headers={"Location": "/u/login?state=12345"},
+        ),
+    )
+    aresponses.add(
+        "auth.simplisafe.com",
+        "/u/login",
+        "post",
+        response=aresponses.Response(
+            text=login_resp_verification_pending_email,
+            status=200,
+        ),
+    )
+    aresponses.add(
+        "auth.simplisafe.com",
+        "/u/login",
+        "post",
+        response=aresponses.Response(
+            text=login_resp_verification_successful,
+            status=200,
+            headers={"Location": "/authorize/resume?state=12345"},
+        ),
+    )
+    aresponses.add(
+        "auth.simplisafe.com",
+        "/authorize/resume",
+        "get",
+        response=aresponses.Response(
+            text=None,
+            status=400,
+        ),
+    )
+
+    async with aiohttp.ClientSession() as session:
+        with pytest.raises(SimplipyError):
+            simplisafe = await API.async_from_credentials(
+                TEST_USERNAME, TEST_PASSWORD, session=session
+            )
+            await simplisafe.async_verify_2fa_email()
+
+
+@pytest.mark.asyncio
+async def test_unknown_token_response(
+    aresponses,
+    login_resp_verification_pending_email,
+    login_resp_verification_successful,
+):
+    """Test that an error while submitting the initial token request is handled."""
+    aresponses.add(
+        "auth.simplisafe.com",
+        "/authorize",
+        "get",
+        response=aresponses.Response(
+            text=None,
+            status=302,
+            headers={"Location": "/u/login?state=12345"},
+        ),
+    )
+    aresponses.add(
+        "auth.simplisafe.com",
+        "/u/login",
+        "post",
+        response=aresponses.Response(
+            text=login_resp_verification_pending_email,
+            status=200,
+        ),
+    )
+    aresponses.add(
+        "auth.simplisafe.com",
+        "/u/login",
+        "post",
+        response=aresponses.Response(
+            text=login_resp_verification_successful,
+            status=200,
+            headers={"Location": "/authorize/resume?state=12345"},
+        ),
+    )
+    aresponses.add(
+        "auth.simplisafe.com",
+        "/authorize/resume",
+        "get",
+        response=aresponses.Response(
+            text=None,
+            status=200,
+            headers={"Location": "https://webapp.simplisafe.com/new?code=12345"},
+        ),
+    )
     aresponses.add(
         "auth.simplisafe.com",
         "/oauth/token",
         "post",
-        response=aresponses.Response(text='"Unauthorized"', status=401),
+        response=aresponses.Response(
+            text=None,
+            status=400,
+        ),
     )
 
     async with aiohttp.ClientSession() as session:
-        with pytest.raises(InvalidCredentialsError):
-            await API.async_from_auth(
-                TEST_AUTHORIZATION_CODE,
-                TEST_CODE_VERIFIER,
-                session=session,
-                # Set so that our tests don't take too long:
-                request_retries=1,
+        with pytest.raises(SimplipyError):
+            simplisafe = await API.async_from_credentials(
+                TEST_USERNAME, TEST_PASSWORD, session=session
             )
-
-    aresponses.assert_plan_strictly_followed()
+            await simplisafe.async_verify_2fa_email()

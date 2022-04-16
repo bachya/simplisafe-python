@@ -7,11 +7,11 @@ from simplipy import API
 from simplipy.device.camera import CameraTypes
 
 from .common import (
-    TEST_AUTHORIZATION_CODE,
     TEST_CAMERA_ID,
     TEST_CAMERA_ID_2,
-    TEST_CODE_VERIFIER,
+    TEST_PASSWORD,
     TEST_SYSTEM_ID,
+    TEST_USERNAME,
 )
 
 
@@ -19,9 +19,10 @@ from .common import (
 async def test_properties(aresponses, v3_server):
     """Test that camera properties are created properly."""
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.async_from_auth(
-            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
+        simplisafe = await API.async_from_credentials(
+            TEST_USERNAME, TEST_PASSWORD, session=session
         )
+        await simplisafe.async_verify_2fa_email()
 
         systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
@@ -46,9 +47,10 @@ async def test_properties(aresponses, v3_server):
 async def test_video_urls(aresponses, v3_server):
     """Test that camera video URL is configured properly."""
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.async_from_auth(
-            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
+        simplisafe = await API.async_from_credentials(
+            TEST_USERNAME, TEST_PASSWORD, session=session
         )
+        await simplisafe.async_verify_2fa_email()
 
         systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]

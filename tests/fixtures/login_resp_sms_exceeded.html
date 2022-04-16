@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="robots" content="noindex, nofollow"/>
+    <link rel="stylesheet" href="https://cdn.auth0.com/ulp/react-components/1.57.8/css/main.cdn.min.css"/>
+    <style id="custom-styles-container">
+      body {
+        background: #F6F6F5;
+        font-family: ulp-font, -apple-system, BlinkMacSystemFont, Roboto, Helvetica, sans-serif;
+      }
+      
+.c9de4f218 {
+        background: #F6F6F5;
+      }
+      
+.cfd68411f.c091ffa4c {
+        background: #D00E17;
+      }
+      
+.cfd68411f.c625453ba {
+        background: #0A8852;
+      }
+      
+.cc48b7925 {
+        background-color: #0081ad;
+        color: #ffffff;
+      }
+      
+.cc48b7925 a,
+      .cc48b7925 a:visited {
+        color: #ffffff;
+      }
+      
+.ce747747d {
+        background-color: #0A8852;
+      }
+      
+.c04549935 {
+        background-color: #D00E17;
+      }
+      
+@supports(mask-image: url('/static/img/branding-generic/copy-icon.svg')) {
+        @supports not(-ms-ime-align: auto) {
+          .c326c692c.c2fd47e24::before {
+            background-color: #D00E17;
+          }
+        }
+      }
+      
+.input.ced87ca25 {
+        border-color: #D00E17;
+      }
+      
+.error-cloud {
+        background-color: #D00E17;
+      }
+      
+.error-fatal {
+        background-color: #D00E17;
+      }
+      
+.error-local {
+        background-color: #D00E17;
+      }
+      
+.c27a9cbee.c2fd47e24 {
+        background-color: #D00E17;
+        border-color: #D00E17;
+      }
+      
+.c27a9cbee.c2fd47e24::before {
+        border-bottom-color: #D00E17;
+      }
+      
+.c27a9cbee.c2fd47e24::after {
+        border-bottom-color: #D00E17;
+      }
+      
+#alert-trigger {
+        background-color: #D00E17;
+      }
+    </style>
+    <style>
+      /* By default, hide features for javascript-disabled browsing */
+      /* We use !important to override any css with higher specificity */
+      /* It is also overridden by the styles in <noscript> in the header file */
+      .no-js {
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
+        height: 1px;
+        overflow: hidden;
+        position: absolute;
+        white-space: nowrap;
+        width: 1px;
+      }
+    </style>
+    <noscript>
+      <style>
+        /* We use !important to override the default for js enabled */
+        /* If the display should be other than block, it should be defined specifically here */
+        .js-required {
+          display: none !important;
+        }
+        
+.no-js {
+          clip: auto;
+          clip-path: none;
+          height: auto;
+          overflow: auto;
+          position: static;
+          white-space: normal;
+          width: var(--prompt-width);
+        }
+      </style>
+    </noscript>
+    <style>
+      .flex {
+        display: flex;
+        width: 100%;
+        height: 100%;
+        align-items: center;
+        position: relative;
+        justify-content: left;
+        background-color: var(--widget-background-color);
+      }
+      
+.inner {
+        margin: auto;
+        width: 480px;
+      }
+      
+.prompt-wrapper {
+        display: block;
+      }
+      
+body {
+        background-image: radial-gradient(white, rgb(200, 200, 200));
+      }
+      
+.disclaimer,
+      .reset-login {
+        padding: 0 16px 16px;
+        width: 100%;
+        position: relative;
+        text-align: center;
+        font-style: italic;
+        font-size: small;
+      }
+      
+.disclaimer a {
+        font-size: unset;
+      }
+      
+.ulp-authenticator-selector-text {
+        white-space: nowrap;
+      }
+      
+.ulp-outer {
+        height: unset;
+      }
+      
+@media(max-width:480px) {
+        .flex {
+          width: 100%;
+        }
+        
+.ulp-outer {
+          height: unset;
+        }
+        
+.ulp-footer {
+          position: unset;
+        }
+        
+.ulp-authenticator-selector-text {
+          line-break: strict;
+        }
+      }
+    </style>
+  </head>
+  <body class="_widget-auto-layout">
+    <main class="_widget c8c853123">
+      <section class="cd39d2426 _prompt-box-outer c227c4673">
+        <div class="c1811e653 cc5d16767">
+          <div class="ccffe50df">
+            <header class="c1b9f272f ca6485e95">
+              <div title="SimpliSafe" id="custom-prompt-logo" style="width: auto !important; height: 60px !important; position: static !important; margin: auto !important; padding: 0 !important; background-color: transparent !important; background-position: center !important; background-size: contain !important; background-repeat: no-repeat !important"></div>
+              <img class="c4de43745 ced02f251" id="prompt-logo-center" src="https://webapp.simplisafe.com/res/img/1/ss-logo.svg" alt="SimpliSafe"/>
+              <h1 class="c8fd34f56 cd64f787c">Verify Your Identity</h1>
+              <div class="ce4f0dcc5 cb1b594da">
+                <p class="c10d47ecd c1f915e50">We&#39;ve sent a text message to:</p>
+              </div>
+            </header>
+            <div class="c2b3922e3 cacec78bf">
+              <div id="prompt-alert" class="cfd68411f c1d556e53 c091ffa4c c71f2fcc0" data-error-code="too-many-sms" aria-live="assertive" aria-atomic="true">
+                <p class="cd5d3a251 c20a6188a">You have exceeded the maximum number of phone messages per hour. Wait a few minutes and try again</p>
+              </div>
+              <div class="ce4d712db c74b97556">
+                <div class="c0be4b2fb">
+                  <div>
+                    <div class="c2a0a99ad cd6afb4c0 c9c9e37c0 c43f03584 cf2cf68dc ccec8bda4">
+                      <span class="ulp-authenticator-selector-text">XXXXXXXX5753</span>
+                    </div>
+                  </div>
+                  <form method="POST" class="c5d1dd258 c7c9fba92">
+                    <input type="hidden" name="state" value="REDACTED"/>
+                    <div class="ce4d712db c74b97556">
+                      <div class="c0be4b2fb">
+                        <div class="input-wrapper _input-wrapper">
+                          <div class="c326c692c c68e91117 text cd73c7c23" data-action-text="" data-alternate-action-text="">
+                            <label class="c01c3c8f7 no-js c39143fef cd1ed2615" for="code">
+                              Enter the 6-digit code
+                            </label>
+                            <input class="input c7b4cd87e c3fed3795" name="code" id="code" type="text" value="" required autocomplete="off" autocapitalize="none" spellcheck="false" autofocus/>
+                            <div class="c01c3c8f7 js-required c39143fef cd1ed2615" data-dynamic-label-for="code" aria-hidden="true">
+                              Enter the 6-digit code
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="ca5e1303f ce1840f90 c9e7d8f4f">
+                      <input class="c59727b73 cd8b76659" id="rememberBrowser" name="rememberBrowser" type="checkbox" value="true"/>
+                      <label class="c70fdcd46 c7b236129" for="rememberBrowser">
+                        <span class="c10d47ecd c1f915e50">Remember this device for 30 days</span>
+                      </label>
+                    </div>
+                    <div class="cd4846896">
+                      <button type="submit" name="action" value="default" class="cefe98bea cc48b7925 cdfc94bba c00a72e00 cecd0c914">Continue</button>
+                    </div>
+                  </form>
+                  <div class="cf938aea6 c6674f4d2">Didn&#39;t receive a code?
+                    <form method="POST" class="cf7544a27">
+                      <input type="hidden" name="state" value="REDACTED"/>
+                      <input type="hidden" name="rememberBrowser" value="false"/>
+                      <button type="submit" name="action" aria-label="" value="resend-code" class="c64127b51 _link-resend-code c43aa7c44">Resend</button>
+                    </form>
+                    or
+                    <form method="POST" class="cf7544a27">
+                      <input type="hidden" name="state" value="REDACTED"/>
+                      <button type="submit" name="action" aria-label="" value="switch-to-voice" class="c64127b51 _link-switch-to-voice c43aa7c44">get a call</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+              <div class="ulp-alternate-action center _alternate-action ">
+                <form method="POST" class="cf7544a27">
+                  <input type="hidden" name="state" value="REDACTED"/>
+                  <button type="submit" name="action" aria-label="" value="pick-authenticator" class="c64127b51 cd4de6c43 c43aa7c44">Try another method</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <script id="client-scripts" type="text/javascript">
+      !function () {
+        var e,
+          t = {
+            exports: function (n, r) {
+              var o = {};
+              function a(e, t, n, r) {
+                return e.addEventListener(t, n, r)
+              }
+              function i(e) {
+                return "string" == typeof e
+              }
+              function s(e, t) {
+                return e.getAttribute(t)
+              }
+              function u(e, t, n) {
+                return e.setAttribute(t, n)
+              }
+              return {
+                addClass: function (e, t) {
+                  if (e.classList) 
+                    return e.classList.add(t);
+                  
+                  var n = e.className.split(" ");
+                  -1 === n.indexOf(t) && (n.push(t), e.className = n.join(" "))
+                },
+                toggleClass: function (e, t) {
+                  if (e.classList) 
+                    return e.classList.toggle(t);
+                  
+                  var n = e.className.split(" "),
+                    r = n.indexOf(t);
+                  -1 !== r
+                    ? n.splice(r, 1)
+                    : n.push(t),
+                  e.className = n.join(" ")
+                },
+                addClickListener: function (e, t) {
+                  return a(e, "click", t)
+                },
+                addEventListener: a,
+                getAttribute: s,
+                getElementById: function (e) {
+                  return r.getElementById(e)
+                },
+                getParent: function (e) {
+                  return e.parentNode
+                },
+                isString: i,
+                loadScript: function (e) {
+                  var t = r.createElement("script");
+                  t.src = e,
+                  t.async = !0,
+                  r.body.appendChild(t)
+                },
+                poll: function (e) {
+                  var a = e.interval || 2e3,
+                    t = e.url || n.location.href,
+                    i = e.condition || function () {
+                      return !0
+                    },
+                    s = e.onSuccess || function () {},
+                    u = e.onError || function () {};
+                  return setTimeout(function r() {
+                    var o = new XMLHttpRequest;
+                    return o.open("GET", t),
+                    o.setRequestHeader("Accept", "application/json"),
+                    o.onload = function () {
+                      if (200 === o.status) {
+                        var e = "application/json" === o.getResponseHeader("Content-Type").split(";")[0]
+                          ? JSON.parse(o.responseText)
+                          : o.responseText;
+                        return i(e)
+                          ? s()
+                          : setTimeout(r, a)
+                      }
+                      if (429 !== o.status) 
+                        return u({status: o.status, responseText: o.responseText});
+                      
+                      var t = 1e3 * Number.parseInt(o.getResponseHeader("X-RateLimit-Reset")),
+                        n = t - (new Date).getTime();
+                      return setTimeout(
+                        r,
+                        a < n
+                          ? n
+                          : a
+                      )
+                    },
+                    o.send()
+                  }, a)
+                },
+                querySelector: function (e, t) {
+                  return i(e)
+                    ? r.querySelector(e)
+                    : e.querySelector(t)
+                },
+                querySelectorAll: function (e, t) {
+                  var n = i(e)
+                    ? r.querySelectorAll(e)
+                    : e.querySelectorAll(t);
+                  return Array
+                    .prototype
+                    .slice
+                    .call(n)
+                },
+                removeClass: function (e, t) {
+                  if (e.classList) 
+                    return e.classList.remove(t);
+                  
+                  var n = e.className.split(" "),
+                    r = n.indexOf(t);
+                  -1 !== r && (n.splice(r, 1), e.className = n.join(" "))
+                },
+                setAttribute: u,
+                removeAttribute: function (e, t) {
+                  return e.removeAttribute(t)
+                },
+                swapAttributes: function (e, t, n) {
+                  var r = s(e, t),
+                    o = s(e, n);
+                  u(e, n, r),
+                  u(e, t, o)
+                },
+                setGlobalFlag: function (e, t) {
+                  o[e] = !! t
+                },
+                getGlobalFlag: function (e) {
+                  return !! o[e]
+                },
+                preventFormSubmit: function (e) {
+                  e.stopPropagation(),
+                  e.preventDefault()
+                },
+                matchMedia: function (e) {
+                  return "function" != typeof n.matchMedia && n.matchMedia(e).matches
+                },
+                dispatchEvent: function (e, t) {
+                  e.dispatchEvent(t)
+                },
+                setTimeout: setTimeout
+              }
+            }
+          }.exports(window, document);
+        ((e =
+          {}).exports = function (r, e, o, a, i, s, u, c, n, l) {
+          function f(e) {
+            var t = e.target,
+              n = s(t);
+            t.value || l(t, "data-autofilled")
+              ? a(n, "cf412db7b")
+              : i(n, "cf412db7b")
+          }
+          function d(e) {
+            var t = e.target;
+            "onAutoFillStart" === e.animationName && (n(t, "data-autofilled", !0), c(e.target, new Event("change", {
+              bubbles: !0
+            })), o(t, "keyup", p, {
+              once: !0
+            }))
+          }
+          function p(e) {
+            var t = e.target;
+            n(t, "data-autofilled", "")
+          }
+          if (r("body._simple-labels")) 
+            return e(".c01c3c8f7.no-js").forEach(function (e) {
+              i(e, "no-js")
+            }),
+            void e(".c01c3c8f7.js-required").forEach(function (e) {
+              a(e, "cd59b0efc")
+            });
+          
+          e(".c326c692c:not(.c2b2e4974):not(disabled)").forEach(function (e) {
+            a(e, "cddcefc22");
+            var t,
+              n = r(e, ".input");
+            n.value && a(e, "cf412db7b"),
+            o(e, "change", f),
+            o(n, "blur", f),
+            o(n, "animationstart", d),
+            t = n,
+            u(function () {
+              t.value && c(t, new Event("change", {
+                bubbles: !0
+              }))
+            }, 100)
+          })
+        }, e.exports)(t.querySelector, t.querySelectorAll, t.addEventListener, t.addClass, t.removeClass, t.getParent, t.setTimeout, t.dispatchEvent, t.setAttribute, t.getAttribute), {
+          exports: function (e, t) {
+            var n = t(".ca5e1303f #rememberBrowser"),
+              r = e('input[name="rememberBrowser"][type="hidden"]');
+            0 < r.length && n.addEventListener("change", function () {
+              var t = this.checked;
+              r.forEach(function (e) {
+                e.value = t
+                  ? "true"
+                  : "false"
+              })
+            })
+          }
+        }.exports(t.querySelectorAll, t.querySelector), {
+          exports: function (e, t, n, r, o, a) {
+            function i(e) {
+              var t = n("submitted");
+              r("submitted", !0),
+              t
+                ? o(e)
+                : "c401f2f07" === a(e.target, "data-provider") && setTimeout(function () {
+                  r("submitted", !1)
+                }, 2e3)
+            }
+            var s = e("form");
+            s && s.forEach(function (e) {
+              t(e, "submit", i)
+            })
+          }
+        }.exports(t.querySelectorAll, t.addEventListener, t.getGlobalFlag, t.setGlobalFlag, t.preventFormSubmit, t.getAttribute)
+      }();
+    </script>
+  </body>
+</html>

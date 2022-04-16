@@ -10,12 +10,12 @@ from simplipy.system import SystemStates
 
 from tests.common import (
     TEST_ADDRESS,
-    TEST_AUTHORIZATION_CODE,
-    TEST_CODE_VERIFIER,
+    TEST_PASSWORD,
     TEST_SUBSCRIPTION_ID,
     TEST_SYSTEM_ID,
     TEST_SYSTEM_SERIAL_NO,
     TEST_USER_ID,
+    TEST_USERNAME,
 )
 
 
@@ -32,9 +32,11 @@ async def test_deactivated_system(aresponses, server, subscriptions_response):
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.async_from_auth(
-            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
+        simplisafe = await API.async_from_credentials(
+            TEST_USERNAME, TEST_PASSWORD, session=session
         )
+        await simplisafe.async_verify_2fa_email()
+
         systems = await simplisafe.async_get_systems()
         assert len(systems) == 0
 
@@ -52,9 +54,11 @@ async def test_get_events(aresponses, events_response, v2_server):
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.async_from_auth(
-            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
+        simplisafe = await API.async_from_credentials(
+            TEST_USERNAME, TEST_PASSWORD, session=session
         )
+        await simplisafe.async_verify_2fa_email()
+
         systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         events = await system.async_get_events(datetime.now(), 2)
@@ -95,9 +99,11 @@ async def test_missing_property(
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.async_from_auth(
-            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
+        simplisafe = await API.async_from_credentials(
+            TEST_USERNAME, TEST_PASSWORD, session=session
         )
+        await simplisafe.async_verify_2fa_email()
+
         systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         assert system.offline is False
@@ -122,9 +128,11 @@ async def test_missing_system_info(aresponses, caplog, server, subscriptions_res
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.async_from_auth(
-            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
+        simplisafe = await API.async_from_credentials(
+            TEST_USERNAME, TEST_PASSWORD, session=session
         )
+        await simplisafe.async_verify_2fa_email()
+
         await simplisafe.async_get_systems()
         assert any(
             "Skipping subscription with missing system data" in e.message
@@ -138,9 +146,11 @@ async def test_missing_system_info(aresponses, caplog, server, subscriptions_res
 async def test_properties(aresponses, v2_server):
     """Test that base system properties are created properly."""
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.async_from_auth(
-            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
+        simplisafe = await API.async_from_credentials(
+            TEST_USERNAME, TEST_PASSWORD, session=session
         )
+        await simplisafe.async_verify_2fa_email()
+
         systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         assert not system.alarm_going_off
@@ -159,9 +169,11 @@ async def test_properties(aresponses, v2_server):
 async def test_unknown_sensor_type(aresponses, caplog, v2_server):
     """Test whether a message is logged upon finding an unknown sensor type."""
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.async_from_auth(
-            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
+        simplisafe = await API.async_from_credentials(
+            TEST_USERNAME, TEST_PASSWORD, session=session
         )
+        await simplisafe.async_verify_2fa_email()
+
         await simplisafe.async_get_systems()
         assert any("Unknown device type" in e.message for e in caplog.records)
 
@@ -202,9 +214,11 @@ async def test_unknown_system_state(
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.async_from_auth(
-            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
+        simplisafe = await API.async_from_credentials(
+            TEST_USERNAME, TEST_PASSWORD, session=session
         )
+        await simplisafe.async_verify_2fa_email()
+
         await simplisafe.async_get_systems()
         assert any("Unknown raw system state" in e.message for e in caplog.records)
         assert any("NOT_REAL_STATE" in e.message for e in caplog.records)

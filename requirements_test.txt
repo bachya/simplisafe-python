@@ -1,5 +1,5 @@
 aiohttp>=3.8.0
-aresponses==2.1.4
+aresponses==2.1.5
 asynctest==0.13.0
 backoff==1.11.1
 pytest-aiohttp==0.3.0

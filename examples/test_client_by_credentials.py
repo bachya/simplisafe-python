@@ -1,6 +1,7 @@
 """Test system functionality."""
 import asyncio
 import logging
+import os
 
 from aiohttp import ClientSession
 from async_timeout import timeout
@@ -10,8 +11,8 @@ from simplipy.errors import SimplipyError, Verify2FAError, Verify2FAPending
 
 _LOGGER = logging.getLogger()
 
-SIMPLISAFE_USERNAME = "<USERNAME>"
-SIMPLISAFE_PASSWORD = "<PASSWORD>"
+SIMPLISAFE_USERNAME = os.getenv("SIMPLISAFE_USERNAME", "<USERNAME>")
+SIMPLISAFE_PASSWORD = os.getenv("SIMPLISAFE_PASSWORD", "<PASSWORD>")
 
 
 async def main() -> None:

@@ -4,7 +4,7 @@ asynctest==0.13.0
 backoff==1.11.1
 pytest-aiohttp==1.0.4
 pytest-cov==3.0.0
-pytest==7.1.1
+pytest==7.1.2
 pytz==2022.1
 types-pytz==2021.3.6
 voluptuous==0.13.1

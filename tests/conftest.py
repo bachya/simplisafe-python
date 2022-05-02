@@ -125,17 +125,8 @@ async def server_fixture(
             "/u/login",
             "post",
             response=aresponses.Response(
-                text=login_resp_verification_pending_email,
-                status=200,
-            ),
-        )
-        server.add(
-            "auth.simplisafe.com",
-            "/u/login",
-            "post",
-            response=aresponses.Response(
-                text=login_resp_verification_successful,
-                status=200,
+                text=None,
+                status=302,
                 headers={"Location": "/authorize/resume?state=12345"},
             ),
         )
@@ -145,7 +136,50 @@ async def server_fixture(
             "get",
             response=aresponses.Response(
                 text=None,
+                status=302,
+                headers={
+                    "Location": (
+                        "https://tsv.prd.platform.simplisafe.com/v1/tsv/check"
+                        "?token=12345&state=12345"
+                    )
+                },
+            ),
+        )
+        server.add(
+            "tsv.prd.platform.simplisafe.com",
+            "/v1/tsv/check",
+            "get",
+            response=aresponses.Response(
+                text=login_resp_verification_pending_email,
                 status=200,
+            ),
+        )
+        server.add(
+            "tsv.prd.platform.simplisafe.com",
+            "/v1/tsv/check",
+            "get",
+            response=aresponses.Response(
+                text=login_resp_verification_successful,
+                status=200,
+            ),
+        )
+        server.add(
+            "auth.simplisafe.com",
+            "/continue",
+            "post",
+            response=aresponses.Response(
+                text=None,
+                status=302,
+                headers={"Location": "/authorize/resume?state=12345"},
+            ),
+        )
+        server.add(
+            "auth.simplisafe.com",
+            "/authorize/resume",
+            "get",
+            response=aresponses.Response(
+                text=None,
+                status=302,
                 headers={"Location": "https://webapp.simplisafe.com/new?code=12345"},
             ),
         )

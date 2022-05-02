@@ -88,9 +88,11 @@ async def test_401_bad_credentials(aresponses, login_resp_invalid_username_passw
 
 @pytest.mark.asyncio
 async def test_401_refresh_token_failure(
-    aresponses, invalid_refresh_token_response, server
+    aresponses, invalid_refresh_token_response, server, caplog
 ):
     """Test that an error is raised when refresh token and reauth both fail."""
+    # import logging
+    # caplog.set_level(logging.DEBUG)
     server.add(
         "api.simplisafe.com",
         f"/v1/users/{TEST_SUBSCRIPTION_ID}/subscriptions",
@@ -428,17 +430,51 @@ async def test_unknown_resume_url(
         "/u/login",
         "post",
         response=aresponses.Response(
+            text=None,
+            status=302,
+            headers={"Location": "/authorize/resume?state=12345"},
+        ),
+    )
+    aresponses.add(
+        "auth.simplisafe.com",
+        "/authorize/resume",
+        "get",
+        response=aresponses.Response(
+            text=None,
+            status=302,
+            headers={
+                "Location": (
+                    "https://tsv.prd.platform.simplisafe.com/v1/tsv/check"
+                    "?token=12345&state=12345"
+                )
+            },
+        ),
+    )
+    aresponses.add(
+        "tsv.prd.platform.simplisafe.com",
+        "/v1/tsv/check",
+        "get",
+        response=aresponses.Response(
             text=login_resp_verification_pending_email,
             status=200,
         ),
     )
     aresponses.add(
-        "auth.simplisafe.com",
-        "/u/login",
-        "post",
+        "tsv.prd.platform.simplisafe.com",
+        "/v1/tsv/check",
+        "get",
         response=aresponses.Response(
             text=login_resp_verification_successful,
             status=200,
+        ),
+    )
+    aresponses.add(
+        "auth.simplisafe.com",
+        "/continue",
+        "post",
+        response=aresponses.Response(
+            text=None,
+            status=302,
             headers={"Location": "/authorize/resume?state=12345"},
         ),
     )
@@ -482,17 +518,8 @@ async def test_unknown_token_response(
         "/u/login",
         "post",
         response=aresponses.Response(
-            text=login_resp_verification_pending_email,
-            status=200,
-        ),
-    )
-    aresponses.add(
-        "auth.simplisafe.com",
-        "/u/login",
-        "post",
-        response=aresponses.Response(
-            text=login_resp_verification_successful,
-            status=200,
+            text=None,
+            status=302,
             headers={"Location": "/authorize/resume?state=12345"},
         ),
     )
@@ -502,7 +529,50 @@ async def test_unknown_token_response(
         "get",
         response=aresponses.Response(
             text=None,
+            status=302,
+            headers={
+                "Location": (
+                    "https://tsv.prd.platform.simplisafe.com/v1/tsv/check"
+                    "?token=12345&state=12345"
+                )
+            },
+        ),
+    )
+    aresponses.add(
+        "tsv.prd.platform.simplisafe.com",
+        "/v1/tsv/check",
+        "get",
+        response=aresponses.Response(
+            text=login_resp_verification_pending_email,
             status=200,
+        ),
+    )
+    aresponses.add(
+        "tsv.prd.platform.simplisafe.com",
+        "/v1/tsv/check",
+        "get",
+        response=aresponses.Response(
+            text=login_resp_verification_successful,
+            status=200,
+        ),
+    )
+    aresponses.add(
+        "auth.simplisafe.com",
+        "/continue",
+        "post",
+        response=aresponses.Response(
+            text=None,
+            status=302,
+            headers={"Location": "/authorize/resume?state=12345"},
+        ),
+    )
+    aresponses.add(
+        "auth.simplisafe.com",
+        "/authorize/resume",
+        "get",
+        response=aresponses.Response(
+            text=None,
+            status=302,
             headers={"Location": "https://webapp.simplisafe.com/new?code=12345"},
         ),
     )

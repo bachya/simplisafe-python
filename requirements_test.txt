@@ -2,6 +2,7 @@ aiohttp>=3.8.0
 aresponses==2.1.5
 asynctest==0.13.0
 backoff==2.0.1
+beautifulsoup4==4.11.1
 pytest-aiohttp==1.0.4
 pytest-cov==3.0.0
 pytest==7.1.2

@@ -11,6 +11,7 @@ from typing import Any, Callable, cast
 from aiohttp import ClientResponse, ClientSession
 from aiohttp.client_exceptions import ClientResponseError
 import backoff
+from bs4 import BeautifulSoup
 from yarl import URL
 
 from simplipy.const import DEFAULT_USER_AGENT, LOGGER
@@ -86,7 +87,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         # These will get filled in after initial authentication:
         self._backoff_refresh_lock = asyncio.Lock()
         self._code_verifier: str = get_auth0_code_verifier()
-        self._login_verification_url: str | None = None
+        self._login_verification_url: URL | None = None
         self._token_last_refreshed: datetime | None = None
         self.access_token: str | None = None
         self.auth_state: AuthStates = AuthStates.UNAUTHENTICATED
@@ -169,12 +170,13 @@ class API:  # pylint: disable=too-many-instance-attributes
         if "too-many-sms" in body:
             raise Verify2FAError("SMS 2FA limit per hour exceeded; try again later")
 
-        api._login_verification_url = login_resp.url.human_repr()
+        api._login_verification_url = login_resp.url
+        LOGGER.debug("API Verification URL: %s", api._login_verification_url)
         assert api._login_verification_url
 
         # From what we can tell, SimpliSAfe requires 2FA on all accounts; unless we can
         # detect a more specific method, assume the user is using email-based 2FA:
-        if "mfa-sms-challenge" in api._login_verification_url:
+        if "mfa-sms-challenge" in str(api._login_verification_url):
             api.auth_state = AuthStates.PENDING_2FA_SMS
         else:
             api.auth_state = AuthStates.PENDING_2FA_EMAIL
@@ -224,6 +226,7 @@ class API:  # pylint: disable=too-many-instance-attributes
             ) from err
 
         auth_code_url = URL(auth_resume_resp.headers["Location"])
+        LOGGER.debug("Auth Code URL: %s", auth_code_url)
         auth_code = auth_code_url.query["code"]
 
         try:
@@ -445,17 +448,37 @@ class API:  # pylint: disable=too-many-instance-attributes
         if self.auth_state != AuthStates.PENDING_2FA_EMAIL:
             raise ValueError("API object is not awaiting email-based 2FA verification")
 
-        login_verification_resp = await self.session.request(
-            "post", self._login_verification_url
+        login_check_resp = await self.session.request(
+            "get", self._login_verification_url
         )
-
-        body = await login_verification_resp.text()
+        body = await login_check_resp.text()
         LOGGER.debug("Email-based 2FA attempt response body: %s", body)
 
         if "Verification Pending" in body:
             raise Verify2FAPending("Email-based 2FA verification still pending")
         if "Verification Successful" not in body:
             raise Verify2FAError("Unknown error during email-based 2FA verification")
+
+        login_check_soup = BeautifulSoup(body, "html.parser")
+        login_token = login_check_soup.find("input", {"name": "token"})["value"]
+
+        assert self._login_verification_url
+
+        login_verification_resp = await self.session.request(
+            "post",
+            f"{AUTH_URL_BASE}/continue",
+            allow_redirects=False,
+            params={
+                "state": self._login_verification_url.query["state"],
+            },
+            data={
+                "token": login_token,
+            },
+        )
+
+        LOGGER.info(
+            "Login Verification Response Headers: %s", login_verification_resp.headers
+        )
 
         await self._async_complete_login(login_verification_resp)
 

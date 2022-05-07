@@ -152,6 +152,8 @@ class API:  # pylint: disable=too-many-instance-attributes
                 f"Error while determining the Auth0 login URL: {err}"
             ) from err
 
+        LOGGER.debug("Auth0 response headers: %s", auth0_resp.headers)
+
         # Attempt to login:
         login_resp = await session.request(
             "post",
@@ -476,7 +478,7 @@ class API:  # pylint: disable=too-many-instance-attributes
             },
         )
 
-        LOGGER.info(
+        LOGGER.debug(
             "Login Verification Response Headers: %s", login_verification_resp.headers
         )
 

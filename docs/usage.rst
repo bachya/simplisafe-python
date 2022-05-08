@@ -103,7 +103,7 @@ Performing SMS-Based Two-Factor Authentication
 **********************************************
 
 This type of two-factor authentication requires you to input a code received via SMS.
-SimpliSafe. After you receive the code, you use it like this:
+After you receive the code, you verify it like this:
 
 .. code:: python
 

@@ -21,17 +21,17 @@ Python Versions
 SimpliSafe™ Plans
 -----------------
 
-SimpliSafe™ offers several `monitoring plans <https://support.simplisafe.com/hc/en-us/articles/360023809972-What-are-the-service-plan-options->`_. Only the **Standard** and **Interactive** plans work with this library.
+SimpliSafe™ offers several `monitoring plans <https://support.simplisafe.com/hc/en-us/articles/360023809972-What-are-the-service-plan-options->`_.
+Only the **Standard** and **Interactive** plans work with this library.
 
-
-Please note that only Interactive plans can access sensor values and set the
-system state; using the API with a Standard plan will be limited to retrieving
-the current system state.
+Please note that only Interactive plans can access sensor values and set the system
+state; using the API with a Standard plan will be limited to retrieving the current
+system state.
 
 Accessing the API
 -----------------
 
-First, authenticate using your SimpliSafe username/email and password:
+First, authenticate using your SimpliSafe™ username/email and password:
 
 .. code:: python
 
@@ -54,9 +54,9 @@ First, authenticate using your SimpliSafe username/email and password:
     asyncio.run(main())
 
 
-This will create an object that is in a "pending" state, meaning that it now awaits
-two-factor authentication. You can find the type of two-factor authentication by looking
-at the ``auth_state`` property:
+This process creates an object in a "pending" state, which now awaits two-factor
+authentication. You can find the type of two-factor authentication by looking at the
+``auth_state`` property:
 
 .. code:: python
 
@@ -72,7 +72,7 @@ Performing Email-Based Two-Factor Authentication
 *************************************************
 
 This type of two-factor authentication requires you to click a link in an email from
-SimpliSafe. At any point, you can see if two-factor authentication has been completed:
+SimpliSafe™. At any point, you can see if two-factor authentication is complete:
 
 .. code:: python
 
@@ -82,8 +82,8 @@ If the two-factor authentication hasn't succeeded yet, ``simplipy`` will raise a
 :meth:`Verify2FAPending  <simplipy.errors.Verify2FAPending>` exception. If it has
 succeeded, the :meth:`API  <simplipy.api.API>` object is ready to use.
 
-A common pattern in this scenario would be to loop and regularly test for authentication
-(eventually timing out as appropriate):
+A typical pattern in this scenario would be to loop and regularly test for
+authentication (eventually timing out as appropriate):
 
 .. code:: python
 
@@ -142,12 +142,17 @@ aware of:
     api.user_id
     # >>> 1234567
 
-Refreshing the Access Token
-***************************
+Creating a New API Object with the Refresh Token
+************************************************
 
-The official way to create an :meth:`API <simplipy.api.API>` object after the initial
-Authorization Code/Code Verifier handshake is to use the refresh token to generate a new
-access token:
+It is cumbersome to call
+:meth:`API.async_from_credentials <simplipy.api.API.async_from_credentials>` every time
+you want a new :meth:`API <simplipy.api.API>` object. Therefore, *after* initial
+authentication, call
+:meth:`API.async_from_refresh_token <simplipy.api.API.async_from_refresh_token>`,
+passing the :meth:`refresh_token <simplipy.api.API.refresh_token>` from the previous
+:meth:`API <simplipy.api.API>` object. A common practice is to save a valid refresh
+token to a filesystem/database/etc. and retrieve it later.
 
 .. code:: python
 
@@ -157,12 +162,17 @@ access token:
     import simplipy
 
 
+    async def async_get_refresh_token() -> str:
+        """Get a refresh token from storage."""
+        # ...
+
+
     async def main() -> None:
         """Create the aiohttp session and run."""
         async with ClientSession() as session:
+            refresh_token = await async_get_refresh_token()
             api = await simplipy.API.async_from_refresh_token(
-                "<REFRESH_TOKEN>"
-                session=session,
+                refresh_token, session=session
             )
 
             # ...
@@ -170,22 +180,28 @@ access token:
 
     asyncio.run(main())
 
-The common practice is to store ``api.refresh_token`` somewhere (a filesystem, a
-database, etc.), retrieve it later when needed, and pass it to
-:meth:`async_from_refresh_token <simplipy.api.API.async_from_refresh_token>`. Be aware
-that refresh tokens can only be used once!
-
 After a new :meth:`API <simplipy.api.API>` object is created via 
-:meth:`async_from_refresh_token <simplipy.api.API.async_from_refresh_token>`, it comes
-with its own, new refresh token; this can be used to follow the same re-authentication
-process into perpetuity.
+:meth:`API.async_from_refresh_token <simplipy.api.API.async_from_refresh_token>`, it
+comes with its own, new refresh token; this can be used to follow the same
+re-authentication process into perpetuity.
 
 Note that you do not need to worry about refreshing the access token within an
 :meth:`API <simplipy.api.API>` object's normal operations (if, for instance, you have an
-application that runs for longer than an access token's lifespan); that is handled for
-you transparently.
+application that runs for longer than an access token's lifespan); if an
+:meth:`API <simplipy.api.API>` object encounters an error that indicates an expired
+access token, it will automatically attempt to use the refresh token it has.
 
-**VERY IMPORTANT NOTE: It is vitally important that you do not let these tokens leave
-your control.** If exposed, savvy attackers could use them to view and alter your
-system's state. **You have been warned; proper usage of these properties is solely your
-responsibility.**
+Remember three essential characteristics of refresh tokens:
+
+1. Refresh tokens can only be used once.
+2. SimpliSafe™ will invalidate active tokens if you change your password.
+3. Given the unofficial nature of the SimpliSafe™ API, we do not know how long refresh
+   tokens are valid – we assume they'll last indefinitely, but that information may
+   change.
+
+A VERY IMPORTANT NOTE ABOUT TOKENS
+**********************************
+
+**It is vitally important not to let these tokens leave your control.** If
+exposed, savvy attackers could use them to view and alter your system's state. **You
+have been warned; proper storage/usage of tokens is solely your responsibility.**

@@ -13,12 +13,13 @@
 # import os
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
+from datetime import datetime
 
 
 # -- Project information -----------------------------------------------------
 
 project = "simplisafe-python"
-copyright = "2020, Aaron Bach"
+copyright = f"{datetime.today().year}, Aaron Bach"
 author = "Aaron Bach"
 
 # The full version, including alpha/beta/rc tags

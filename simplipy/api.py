@@ -208,7 +208,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         :param session: The ``aiohttp`` ``ClientSession`` session used for all HTTP requests
         :type session: ``aiohttp.client.ClientSession``
         :param request_retries: The default number of request retries to use
-        :typ request_retries: ``int``
+        :type request_retries: ``int``
         :rtype: :meth:`simplipy.api.API`
         """
         api = cls(session=session, request_retries=request_retries)

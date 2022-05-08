@@ -79,6 +79,48 @@ async def test_2fa_email_pending(aresponses, login_resp_verification_pending_ema
 
 
 @pytest.mark.asyncio
+async def test_2fa_email_pending_already_authenticated(
+    aresponses, login_resp_verification_pending_email
+):
+    """Test a email-based 2FA workflowup to the pending stage (auth already complete)."""
+    aresponses.add(
+        "auth.simplisafe.com",
+        "/authorize",
+        "get",
+        response=aresponses.Response(
+            text=None,
+            status=302,
+            headers={
+                "Location": (
+                    "https://tsv.prd.platform.simplisafe.com/v1/tsv/check"
+                    "?token=12345&state=12345"
+                )
+            },
+        ),
+    )
+    aresponses.add(
+        "tsv.prd.platform.simplisafe.com",
+        "/v1/tsv/check",
+        "get",
+        response=aresponses.Response(
+            text=login_resp_verification_pending_email,
+            status=200,
+        ),
+    )
+
+    async with aiohttp.ClientSession() as session:
+        simplisafe = await API.async_from_credentials(
+            TEST_USERNAME, TEST_PASSWORD, session=session
+        )
+        assert simplisafe.auth_state == AuthStates.PENDING_2FA_EMAIL
+
+        with pytest.raises(Verify2FAPending):
+            await simplisafe.async_verify_2fa_email()
+
+    aresponses.assert_plan_strictly_followed()
+
+
+@pytest.mark.asyncio
 async def test_2fa_email_successful(aresponses, server):
     """Test a successful email-based 2FA."""
     async with aiohttp.ClientSession() as session:

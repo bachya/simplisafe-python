@@ -154,25 +154,31 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         LOGGER.debug("Auth0 response headers: %s", auth0_resp.headers)
 
-        # Attempt to login:
-        login_resp = await session.request(
-            "post",
-            f"{AUTH_URL_BASE}{auth0_resp.headers['Location']}",
-            data={
-                "password": password,
-                "username": username,
-            },
-        )
+        if not auth0_resp.headers["Location"].startswith("/"):
+            # Login has already occurred (according to the session cookies we have), so
+            # we already have the login verification URL:
+            api._login_verification_url = auth0_resp.headers["Location"]
+        else:
+            # Attempt to login:
+            login_resp = await session.request(
+                "post",
+                f"{AUTH_URL_BASE}{auth0_resp.headers['Location']}",
+                data={
+                    "password": password,
+                    "username": username,
+                },
+            )
 
-        body = await login_resp.text()
-        LOGGER.debug("Login attempt response body: %s", body)
+            body = await login_resp.text()
+            LOGGER.debug("Login attempt response body: %s", body)
 
-        if "invalid_user_password" in body:
-            raise InvalidCredentialsError("Invalid username/password")
-        if "too-many-sms" in body:
-            raise Verify2FAError("SMS 2FA limit per hour exceeded; try again later")
+            if "invalid_user_password" in body:
+                raise InvalidCredentialsError("Invalid username/password")
+            if "too-many-sms" in body:
+                raise Verify2FAError("SMS 2FA limit per hour exceeded; try again later")
 
-        api._login_verification_url = login_resp.url
+            api._login_verification_url = login_resp.url
+
         LOGGER.debug("API Verification URL: %s", api._login_verification_url)
         assert api._login_verification_url
 

@@ -45,7 +45,7 @@ class Lock(DeviceV3):
     def __init__(
         self,
         request: Callable[..., Awaitable],
-        system: "System",
+        system: System,
         device_type: DeviceTypes,
         serial: str,
     ) -> None:

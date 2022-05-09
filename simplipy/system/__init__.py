@@ -78,7 +78,7 @@ def guard_from_missing_data(default_value: Any = None) -> Callable:
         """Decorate."""
 
         @wraps(func)
-        def wrapper(system: "System") -> Any:
+        def wrapper(system: System) -> Any:
             """Call the function and handle any issue."""
             try:
                 return func(system)
@@ -105,7 +105,7 @@ class System:  # pylint: disable=too-many-public-methods
     :type sid: ``int``
     """
 
-    def __init__(self, api: "API", sid: int) -> None:
+    def __init__(self, api: API, sid: int) -> None:
         """Initialize."""
         self._api = api
         self._sid = sid

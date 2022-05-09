@@ -40,7 +40,7 @@ def coverage(session: nox.sessions.Session) -> None:
 def docs(session: nox.sessions.Session) -> None:
     """Generate a local copy of the docs."""
     session.run("poetry", "install", "--no-dev", external=True)
-    install_with_constraints(session, "Sphinx", "sphinx-rtd-theme")
+    install_with_constraints(session, "myst-parser", "Sphinx", "sphinx-rtd-theme")
     session.run("sphinx-build", "./docs", "./docs/_build")
 
 

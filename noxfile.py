@@ -28,6 +28,7 @@ def coverage(session: nox.sessions.Session) -> None:
         "--cov=simplipy",
         "--cov-report=term-missing",
         "--cov-report=xml",
+        "tests/"
     ]
     session.run("poetry", "install", "--no-dev", external=True)
     install_with_constraints(
@@ -47,7 +48,7 @@ def docs(session: nox.sessions.Session) -> None:
 @nox.session
 def tests(session: nox.sessions.Session) -> None:
     """Run all tests."""
-    args = session.posargs or ["-s"]
+    args = session.posargs or ["-s", "tests/"]
     session.run("poetry", "install", "--no-dev", external=True)
     install_with_constraints(session, "aresponses", "pytest", "pytest-aiohttp")
     session.run("pytest", *args)

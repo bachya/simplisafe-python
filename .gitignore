@@ -1,5 +1,6 @@
 .coverage
 .mypy_cache
+.nox
 .tox/
 .venv
 __pycache__/

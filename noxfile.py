@@ -28,7 +28,7 @@ def coverage(session: nox.sessions.Session) -> None:
         "--cov=simplipy",
         "--cov-report=term-missing",
         "--cov-report=xml",
-        "tests/"
+        "tests/",
     ]
     session.run("poetry", "install", "--no-dev", external=True)
     install_with_constraints(

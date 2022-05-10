@@ -247,18 +247,11 @@ async def test_client_async_from_refresh_token(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "raw_error,raised_error",
-    [
-        (aiohttp.client_exceptions.ClientResponseError, RequestError),
-        (Exception, SimplipyError),
-    ],
-)
-async def test_client_async_from_refresh_token_unknown_error(raised_error, raw_error):
+async def test_client_async_from_refresh_token_unknown_error():
     """Test an unknown error while creating a client from a refresh token."""
-    with patch("simplipy.API._async_api_request", AsyncMock(side_effect=raw_error)):
+    with patch("simplipy.API._async_api_request", AsyncMock(side_effect=Exception)):
         async with aiohttp.ClientSession() as session:
-            with pytest.raises(raised_error):
+            with pytest.raises(SimplipyError):
                 await API.async_from_refresh_token(TEST_REFRESH_TOKEN, session=session)
 
 

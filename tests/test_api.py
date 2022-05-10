@@ -88,11 +88,9 @@ async def test_401_bad_credentials(aresponses, login_resp_invalid_username_passw
 
 @pytest.mark.asyncio
 async def test_401_refresh_token_failure(
-    aresponses, invalid_refresh_token_response, server, caplog
+    aresponses, invalid_refresh_token_response, server
 ):
     """Test that an error is raised when refresh token and reauth both fail."""
-    # import logging
-    # caplog.set_level(logging.DEBUG)
     server.add(
         "api.simplisafe.com",
         f"/v1/users/{TEST_SUBSCRIPTION_ID}/subscriptions",
@@ -242,6 +240,36 @@ async def test_client_async_from_refresh_token(
         )
         assert simplisafe.access_token == TEST_ACCESS_TOKEN
         assert simplisafe.refresh_token == TEST_REFRESH_TOKEN
+
+    aresponses.assert_plan_strictly_followed()
+
+
+@pytest.mark.asyncio
+async def test_client_async_from_refresh_token_http_error(
+    aresponses, invalid_refresh_token_response, server
+):
+    """Test that an error is when refreshing a token yields an HTTP error."""
+    server.add(
+        "api.simplisafe.com",
+        f"/v1/users/{TEST_SUBSCRIPTION_ID}/subscriptions",
+        "get",
+        response=aresponses.Response(text="Unauthorized", status=401),
+    )
+    server.add(
+        "auth.simplisafe.com",
+        "/oauth/token",
+        "post",
+        response=aiohttp.web_response.json_response("Bad Request", status=400),
+    )
+
+    async with aiohttp.ClientSession() as session:
+        simplisafe = await API.async_from_credentials(
+            TEST_USERNAME, TEST_PASSWORD, session=session
+        )
+        await simplisafe.async_verify_2fa_email()
+
+        with pytest.raises(RequestError):
+            await API.async_from_refresh_token(TEST_REFRESH_TOKEN, session=session)
 
     aresponses.assert_plan_strictly_followed()
 

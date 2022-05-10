@@ -245,9 +245,7 @@ async def test_client_async_from_refresh_token(
 
 
 @pytest.mark.asyncio
-async def test_client_async_from_refresh_token_http_error(
-    aresponses, invalid_refresh_token_response, server
-):
+async def test_client_async_from_refresh_token_http_error(aresponses, server):
     """Test that an error is when refreshing a token yields an HTTP error."""
     server.add(
         "api.simplisafe.com",

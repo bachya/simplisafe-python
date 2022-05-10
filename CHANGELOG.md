@@ -24,7 +24,7 @@ https://github.com/bachya/simplisafe-python/releases
 - Moving to the new API
 
 ## 1.0.5
-- Get status from "Dashboard" request instead of "Locations" request because simplisafe was returning 'error' 
+- Get status from "Dashboard" request instead of "Locations" request because simplisafe was returning 'error'
 
 ## 1.0.4
 - Don't log error when user doesn't have a freeze sensor

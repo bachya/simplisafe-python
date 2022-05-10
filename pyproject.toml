@@ -2,6 +2,13 @@
 requires = ["setuptools >= 35.0.2", "wheel >= 0.29.0", "poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
+[tool.coverage.report]
+exclude_lines = ["raise NotImplementedError", "TYPE_CHECKING"]
+fail_under = 100
+
+[tool.coverage.run]
+source = ["simplipy"]
+
 [tool.isort]
 combine_as_imports = true
 default_section = "THIRDPARTY"

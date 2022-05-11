@@ -113,7 +113,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         :type username: ``str``
         :param password: A SimpliSafe account password
         :type password: ``str``
-        :param session: The ``aiohttp`` ``ClientSession`` session used for all HTTP requests
+        :param session: An ``aiohttp`` ``ClientSession``
         :type session: ``aiohttp.client.ClientSession``
         :param request_retries: The default number of request retries to use
         :type request_retries: ``int``
@@ -205,7 +205,7 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         :param refresh_token: The refresh token
         :type refresh_token: ``str``
-        :param session: The ``aiohttp`` ``ClientSession`` session used for all HTTP requests
+        :param session: An ``aiohttp`` ``ClientSession``
         :type session: ``aiohttp.client.ClientSession``
         :param request_retries: The default number of request retries to use
         :type request_retries: ``int``
@@ -261,7 +261,9 @@ class API:  # pylint: disable=too-many-instance-attributes
     async def _async_handle_on_backoff(self, _: dict[str, Any]) -> None:
         """Handle a backoff retry."""
         err_info = sys.exc_info()
-        err: ClientResponseError = err_info[1].with_traceback(err_info[2])  # type: ignore
+        err: ClientResponseError = err_info[1].with_traceback(  # type: ignore
+            err_info[2]
+        )
 
         LOGGER.debug("Error during request attempt: %s", err)
 

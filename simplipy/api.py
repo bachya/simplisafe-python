@@ -111,8 +111,8 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         :param username: A SimpliSafe account username/email address
         :type username: ``str``
-        :param password: A SimpliSafe account password
-        :type password: ``str``
+        :param pswd: A SimpliSafe account password
+        :type pswd: ``str``
         :param session: An ``aiohttp`` ``ClientSession``
         :type session: ``aiohttp.client.ClientSession``
         :param request_retries: The default number of request retries to use

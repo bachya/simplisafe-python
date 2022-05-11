@@ -83,7 +83,7 @@ class Camera(DeviceV3):
 
     @property
     def shutter_open_when_away(self) -> bool:
-        """Return whether the privacy shutter is open when the alarm is armed in away mode.
+        """Return whether the privacy shutter is open in away mode.
 
         :rtype: ``bool``
         """
@@ -92,7 +92,7 @@ class Camera(DeviceV3):
 
     @property
     def shutter_open_when_home(self) -> bool:
-        """Return whether the privacy shutter is open when the alarm is armed in home mode.
+        """Return whether the privacy shutter is open in home mode.
 
         :rtype: ``bool``
         """

@@ -9,13 +9,18 @@ from simplipy.errors import CannotConnectError, SimplipyError
 
 _LOGGER = logging.getLogger()
 
-SIMPLISAFE_REFRESH_TOKEN = "<REFRESH TOKEN>"
+SIMPLISAFE_REFRESH_TOKEN = os.getenv("SIMPLISAFE_REFRESH_TOKEN", "")
 
 
 async def main() -> None:
     """Create the aiohttp session and run the example."""
     async with ClientSession() as session:
         logging.basicConfig(level=logging.DEBUG)
+        if not SIMPLISAFE_REFRESH_TOKEN:
+            _LOGGER.error(
+                "You must specify a SIMPLISAFE_REFRESH_TOKEN in the environment."
+            )
+            return
 
         try:
             simplisafe = await API.async_from_refresh_token(

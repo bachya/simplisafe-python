@@ -11,37 +11,37 @@
         background: #F6F6F5;
         font-family: ulp-font, -apple-system, BlinkMacSystemFont, Roboto, Helvetica, sans-serif;
       }
-      
+
 .c9de4f218 {
         background: #F6F6F5;
       }
-      
+
 .cfd68411f.c091ffa4c {
         background: #D00E17;
       }
-      
+
 .cfd68411f.c625453ba {
         background: #0A8852;
       }
-      
+
 .cc48b7925 {
         background-color: #0081ad;
         color: #ffffff;
       }
-      
+
 .cc48b7925 a,
       .cc48b7925 a:visited {
         color: #ffffff;
       }
-      
+
 .ce747747d {
         background-color: #0A8852;
       }
-      
+
 .c04549935 {
         background-color: #D00E17;
       }
-      
+
 @supports(mask-image: url('/static/img/branding-generic/copy-icon.svg')) {
         @supports not(-ms-ime-align: auto) {
           .c326c692c.c2fd47e24::before {
@@ -49,36 +49,36 @@
           }
         }
       }
-      
+
 .input.ced87ca25 {
         border-color: #D00E17;
       }
-      
+
 .error-cloud {
         background-color: #D00E17;
       }
-      
+
 .error-fatal {
         background-color: #D00E17;
       }
-      
+
 .error-local {
         background-color: #D00E17;
       }
-      
+
 .c27a9cbee.c2fd47e24 {
         background-color: #D00E17;
         border-color: #D00E17;
       }
-      
+
 .c27a9cbee.c2fd47e24::before {
         border-bottom-color: #D00E17;
       }
-      
+
 .c27a9cbee.c2fd47e24::after {
         border-bottom-color: #D00E17;
       }
-      
+
 #alert-trigger {
         background-color: #D00E17;
       }
@@ -104,7 +104,7 @@
         .js-required {
           display: none !important;
         }
-        
+
 .no-js {
           clip: auto;
           clip-path: none;
@@ -126,20 +126,20 @@
         justify-content: left;
         background-color: var(--widget-background-color);
       }
-      
+
 .inner {
         margin: auto;
         width: 480px;
       }
-      
+
 .prompt-wrapper {
         display: block;
       }
-      
+
 body {
         background-image: radial-gradient(white, rgb(200, 200, 200));
       }
-      
+
 .disclaimer,
       .reset-login {
         padding: 0 16px 16px;
@@ -149,32 +149,32 @@ body {
         font-style: italic;
         font-size: small;
       }
-      
+
 .disclaimer a {
         font-size: unset;
       }
-      
+
 .ulp-authenticator-selector-text {
         white-space: nowrap;
       }
-      
+
 .ulp-outer {
         height: unset;
       }
-      
+
 @media(max-width:480px) {
         .flex {
           width: 100%;
         }
-        
+
 .ulp-outer {
           height: unset;
         }
-        
+
 .ulp-footer {
           position: unset;
         }
-        
+
 .ulp-authenticator-selector-text {
           line-break: strict;
         }
@@ -277,16 +277,16 @@ body {
               }
               return {
                 addClass: function (e, t) {
-                  if (e.classList) 
+                  if (e.classList)
                     return e.classList.add(t);
-                  
+
                   var n = e.className.split(" ");
                   -1 === n.indexOf(t) && (n.push(t), e.className = n.join(" "))
                 },
                 toggleClass: function (e, t) {
-                  if (e.classList) 
+                  if (e.classList)
                     return e.classList.toggle(t);
-                  
+
                   var n = e.className.split(" "),
                     r = n.indexOf(t);
                   -1 !== r
@@ -333,9 +333,9 @@ body {
                           ? s()
                           : setTimeout(r, a)
                       }
-                      if (429 !== o.status) 
+                      if (429 !== o.status)
                         return u({status: o.status, responseText: o.responseText});
-                      
+
                       var t = 1e3 * Number.parseInt(o.getResponseHeader("X-RateLimit-Reset")),
                         n = t - (new Date).getTime();
                       return setTimeout(
@@ -363,9 +363,9 @@ body {
                     .call(n)
                 },
                 removeClass: function (e, t) {
-                  if (e.classList) 
+                  if (e.classList)
                     return e.classList.remove(t);
-                  
+
                   var n = e.className.split(" "),
                     r = n.indexOf(t);
                   -1 !== r && (n.splice(r, 1), e.className = n.join(" "))
@@ -421,14 +421,14 @@ body {
             var t = e.target;
             n(t, "data-autofilled", "")
           }
-          if (r("body._simple-labels")) 
+          if (r("body._simple-labels"))
             return e(".c01c3c8f7.no-js").forEach(function (e) {
               i(e, "no-js")
             }),
             void e(".c01c3c8f7.js-required").forEach(function (e) {
               a(e, "cd59b0efc")
             });
-          
+
           e(".c326c692c:not(.c2b2e4974):not(disabled)").forEach(function (e) {
             a(e, "cddcefc22");
             var t,

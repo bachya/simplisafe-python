@@ -1,10 +1,11 @@
+*.egg-info
 .coverage
 .mypy_cache
-.tox/
+.nox
+.tox
 .venv
-__pycache__/
+__pycache__
 coverage.xml
 docs/_build
 poetry.lock
-simplisafe_python.egg-info
 tags

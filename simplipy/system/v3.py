@@ -132,7 +132,7 @@ def create_pin_payload(pins: dict) -> dict[str, dict[str, dict[str, str]]]:
 class SystemV3(System):  # pylint: disable=too-many-public-methods
     """Define a V3 (new) system."""
 
-    def __init__(self, api: "API", system_id: int) -> None:
+    def __init__(self, api: API, system_id: int) -> None:
         """Initialize."""
         super().__init__(api, system_id)
 

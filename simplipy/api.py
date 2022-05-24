@@ -11,6 +11,7 @@ from typing import Any, Callable, cast
 from aiohttp import ClientResponse, ClientSession
 from aiohttp.client_exceptions import ClientResponseError
 import backoff
+from bs4 import BeautifulSoup
 from yarl import URL
 
 from simplipy.const import DEFAULT_USER_AGENT, LOGGER
@@ -86,7 +87,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         # These will get filled in after initial authentication:
         self._backoff_refresh_lock = asyncio.Lock()
         self._code_verifier: str = get_auth0_code_verifier()
-        self._login_verification_url: str | None = None
+        self._login_verification_url: URL | None = None
         self._token_last_refreshed: datetime | None = None
         self.access_token: str | None = None
         self.auth_state: AuthStates = AuthStates.UNAUTHENTICATED
@@ -110,9 +111,9 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         :param username: A SimpliSafe account username/email address
         :type username: ``str``
-        :param password: A SimpliSafe account password
-        :type password: ``str``
-        :param session: The ``aiohttp`` ``ClientSession`` session used for all HTTP requests
+        :param pswd: A SimpliSafe account password
+        :type pswd: ``str``
+        :param session: An ``aiohttp`` ``ClientSession``
         :type session: ``aiohttp.client.ClientSession``
         :param request_retries: The default number of request retries to use
         :type request_retries: ``int``
@@ -151,30 +152,39 @@ class API:  # pylint: disable=too-many-instance-attributes
                 f"Error while determining the Auth0 login URL: {err}"
             ) from err
 
-        # Attempt to login:
-        login_resp = await session.request(
-            "post",
-            f"{AUTH_URL_BASE}{auth0_resp.headers['Location']}",
-            data={
-                "password": password,
-                "username": username,
-            },
-        )
+        LOGGER.debug("Auth0 response headers: %s", auth0_resp.headers)
 
-        body = await login_resp.text()
-        LOGGER.debug("Login attempt response body: %s", body)
+        if not auth0_resp.headers["Location"].startswith("/"):
+            # Login has already occurred (according to the session cookies we have), so
+            # we already have the login verification URL:
+            api._login_verification_url = auth0_resp.headers["Location"]
+        else:
+            # Attempt to login:
+            login_resp = await session.request(
+                "post",
+                f"{AUTH_URL_BASE}{auth0_resp.headers['Location']}",
+                data={
+                    "password": password,
+                    "username": username,
+                },
+            )
 
-        if "invalid_user_password" in body:
-            raise InvalidCredentialsError("Invalid username/password")
-        if "too-many-sms" in body:
-            raise Verify2FAError("SMS 2FA limit per hour exceeded; try again later")
+            body = await login_resp.text()
+            LOGGER.debug("Login attempt response body: %s", body)
 
-        api._login_verification_url = login_resp.url.human_repr()
+            if "invalid_user_password" in body:
+                raise InvalidCredentialsError("Invalid username/password")
+            if "too-many-sms" in body:
+                raise Verify2FAError("SMS 2FA limit per hour exceeded; try again later")
+
+            api._login_verification_url = login_resp.url
+
+        LOGGER.debug("API Verification URL: %s", api._login_verification_url)
         assert api._login_verification_url
 
         # From what we can tell, SimpliSAfe requires 2FA on all accounts; unless we can
         # detect a more specific method, assume the user is using email-based 2FA:
-        if "mfa-sms-challenge" in api._login_verification_url:
+        if "mfa-sms-challenge" in str(api._login_verification_url):
             api.auth_state = AuthStates.PENDING_2FA_SMS
         else:
             api.auth_state = AuthStates.PENDING_2FA_EMAIL
@@ -195,10 +205,10 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         :param refresh_token: The refresh token
         :type refresh_token: ``str``
-        :param session: The ``aiohttp`` ``ClientSession`` session used for all HTTP requests
+        :param session: An ``aiohttp`` ``ClientSession``
         :type session: ``aiohttp.client.ClientSession``
         :param request_retries: The default number of request retries to use
-        :typ request_retries: ``int``
+        :type request_retries: ``int``
         :rtype: :meth:`simplipy.api.API`
         """
         api = cls(session=session, request_retries=request_retries)
@@ -224,6 +234,7 @@ class API:  # pylint: disable=too-many-instance-attributes
             ) from err
 
         auth_code_url = URL(auth_resume_resp.headers["Location"])
+        LOGGER.debug("Auth Code URL: %s", auth_code_url)
         auth_code = auth_code_url.query["code"]
 
         try:
@@ -250,7 +261,9 @@ class API:  # pylint: disable=too-many-instance-attributes
     async def _async_handle_on_backoff(self, _: dict[str, Any]) -> None:
         """Handle a backoff retry."""
         err_info = sys.exc_info()
-        err: ClientResponseError = err_info[1].with_traceback(err_info[2])  # type: ignore
+        err: ClientResponseError = err_info[1].with_traceback(  # type: ignore
+            err_info[2]
+        )
 
         LOGGER.debug("Error during request attempt: %s", err)
 
@@ -445,17 +458,37 @@ class API:  # pylint: disable=too-many-instance-attributes
         if self.auth_state != AuthStates.PENDING_2FA_EMAIL:
             raise ValueError("API object is not awaiting email-based 2FA verification")
 
-        login_verification_resp = await self.session.request(
-            "post", self._login_verification_url
+        login_check_resp = await self.session.request(
+            "get", self._login_verification_url
         )
-
-        body = await login_verification_resp.text()
+        body = await login_check_resp.text()
         LOGGER.debug("Email-based 2FA attempt response body: %s", body)
 
         if "Verification Pending" in body:
             raise Verify2FAPending("Email-based 2FA verification still pending")
         if "Verification Successful" not in body:
             raise Verify2FAError("Unknown error during email-based 2FA verification")
+
+        login_check_soup = BeautifulSoup(body, "html.parser")
+        login_token = login_check_soup.find("input", {"name": "token"})["value"]
+
+        assert self._login_verification_url
+
+        login_verification_resp = await self.session.request(
+            "post",
+            f"{AUTH_URL_BASE}/continue",
+            allow_redirects=False,
+            params={
+                "state": self._login_verification_url.query["state"],
+            },
+            data={
+                "token": login_token,
+            },
+        )
+
+        LOGGER.debug(
+            "Login Verification Response Headers: %s", login_verification_resp.headers
+        )
 
         await self._async_complete_login(login_verification_resp)
 

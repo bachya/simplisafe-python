@@ -32,8 +32,9 @@ repos:
     hooks:
       - id: flake8
         additional_dependencies:
-          - flake8-docstrings==1.5.0
-          - pydocstyle==5.0.1
+          - flake8-bugbear
+          - flake8-docstrings
+          - pydocstyle
         files: ^simplipy/.+\.py$
   - repo: https://github.com/pre-commit/mirrors-isort
     rev: v4.3.21
@@ -51,10 +52,13 @@ repos:
     rev: v2.4.0
     hooks:
       - id: check-json
+      - id: check-yaml
+      - id: end-of-file-fixer
       - id: no-commit-to-branch
         args:
           - --branch=dev
           - --branch=master
+      - id: trailing-whitespace
   - repo: https://github.com/PyCQA/pydocstyle
     rev: 5.0.2
     hooks:
@@ -65,3 +69,7 @@ repos:
     hooks:
       - id: shellcheck
         files: ^script/.+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v2.32.1
+    hooks:
+      - id: pyupgrade

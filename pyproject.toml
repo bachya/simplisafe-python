@@ -2,6 +2,13 @@
 requires = ["setuptools >= 35.0.2", "wheel >= 0.29.0", "poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
+[tool.coverage.report]
+exclude_lines = ["raise NotImplementedError", "TYPE_CHECKING"]
+fail_under = 100
+
+[tool.coverage.run]
+source = ["simplipy"]
+
 [tool.isort]
 combine_as_imports = true
 default_section = "THIRDPARTY"
@@ -39,7 +46,7 @@ warn_unused_ignores = true
 
 [tool.poetry]
 name = "simplisafe-python"
-version = "2022.04.0"
+version = "2022.05.1"
 description = "A Python3, async interface to the SimpliSafe API"
 readme = "README.md"
 authors = ["Aaron Bach <bachya1208@gmail.com>"]
@@ -61,7 +68,8 @@ classifiers = [
 
 [tool.poetry.dependencies]
 aiohttp = ">=3.8.0"
-backoff = "^1.11.1"
+backoff = ">=1.11.1"
+beautifulsoup4 = ">=4.11.1"
 python = "^3.8.0"
 pytz = ">=2019.3"
 voluptuous = ">=0.11.7"
@@ -71,6 +79,8 @@ websockets = ">=8.1"
 Sphinx = "^4.0.0"
 aresponses = "^2.1.4"
 asynctest = "^0.13.0"
+myst-parser = "^0.17.2"
+nox = "^2022.1.7"
 pre-commit = "^2.0.1"
 pytest = "^7.0.0"
 pytest-aiohttp = "^1.0.0"

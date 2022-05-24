@@ -1,105 +1,136 @@
-API Reference
-=============
+# API Reference
 
-.. toctree::
-   :maxdepth: 3
+```{toctree}
+:maxdepth: 3
+```
 
+```{eval-rst}
 .. module:: simplipy
+```
 
-API
----
+## API
 
+```{eval-rst}
 .. automodule:: simplipy.api
    :members:
+```
 
-Websocket Communication
------------------------
+## Websocket Communication
 
+```{eval-rst}
 .. autoclass:: simplipy.websocket.WebsocketClient
    :members:
+```
 
+```{eval-rst}
 .. autoclass:: simplipy.websocket.WebsocketEvent
    :members:
    :undoc-members:
+```
 
-Devices
---------
+## Devices
 
+```{eval-rst}
 .. autoclass:: simplipy.device.Device
    :members:
+```
 
+```{eval-rst}
 .. autoclass:: simplipy.device.DeviceTypes
    :members:
    :undoc-members:
+```
 
+```{eval-rst}
 .. autoclass:: simplipy.device.DeviceV3
    :members:
+```
 
-Lock
-----
+## Lock
 
+```{eval-rst}
 .. autoclass:: simplipy.device.lock.Lock
    :members:
+```
 
+```{eval-rst}
 .. autoclass:: simplipy.device.lock.LockStates
    :members:
    :undoc-members:
+```
 
-Sensors
--------
+## Sensors
 
+```{eval-rst}
 .. autoclass:: simplipy.device.sensor.v2.SensorV2
    :members:
+```
 
+```{eval-rst}
 .. autoclass:: simplipy.device.sensor.v3.SensorV3
    :members:
+```
 
-Systems
--------
+## Systems
 
+```{eval-rst}
 .. autoclass:: simplipy.system.System
    :members:
+```
 
+```{eval-rst}
 .. autoclass:: simplipy.system.v2.SystemV2
    :members:
+```
 
+```{eval-rst}
 .. autoclass:: simplipy.system.v3.SystemV3
    :members:
+```
 
+```{eval-rst}
 .. autoclass:: simplipy.system.SystemNotification
    :members:
    :undoc-members:
+```
 
+```{eval-rst}
 .. autoclass:: simplipy.system.SystemStates
    :members:
    :undoc-members:
+```
 
-Utilities
----------
+## Utilities
 
+```{eval-rst}
 .. automodule:: simplipy.util
    :members:
+```
 
-``auth``
-********
+### `auth`
 
+```{eval-rst}
 .. automodule:: simplipy.util.auth
    :members:
+```
 
-``dt``
-******
+### `dt`
 
+```{eval-rst}
 .. automodule:: simplipy.util.dt
    :members:
+```
 
-``string``
-**********
+### `string`
 
+```{eval-rst}
 .. automodule:: simplipy.util.string
    :members:
+```
 
-Errors
-------
+## Errors
 
+```{eval-rst}
 .. automodule:: simplipy.errors
    :members:
+```

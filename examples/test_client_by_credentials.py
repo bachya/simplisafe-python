@@ -11,6 +11,8 @@ from simplipy.errors import SimplipyError, Verify2FAError, Verify2FAPending
 
 _LOGGER = logging.getLogger()
 
+DEFAULT_EMAIL_2FA_TIMEOUT = 500
+
 SIMPLISAFE_USERNAME = os.getenv("SIMPLISAFE_USERNAME", "")
 SIMPLISAFE_PASSWORD = os.getenv("SIMPLISAFE_PASSWORD", "")
 
@@ -39,12 +41,15 @@ async def main() -> None:
                 # loop and periodically see if the user has verified the email
                 # (eventually timing out if nothing happens):
                 try:
-                    async with timeout(30):
-                        try:
-                            await simplisafe.async_verify_2fa_email()
-                        except Verify2FAPending as err:
-                            _LOGGER.info(err)
-                            await asyncio.sleep(3)
+                    async with timeout(DEFAULT_EMAIL_2FA_TIMEOUT):
+                        while True:
+                            try:
+                                await simplisafe.async_verify_2fa_email()
+                            except Verify2FAPending as err:
+                                _LOGGER.info(err)
+                                await asyncio.sleep(3)
+                            else:
+                                break
                 except asyncio.TimeoutError as err:
                     raise Verify2FAError(
                         "Timed out while waiting for email-based 2FA verification"

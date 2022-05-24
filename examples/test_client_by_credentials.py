@@ -1,6 +1,7 @@
 """Test system functionality."""
 import asyncio
 import logging
+import os
 
 from aiohttp import ClientSession
 from async_timeout import timeout
@@ -12,14 +13,19 @@ _LOGGER = logging.getLogger()
 
 DEFAULT_EMAIL_2FA_TIMEOUT = 500
 
-SIMPLISAFE_USERNAME = "<USERNAME>"
-SIMPLISAFE_PASSWORD = "<PASSWORD>"
+SIMPLISAFE_USERNAME = os.getenv("SIMPLISAFE_USERNAME", "")
+SIMPLISAFE_PASSWORD = os.getenv("SIMPLISAFE_PASSWORD", "")
 
 
 async def main() -> None:
     """Create the aiohttp session and run the example."""
     async with ClientSession() as session:
         logging.basicConfig(level=logging.INFO)
+        if not SIMPLISAFE_USERNAME or not SIMPLISAFE_PASSWORD:
+            _LOGGER.error(
+                "You must specify a SIMPLISAFE_USERNAME and SIMPLISAFE_PASSWORD in the environment."
+            )
+            return
 
         try:
             # Start the process of obtaining an authenticated API object using a

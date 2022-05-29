@@ -22,7 +22,7 @@ from simplipy.errors import (
     InvalidMessageError,
     NotConnectedError,
 )
-from simplipy.util import schedule_callback
+from simplipy.util import execute_callback
 from simplipy.util.dt import utc_from_timestamp
 
 if TYPE_CHECKING:
@@ -117,7 +117,7 @@ class Watchdog:
     def _on_expire(self) -> None:
         """Log and act when the watchdog expires."""
         LOGGER.info("Websocket watchdog expired")
-        schedule_callback(self._action)
+        execute_callback(self._action)
 
     def cancel(self) -> None:
         """Cancel the watchdog."""
@@ -281,7 +281,7 @@ class WebsocketClient:
         if message["type"] == "com.simplisafe.event.standard":
             event = websocket_event_from_payload(message)
             for callback in self._event_callbacks:
-                schedule_callback(callback, event)
+                execute_callback(callback, event)
 
     def add_connect_callback(self, callback: Callable[..., Any]) -> Callable[..., None]:
         """Add a callback to be called after connecting.
@@ -329,7 +329,7 @@ class WebsocketClient:
         self._watchdog.trigger()
 
         for callback in self._connect_callbacks:
-            schedule_callback(callback)
+            execute_callback(callback)
 
     async def async_disconnect(self) -> None:
         """Disconnect from the websocket server."""
@@ -380,7 +380,7 @@ class WebsocketClient:
             self._watchdog.cancel()
 
             for callback in self._disconnect_callbacks:
-                schedule_callback(callback)
+                execute_callback(callback)
 
     async def async_reconnect(self) -> None:
         """Reconnect (and re-listen, if appropriate) to the websocket."""

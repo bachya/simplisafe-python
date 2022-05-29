@@ -25,7 +25,7 @@ from simplipy.errors import (
 )
 from simplipy.system.v2 import SystemV2
 from simplipy.system.v3 import SystemV3
-from simplipy.util import schedule_callback
+from simplipy.util import execute_callback
 from simplipy.util.auth import get_auth0_code_challenge, get_auth0_code_verifier
 from simplipy.websocket import WebsocketClient
 
@@ -316,7 +316,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         await self._async_save_token_data_from_response(token_resp)
 
         for callback in self._refresh_token_callbacks:
-            schedule_callback(callback, self.refresh_token)
+            execute_callback(callback, self.refresh_token)
 
     async def _async_api_request(
         self, method: str, endpoint: str, url_base: str = API_URL_BASE, **kwargs: Any

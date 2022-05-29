@@ -8,5 +8,4 @@ def schedule_callback(callback: Callable[..., Any], *args: Any) -> None:
     if asyncio.iscoroutinefunction(callback):
         asyncio.create_task(callback(*args))
     else:
-        loop = asyncio.get_running_loop()
-        loop.call_soon(callback, *args)
+        callback(*args)

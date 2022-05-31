@@ -147,7 +147,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 },
             )
             auth0_resp.raise_for_status()
-        except ClientResponseError as err:
+        except Exception as err:  # pylint: disable-broad-except
             raise SimplipyError(
                 f"Error while determining the Auth0 login URL: {err}"
             ) from err
@@ -228,7 +228,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 allow_redirects=False,
             )
             auth_resume_resp.raise_for_status()
-        except ClientResponseError as err:
+        except Exception as err:  # pylint: disable-broad-except
             raise SimplipyError(
                 f"Error while attempting to get authorization code: {err}"
             ) from err
@@ -250,7 +250,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 },
             )
             token_resp.raise_for_status()
-        except ClientResponseError as err:
+        except Exception as err:  # pylint: disable-broad-except
             raise SimplipyError(
                 f"Unknown error while attempting getting access token: {err}"
             ) from err
@@ -311,6 +311,10 @@ class API:  # pylint: disable=too-many-instance-attributes
                 raise InvalidCredentialsError("Invalid refresh token") from err
             raise RequestError(
                 f"Request error while attempting to refresh access token: {err}"
+            ) from err
+        except Exception as err:  # pylint: disable-broad-except
+            raise SimplipyError(
+                f"Error while attempting to refresh access token: {err}"
             ) from err
 
         await self._async_save_token_data_from_response(token_resp)

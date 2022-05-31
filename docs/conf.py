@@ -23,7 +23,7 @@ copyright = f"{datetime.today().year}, Aaron Bach"
 author = "Aaron Bach"
 
 # The full version, including alpha/beta/rc tags
-release = "2022.05.1"
+release = "2022.05.2"
 
 
 # -- General configuration ---------------------------------------------------

@@ -2,7 +2,7 @@
 # pylint: disable=protected-access,too-many-arguments
 import asyncio
 from datetime import datetime, timedelta
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import aiohttp
 import pytest
@@ -275,10 +275,12 @@ async def test_client_async_from_refresh_token_http_error(aresponses, server):
 @pytest.mark.asyncio
 async def test_client_async_from_refresh_token_unknown_error():
     """Test an unknown error while creating a client from a refresh token."""
-    with patch("simplipy.API._async_api_request", AsyncMock(side_effect=Exception)):
-        async with aiohttp.ClientSession() as session:
-            with pytest.raises(SimplipyError):
-                await API.async_from_refresh_token(TEST_REFRESH_TOKEN, session=session)
+    with patch(
+        "simplipy.api.ClientSession",
+        MagicMock(request=AsyncMock(side_effect=Exception)),
+    ) as session:
+        with pytest.raises(SimplipyError):
+            await API.async_from_refresh_token(TEST_REFRESH_TOKEN, session=session)
 
 
 @pytest.mark.asyncio

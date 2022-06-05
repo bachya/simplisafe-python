@@ -157,7 +157,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         if not auth0_resp.headers["Location"].startswith("/"):
             # Login has already occurred (according to the session cookies we have), so
             # we already have the login verification URL:
-            api._login_verification_url = auth0_resp.headers["Location"]
+            api._login_verification_url = URL(auth0_resp.headers["Location"])
         else:
             # Attempt to login:
             login_resp = await session.request(

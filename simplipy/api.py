@@ -213,7 +213,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         """
         api = cls(session=session, request_retries=request_retries)
         api.refresh_token = refresh_token
-        await api._async_refresh_access_token()
+        await api.async_refresh_access_token()
         await api._async_post_init()
         return api
 
@@ -284,7 +284,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                     return
 
                 LOGGER.info("401 detected; attempting refresh token")
-                await self._async_refresh_access_token()
+                await self.async_refresh_access_token()
 
     async def _async_post_init(self) -> None:
         """Perform some post-init actions."""
@@ -292,35 +292,6 @@ class API:  # pylint: disable=too-many-instance-attributes
         auth_check_resp = await self._async_api_request("get", "api/authCheck")
         self.user_id = auth_check_resp["userId"]
         self.websocket = WebsocketClient(self)
-
-    async def _async_refresh_access_token(self) -> None:
-        """Update access/refresh tokens from a refresh token."""
-        try:
-            token_resp = await self.session.request(
-                "post",
-                f"{AUTH_URL_BASE}/oauth/token",
-                json={
-                    "grant_type": "refresh_token",
-                    "client_id": DEFAULT_CLIENT_ID,
-                    "refresh_token": self.refresh_token,
-                },
-            )
-            token_resp.raise_for_status()
-        except ClientResponseError as err:
-            if err.status in (401, 403):
-                raise InvalidCredentialsError("Invalid refresh token") from err
-            raise RequestError(
-                f"Request error while attempting to refresh access token: {err}"
-            ) from err
-        except Exception as err:  # pylint: disable-broad-except
-            raise SimplipyError(
-                f"Error while attempting to refresh access token: {err}"
-            ) from err
-
-        await self._async_save_token_data_from_response(token_resp)
-
-        for callback in self._refresh_token_callbacks:
-            execute_callback(callback, self.refresh_token)
 
     async def _async_api_request(
         self, method: str, endpoint: str, url_base: str = API_URL_BASE, **kwargs: Any
@@ -446,6 +417,38 @@ class API:  # pylint: disable=too-many-instance-attributes
             systems[sid] = system
 
         return systems
+
+    async def async_refresh_access_token(self) -> None:
+        """Initiate a refresh of the access/refresh tokens.
+
+        Note that this will execute any callbacks added via add_refresh_token_callback.
+        """
+        try:
+            token_resp = await self.session.request(
+                "post",
+                f"{AUTH_URL_BASE}/oauth/token",
+                json={
+                    "grant_type": "refresh_token",
+                    "client_id": DEFAULT_CLIENT_ID,
+                    "refresh_token": self.refresh_token,
+                },
+            )
+            token_resp.raise_for_status()
+        except ClientResponseError as err:
+            if err.status in (401, 403):
+                raise InvalidCredentialsError("Invalid refresh token") from err
+            raise RequestError(
+                f"Request error while attempting to refresh access token: {err}"
+            ) from err
+        except Exception as err:  # pylint: disable-broad-except
+            raise SimplipyError(
+                f"Error while attempting to refresh access token: {err}"
+            ) from err
+
+        await self._async_save_token_data_from_response(token_resp)
+
+        for callback in self._refresh_token_callbacks:
+            execute_callback(callback, self.refresh_token)
 
     async def async_update_subscription_data(self) -> None:
         """Get the latest subscription data."""

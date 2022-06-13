@@ -132,6 +132,14 @@ api.user_id
 # >>> 1234567
 ```
 
+Remember three essential characteristics of refresh tokens:
+
+1. Refresh tokens can only be used once.
+2. SimpliSafe™ will invalidate active tokens if you change your password.
+3. Given the unofficial nature of the SimpliSafe™ API, we do not know how long refresh
+   tokens are valid – we assume they'll last indefinitely, but that information may
+   change.
+
 ### Creating a New API Object with the Refresh Token
 
 It is cumbersome to call
@@ -174,19 +182,14 @@ After a new {meth}`API <simplipy.api.API>` object is created via
 comes with its own, new refresh token; this can be used to follow the same
 re-authentication process into perpetuity.
 
-Note that you do not need to worry about refreshing the access token within an
-{meth}`API <simplipy.api.API>` object's normal operations (if, for instance, you have an
-application that runs for longer than an access token's lifespan); if an
-{meth}`API <simplipy.api.API>` object encounters an error that indicates an expired
-access token, it will automatically attempt to use the refresh token it has.
+### Refreshing an Access Token During Runtime
 
-Remember three essential characteristics of refresh tokens:
+In general, you do not need to worry about refreshing the access token within an
+{meth}`API <simplipy.api.API>` object's normal operations; if an
+{meth}`API <simplipy.api.API>` object encounters an error that indicates an expired access token, it will automatically attempt to use the refresh token it has.
 
-1. Refresh tokens can only be used once.
-2. SimpliSafe™ will invalidate active tokens if you change your password.
-3. Given the unofficial nature of the SimpliSafe™ API, we do not know how long refresh
-   tokens are valid – we assume they'll last indefinitely, but that information may
-   change.
+However, should you need to refresh an access token manually at runtime, you can use the
+{meth}`async_refresh_access_token <simplipy.api.API.async_refresh_access_token>` method.
 
 ### A VERY IMPORTANT NOTE ABOUT TOKENS
 

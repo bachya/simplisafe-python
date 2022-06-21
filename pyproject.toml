@@ -86,7 +86,7 @@ pytest = "^7.0.0"
 pytest-aiohttp = "^1.0.0"
 pytest-cov = "^3.0.0"
 sphinx-rtd-theme = "^1.0.0"
-types-pytz = "^2021.1.0"
+types-pytz = "^2022.1.0"
 
 [tool.pylint.BASIC]
 expected-line-ending-format = "LF"

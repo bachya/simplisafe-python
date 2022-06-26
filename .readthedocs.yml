@@ -11,7 +11,7 @@ build:
       - asdf global poetry latest
       - poetry config virtualenvs.create false
     post_install:
-      - poetry install --dev-only
+      - poetry install --only-dev
 
 sphinx:
   configuration: docs/conf.py

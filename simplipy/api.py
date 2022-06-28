@@ -267,7 +267,7 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         LOGGER.debug("Error during request attempt: %s", err)
 
-        if err.status in (401, 403):
+        if err.status == 401:
             assert self._token_last_refreshed
 
             # Calculate the window between now and the last time the token was
@@ -341,6 +341,24 @@ class API:  # pylint: disable=too-many-instance-attributes
         err = err_info[1].with_traceback(err_info[2])  # type: ignore
         raise RequestError(err) from err
 
+    @staticmethod
+    def is_fatal_error(err: ClientResponseError) -> bool:
+        """Determine whether a ClientResponseError is fatal and shouldn't be retried.
+
+        In general, we retry anything outside of HTTP 4xx codes (client errors) with a
+        few exceptions:
+
+        1. 401: We catch this, refresh the access token, and retry the original request.
+        2. 409: SimpliSafe base stations regular synchronize themselves with the API,
+                which is where this error can occur; we can't control when/how that
+                happens (e.g., we might query the API in the middle of a base station
+                update), so it should be viewed as retryable.
+        """
+        assert isinstance(err.status, int)
+        if err.status in (401, 409):
+            return False
+        return 400 <= err.status < 500
+
     def _wrap_request_method(self, request_retries: int) -> Callable:
         """Wrap the request method in backoff/retry logic."""
         return cast(
@@ -348,6 +366,7 @@ class API:  # pylint: disable=too-many-instance-attributes
             backoff.on_exception(
                 backoff.expo,
                 ClientResponseError,
+                giveup=self.is_fatal_error,
                 jitter=backoff.random_jitter,
                 logger=LOGGER,
                 max_tries=request_retries,

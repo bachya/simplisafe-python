@@ -1,6 +1,8 @@
 """Define package errors."""
 from __future__ import annotations
 
+from typing import Any
+
 
 class SimplipyError(Exception):
     """A base error."""
@@ -78,3 +80,19 @@ class NotConnectedError(WebsocketError):
     """Define a error when the websocket isn't properly connected to."""
 
     pass
+
+
+DATA_ERROR_MAP: dict[str, type[SimplipyError]] = {
+    "NoRemoteManagement": EndpointUnavailableError,
+    "PinError": PinError,
+}
+
+
+def raise_on_data_error(data: dict[str, Any]) -> None:
+    """Raise a specific error if the data payload suggests there is one."""
+    error_type = data.get("type")
+
+    if error_type not in DATA_ERROR_MAP:
+        return
+
+    raise DATA_ERROR_MAP[error_type](data["message"])

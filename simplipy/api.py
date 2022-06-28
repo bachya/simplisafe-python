@@ -16,12 +16,12 @@ from yarl import URL
 
 from simplipy.const import DEFAULT_USER_AGENT, LOGGER
 from simplipy.errors import (
-    EndpointUnavailableError,
     InvalidCredentialsError,
     RequestError,
     SimplipyError,
     Verify2FAError,
     Verify2FAPending,
+    raise_on_data_error,
 )
 from simplipy.system.v2 import SystemV2
 from simplipy.system.v3 import SystemV3
@@ -312,15 +312,11 @@ class API:  # pylint: disable=too-many-instance-attributes
                 data = await resp.json(content_type=None)
             except JSONDecodeError:
                 message = await resp.text()
-                data = {"error": message}
+                data = {"type": "DataParsingError", "message": message}
 
             LOGGER.debug("Data received from /%s: %s", endpoint, data)
 
-            if data and data.get("type") == "NoRemoteManagement":
-                raise EndpointUnavailableError(
-                    f"Endpoint unavailable in plan: {endpoint}"
-                ) from None
-
+            raise_on_data_error(data)
             resp.raise_for_status()
 
         return data

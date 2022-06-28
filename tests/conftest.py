@@ -313,7 +313,7 @@ def v3_state_response_fixture():
 
 @pytest.fixture(name="ws_client")
 async def ws_client_fixture(
-    loop,
+    event_loop,
     ws_message_hello,
     ws_message_registered,
     ws_message_subscribed,

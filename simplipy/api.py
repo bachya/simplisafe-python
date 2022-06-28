@@ -349,10 +349,10 @@ class API:  # pylint: disable=too-many-instance-attributes
         few exceptions:
 
         1. 401: We catch this, refresh the access token, and retry the original request.
-        2. 409: SimpliSafe systems regular on regular polling with their cloud API,
-                which can cause this error; we can't control when/how that happens
-                (e.g., we might query the API in the middle of a base station update),
-                so it should be viewed as retryable.
+        2. 409: SimpliSafe base stations regular synchronize themselves with the API,
+                which is where this error can occur; we can't control when/how that
+                happens (e.g., we might query the API in the middle of a base station
+                update), so it should be viewed as retryable.
         """
         assert isinstance(err.status, int)
         if err.status in (401, 409):

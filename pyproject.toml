@@ -119,3 +119,6 @@ ignore-docstrings = true
 
 # Ignore imports when computing similarities.
 ignore-imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

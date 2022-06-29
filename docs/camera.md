@@ -57,6 +57,6 @@ for serial, camera in system.cameras.items():
 ## Getting the Camera Video URL
 
 ```python
-url =uuuuu camera.video_url()
+url = camera.video_url()
 # >>> https://media.simplisafe.com/v1/...
 ```

@@ -52,8 +52,11 @@ for serial, camera in system.cameras.items():
     # Return the camera subscription status:
     camera.subscription_enabled
     # >>> True
+```
 
-    # Return the camera video URL:
-    camera.video_url
-    # >>> https://media.simplisafe.com/v1/...
+## Getting the Camera Video URL
+
+```python
+url =uuuuu camera.video_url()
+# >>> https://media.simplisafe.com/v1/...
 ```

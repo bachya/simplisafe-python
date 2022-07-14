@@ -43,7 +43,7 @@ async def test_callbacks(caplog, mock_api, ws_message_event, ws_messages):
     mock_event_callback = Mock()
 
     async def async_mock_connect_callback():
-        """Define a mock async conenct callback."""
+        """Define a mock async connect callback."""
         LOGGER.info("We are connected!")
 
     client = WebsocketClient(mock_api)

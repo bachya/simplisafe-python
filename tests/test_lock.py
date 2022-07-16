@@ -21,31 +21,27 @@ from .common import (
 
 
 @pytest.mark.asyncio
-async def test_lock_unlock(aresponses, v3_lock_state_response, v3_server):
+async def test_lock_unlock(aresponses, v3_server):
     """Test locking and unlocking the lock."""
     v3_server.add(
         "api.simplisafe.com",
         f"/v1/doorlock/{TEST_SUBSCRIPTION_ID}/{TEST_LOCK_ID}/state",
         "post",
-        response=aiohttp.web_response.json_response(v3_lock_state_response, status=200),
+        response=aresponses.Response(text=None, status=200),
     )
-
-    v3_lock_state_response["state"] = "unlock"
 
     v3_server.add(
         "api.simplisafe.com",
         f"/v1/doorlock/{TEST_SUBSCRIPTION_ID}/{TEST_LOCK_ID}/state",
         "post",
-        response=aiohttp.web_response.json_response(v3_lock_state_response, status=200),
+        response=aresponses.Response(text=None, status=200),
     )
-
-    v3_lock_state_response["state"] = "lock"
 
     v3_server.add(
         "api.simplisafe.com",
         f"/v1/doorlock/{TEST_SUBSCRIPTION_ID}/{TEST_LOCK_ID}/state",
         "post",
-        response=aiohttp.web_response.json_response(v3_lock_state_response, status=200),
+        response=aresponses.Response(text=None, status=200),
     )
 
     async with aiohttp.ClientSession() as session:
@@ -170,26 +166,19 @@ async def test_unknown_state(aresponses, caplog, v3_server):
 
 
 @pytest.mark.asyncio
-async def test_update(
-    aresponses, v3_lock_state_response, v3_sensors_response, v3_server
-):
+async def test_update(aresponses, v3_sensors_response, v3_server):
     """Test updating the lock."""
-    v3_lock_state_response["state"] = "unlock"
-
     v3_server.add(
         "api.simplisafe.com",
         f"/v1/doorlock/{TEST_SUBSCRIPTION_ID}/{TEST_LOCK_ID}/state",
         "post",
-        response=aiohttp.web_response.json_response(v3_lock_state_response, status=200),
+        response=aresponses.Response(text=None, status=200),
     )
-
-    v3_lock_state_response["state"] = "lock"
-
     v3_server.add(
         "api.simplisafe.com",
         f"/v1/doorlock/{TEST_SUBSCRIPTION_ID}/{TEST_LOCK_ID}/state",
         "post",
-        response=aiohttp.web_response.json_response(v3_lock_state_response, status=200),
+        response=aresponses.Response(text=None, status=200),
     )
     v3_server.add(
         "api.simplisafe.com",
@@ -201,7 +190,7 @@ async def test_update(
         "api.simplisafe.com",
         f"/v1/doorlock/{TEST_SUBSCRIPTION_ID}/{TEST_LOCK_ID}/state",
         "post",
-        response=aiohttp.web_response.json_response(v3_lock_state_response, status=200),
+        response=aresponses.Response(text=None, status=200),
     )
 
     async with aiohttp.ClientSession() as session:

@@ -88,8 +88,11 @@ DATA_ERROR_MAP: dict[str, type[SimplipyError]] = {
 }
 
 
-def raise_on_data_error(data: dict[str, Any]) -> None:
+def raise_on_data_error(data: dict[str, Any] | None) -> None:
     """Raise a specific error if the data payload suggests there is one."""
+    if not data:
+        return
+
     error_type = data.get("type")
 
     if error_type not in DATA_ERROR_MAP:

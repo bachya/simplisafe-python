@@ -261,12 +261,6 @@ def v2_subscriptions_response(subscriptions_response):
     return subscriptions_response
 
 
-@pytest.fixture(name="v3_lock_state_response")
-def v3_lock_state_response_fixture():
-    """Define a fixture to return the state of the lock after altering it."""
-    return json.loads(load_fixture("v3_lock_state_response.json"))
-
-
 @pytest.fixture(name="v3_sensors_response", scope="session")
 def v3_sensors_response_fixture():
     """Define a fixture that returns a V3 sensors response."""

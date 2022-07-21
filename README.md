@@ -8,6 +8,8 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/f46d8b1dcfde6a2f683d/maintainability)](https://codeclimate.com/github/bachya/simplisafe-python/maintainability)
 [![Say Thanks](https://img.shields.io/badge/SayThanks-!-1EAEDB.svg)](https://saythanks.io/to/bachya)
 
+<a href="https://www.buymeacoffee.com/bachya1208P" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
+
 `simplisafe-python` (hereafter referred to as `simplipy`) is a Python3,
 `asyncio`-driven interface to the unofficial SimpliSafe™ API. With it, users can
 get data on their system (including available sensors), set the system state,

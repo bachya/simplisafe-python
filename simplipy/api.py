@@ -116,7 +116,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         except Exception as err:  # pylint: disable=broad-except
             raise SimplipyError(err) from err
 
-        await api._async_save_token_data_from_response(token_data)
+        api._save_token_data_from_response(token_data)
         await api._async_post_init()
         return api
 
@@ -217,20 +217,18 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         return data
 
-    async def _async_save_token_data_from_response(
-        self, token_data: dict[str, Any]
-    ) -> None:
-        """Save token data from a token response."""
-        self._token_last_refreshed = datetime.utcnow()
-        self.access_token = token_data["access_token"]
-        self.refresh_token = token_data["refresh_token"]
-
     @staticmethod
     def _handle_on_giveup(_: dict[str, Any]) -> None:
         """Handle a give up after retries are exhausted."""
         err_info = sys.exc_info()
         err = err_info[1].with_traceback(err_info[2])  # type: ignore
         raise RequestError(err) from err
+
+    def _save_token_data_from_response(self, token_data: dict[str, Any]) -> None:
+        """Save token data from a token response."""
+        self._token_last_refreshed = datetime.utcnow()
+        self.access_token = token_data["access_token"]
+        self.refresh_token = token_data["refresh_token"]
 
     @staticmethod
     def is_fatal_error(err: ClientResponseError) -> bool:
@@ -356,7 +354,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 f"Error while attempting to refresh access token: {err}"
             ) from err
 
-        await self._async_save_token_data_from_response(token_data)
+        self._save_token_data_from_response(token_data)
 
         for callback in self._refresh_token_callbacks:
             execute_callback(callback, self.refresh_token)

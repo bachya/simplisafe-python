@@ -61,15 +61,16 @@ $ script/setup
 $ script/auth
 ```
 
-5. This will open your browser to a SimpliSafe™ login page:
+5. Hit the Enter key to open a web browser to the SimpliSafe login page:
 
 ![The SimpliSafe™ login screen](images/ss-login-screen.png)
 
-6. You will receive a two-factor authentication request. Depending on your account
-   settings, this will arrive as either (1) an SMS text message or (2) an email.
-   Follow the provided instructions regardless of which form you receive. Once you
-   verify your credentials, return to the browser and open its Dev Tools. Look for an
-   error (in either the Console or Network tabs) that contains a URL starting with
+6. Once you enter your username/password and click "Continue", you will receive a
+   two-factor authentication request. Depending on your account settings, this will
+   arrive as either (1) an SMS text message or (2) an email. Follow the provided
+   instructions regardless of which form you receive. Once you complete the
+   verification, return to the browser and open its Dev Tools. Look for an error (in
+   either the Console or Network tabs) that contains a URL starting with
    `com.simplisafe.mobile`:
 ```
 com.simplisafe.mobile://auth.simplisafe.com/ios/com.simplisafe.mobile/callback?code=<CODE>
@@ -81,10 +82,10 @@ com.simplisafe.mobile://auth.simplisafe.com/ios/com.simplisafe.mobile/callback?c
 ![The code in the Network Tab](images/ss-auth-code-in-network.png)
 
 (Note that if you have already logged into SimpliSafe via the browser, you may be sent
-straight to the end of the process. This can present a challenge, as opening Dev Tools
-won't show the previously logged activity. In that case, you may have to open a new tab,
-open the Dev Tools, then copy/paste the URL from the tab opened by `script/auth` into the
-new tab to see the Console/Network output.)
+straight to the end of the process. This can present a challenge, since opening Dev
+Tools in that window won't show the previously logged activity. In this case, open a new
+tab, open its Dev Tools nwindow, then copy/paste the URL from the tab opened by
+`script/auth` into the new tab to see the Console/Network output.)
 
 8. Copy the `code` parameter, return to your terminal, and paste it into the prompt.
    You should now see this message:
@@ -95,8 +96,10 @@ Authorization Code: <CODE>
 Code Verifier: <VERIFIER>
 ```
 
-These one-time values are now ready to be used to instantiate an
-{meth}`API <simplipy.api.API>` object.
+These one-time values can now be used to instantiate an
+{meth}`API <simplipy.api.API>` object. Remember that this Authorization Code and Code
+Verifier pair (a) can only be used once and (b) will expire after a relatively short
+amount of time.
 
 ### Creating an API Object
 
@@ -124,8 +127,6 @@ async def main() -> None:
 
 asyncio.run(main())
 ```
-
-**REMINDER:** this Authorization Code and Code Verifier can only be used once.
 
 ### Key API Object Properties
 

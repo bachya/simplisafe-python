@@ -34,18 +34,6 @@ class RequestError(SimplipyError):
     pass
 
 
-class Verify2FAError(SimplipyError):
-    """An error related to the 2FA process."""
-
-    pass
-
-
-class Verify2FAPending(SimplipyError):
-    """An "error" related to 2FA still pending."""
-
-    pass
-
-
 class WebsocketError(SimplipyError):
     """An error related to generic websocket errors."""
 

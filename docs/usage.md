@@ -27,7 +27,8 @@ system state.
 
 Starting in 2021, SimpliSafe™  began to implement an OAuth-based form of authentication.
 To use this library, you must handshake with the SimpliSafe™  API; although this process
-cannot be 100% accomplished programmatically, the procedure is relatively straightforward.
+cannot be fully accomplished programmatically, the procedure is relatively
+straightforward.
 
 ### Authentication
 

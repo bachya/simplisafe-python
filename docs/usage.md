@@ -25,7 +25,85 @@ system state.
 
 ## Accessing the API
 
-First, authenticate using your SimpliSafe™ username/email and password:
+Starting in 2021, SimpliSafe™  began to implement an OAuth-based form of authentication.
+To use this library, you must handshake with the SimpliSafe™  API; although this process
+cannot be fully accomplished programmatically, the procedure is relatively
+straightforward.
+
+### Authentication
+
+`simplipy` comes with a helper script to get you started. To use it, follow these
+steps from a command line:
+
+1. Clone the ``simplipy`` Git repo and `cd` into it:
+
+```sh
+$ git clone https://github.com/bachya/simplisafe-python.git
+$ cd simplisafe-python/
+```
+
+2. Set up and activate a Python virtual environment:
+
+```sh
+$ python3 -m virtualenv .venv
+$ source .venv/bin/activate
+```
+
+3. Initialize the dev environment for ``simplipy``:
+
+```sh
+$ script/setup
+```
+
+4. Run the ``auth`` script:
+
+```sh
+$ script/auth
+```
+
+5. Hit the Enter key to open a web browser to the SimpliSafe login page:
+
+![The SimpliSafe™ login screen](images/ss-login-screen.png)
+
+6. Once you enter your username/password and click "Continue", you will receive a
+   two-factor authentication request. Depending on your account settings, this will
+   arrive as either (1) an SMS text message or (2) an email. Follow the provided
+   instructions regardless of which form you receive. Once you complete the
+   verification, return to the browser and open its Dev Tools window. Look for an error
+   (in either the Console or Network tab) that contains a URL starting with
+   `com.simplisafe.mobile`:
+```
+com.simplisafe.mobile://auth.simplisafe.com/ios/com.simplisafe.mobile/callback?code=<CODE>
+```
+**The Console Tab in Chrome**
+![The code in the Console Tab](images/ss-auth-code-in-console.png)
+
+**The Network Tab in Chrome**
+![The code in the Network Tab](images/ss-auth-code-in-network.png)
+
+(Note that if you have already logged into SimpliSafe via the browser, you may be sent
+straight to the end of the process. This can present a challenge, since opening Dev
+Tools in that window won't show the previously logged activity. In this case, open a new
+tab, open its Dev Tools window, then copy/paste the URL from the tab opened by
+`script/auth` into the new tab to see the Console/Network output.)
+
+8. Copy the `code` parameter at the end of the `com.simplisafe.mobile` URL, return to your
+terminal, and paste it into the prompt. You should now see this message:
+
+```sh
+You are now ready to use the SimpliSafe API!
+Authorization Code: <CODE>
+Code Verifier: <VERIFIER>
+```
+
+These values can now be used to instantiate an {meth}`API <simplipy.api.API>` object.
+Remember that this Authorization Code and Code Verifier pair (a) can only be used once
+and (b) will expire after a relatively short amount of time.
+
+### Creating an API Object
+
+Once you have an Authorization Code and Code Verifier, you can create an API object like
+this:
 
 ```python
 import asyncio
@@ -35,82 +113,18 @@ import simplipy
 
 
 async def main() -> None:
-    """Create the aiohttp session and run."""
-    async with ClientSession() as session:
-        api = await simplipy.API.async_from_credentials(
-            "<USERNAME>"
-            "<PASSWORD>"
-            session=session,
-        )
+  """Create the aiohttp session and run."""
+  async with ClientSession() as session:
+      simplisafe = await simplipy.API(
+          "<AUTHORIZATION_CODE>",
+          "<CODE_VERIFIER>",
+          session=session,
+      )
+
+      # ...
 
 
 asyncio.run(main())
-```
-
-This process creates an object in a "pending" state, which now awaits two-factor
-authentication. You can find the type of two-factor authentication by looking at the
-`auth_state` property:
-
-```python
-# If your account uses email-based two-factor authentication:
-api.auth_state
-# >>> simplipy.api.AuthStates.PENDING_2FA_EMAIL
-
-# If your account uses SMS-based two-factor authentication:
-api.auth_state
-# >>> simplipy.api.AuthStates.PENDING_2FA_SMS
-```
-
-### Performing Email-Based Two-Factor Authentication
-
-This type of two-factor authentication requires you to click a link in an email from
-SimpliSafe™. At any point, you can see if two-factor authentication is complete:
-
-```python
-api.async_verify_2fa_email()
-```
-
-If the two-factor authentication hasn't succeeded yet, `simplipy` will raise a
-{meth}`Verify2FAPending  <simplipy.errors.Verify2FAPending>` exception. If it has
-succeeded, the {meth}`API  <simplipy.api.API>` object is ready to use.
-
-A typical pattern in this scenario would be to loop and regularly test for
-authentication (eventually timing out as appropriate):
-
-```python
-try:
-   async with timeout(30):
-      try:
-         await api.async_verify_2fa_email()
-      except Verify2FAPending as err:
-         print("Authentication not yet completed")
-         await asyncio.sleep(3)
-except asyncio.TimeoutError as err:
-   print("Timed out waiting for authentication")
-
-# Ready to use!
-```
-
-### Performing SMS-Based Two-Factor Authentication
-
-This type of two-factor authentication requires you to input a code received via SMS.
-After you receive the code, you verify it like this:
-
-```python
-api.async_verify_2fa_sms("<CODE>")
-```
-
-If the two-factor authentication hasn't succeeded yet, `simplipy` will raise a
-{meth}`InvalidCredentialsError  <simplipy.errors.InvalidCredentialsError>` exception.
-If it has succeeded, the {meth}`API  <simplipy.api.API>` object is ready to use.
-
-```python
-try:
-   await api.async_verify_2fa_sms("<CODE>")
-except InvalidCredentialsError as err:
-   print("Invalid SMS 2FA code")
-
-# Ready to use!
 ```
 
 ### Key API Object Properties
@@ -143,9 +157,8 @@ Remember three essential characteristics of refresh tokens:
 ### Creating a New API Object with the Refresh Token
 
 It is cumbersome to call
-{meth}`API.async_from_credentials <simplipy.api.API.async_from_credentials>` every time
-you want a new {meth}`API <simplipy.api.API>` object. Therefore, *after* initial
-authentication, call
+{meth}`API.async_from_auth <simplipy.api.API.async_from_auth>` every time you want a new
+{meth}`API <simplipy.api.API>` object. Therefore, *after* initial authentication, call
 {meth}`API.async_from_refresh_token <simplipy.api.API.async_from_refresh_token>`,
 passing the {meth}`refresh_token <simplipy.api.API.refresh_token>` from the previous
 {meth}`API <simplipy.api.API>` object. A common practice is to save a valid refresh
@@ -180,7 +193,7 @@ asyncio.run(main())
 After a new {meth}`API <simplipy.api.API>` object is created via
 {meth}`API.async_from_refresh_token <simplipy.api.API.async_from_refresh_token>`, it
 comes with its own, new refresh token; this can be used to follow the same
-re-authentication process into perpetuity.
+re-authentication process as often as needed.
 
 ### Refreshing an Access Token During Runtime
 

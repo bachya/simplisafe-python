@@ -10,13 +10,13 @@ from simplipy.device.lock import LockStates
 from simplipy.errors import InvalidCredentialsError
 
 from .common import (
+    TEST_AUTHORIZATION_CODE,
+    TEST_CODE_VERIFIER,
     TEST_LOCK_ID,
     TEST_LOCK_ID_2,
     TEST_LOCK_ID_3,
-    TEST_PASSWORD,
     TEST_SUBSCRIPTION_ID,
     TEST_SYSTEM_ID,
-    TEST_USERNAME,
 )
 
 
@@ -45,11 +45,9 @@ async def test_lock_unlock(aresponses, v3_server):
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.async_from_credentials(
-            TEST_USERNAME, TEST_PASSWORD, session=session
+        simplisafe = await API.async_from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        await simplisafe.async_verify_2fa_email()
-
         systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         lock = system.locks[TEST_LOCK_ID]
@@ -68,11 +66,9 @@ async def test_lock_unlock(aresponses, v3_server):
 async def test_jammed(aresponses, v3_server):
     """Test that a jammed lock shows the correct state."""
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.async_from_credentials(
-            TEST_USERNAME, TEST_PASSWORD, session=session
+        simplisafe = await API.async_from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        await simplisafe.async_verify_2fa_email()
-
         systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         lock = system.locks[TEST_LOCK_ID_2]
@@ -102,10 +98,11 @@ async def test_no_state_change_on_failure(
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.async_from_credentials(
-            TEST_USERNAME, TEST_PASSWORD, session=session
+        simplisafe = await API.async_from_auth(
+            TEST_AUTHORIZATION_CODE,
+            TEST_CODE_VERIFIER,
+            session=session,
         )
-        await simplisafe.async_verify_2fa_email()
 
         # Manually set the expiration datetime to force a refresh token flow:
         simplisafe._token_last_refreshed = datetime.utcnow() - timedelta(seconds=30)
@@ -126,11 +123,9 @@ async def test_no_state_change_on_failure(
 async def test_properties(aresponses, v3_server):
     """Test that lock properties are created properly."""
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.async_from_credentials(
-            TEST_USERNAME, TEST_PASSWORD, session=session
+        simplisafe = await API.async_from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        await simplisafe.async_verify_2fa_email()
-
         systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         lock = system.locks[TEST_LOCK_ID]
@@ -150,11 +145,9 @@ async def test_properties(aresponses, v3_server):
 async def test_unknown_state(aresponses, caplog, v3_server):
     """Test handling a generic error during update."""
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.async_from_credentials(
-            TEST_USERNAME, TEST_PASSWORD, session=session
+        simplisafe = await API.async_from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        await simplisafe.async_verify_2fa_email()
-
         systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         lock = system.locks[TEST_LOCK_ID_3]
@@ -194,11 +187,9 @@ async def test_update(aresponses, v3_sensors_response, v3_server):
     )
 
     async with aiohttp.ClientSession() as session:
-        simplisafe = await API.async_from_credentials(
-            TEST_USERNAME, TEST_PASSWORD, session=session
+        simplisafe = await API.async_from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )
-        await simplisafe.async_verify_2fa_email()
-
         systems = await simplisafe.async_get_systems()
         system = systems[TEST_SYSTEM_ID]
         lock = system.locks[TEST_LOCK_ID]

@@ -7,7 +7,7 @@ from json.decoder import JSONDecodeError
 import sys
 from typing import Any, Callable, cast
 
-from aiohttp import ClientResponse, ClientSession
+from aiohttp import ClientSession
 from aiohttp.client_exceptions import ClientResponseError
 import backoff
 
@@ -96,7 +96,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         api = cls(session=session, request_retries=request_retries)
 
         try:
-            token_resp = await api._async_api_request(
+            token_data = await api._async_api_request(
                 "post",
                 "oauth/token",
                 url_base=AUTH_URL_BASE,
@@ -116,7 +116,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         except Exception as err:  # pylint: disable=broad-except
             raise SimplipyError(err) from err
 
-        await api._async_save_token_data_from_response(token_resp)
+        await api._async_save_token_data_from_response(token_data)
         await api._async_post_init()
         return api
 
@@ -218,10 +218,9 @@ class API:  # pylint: disable=too-many-instance-attributes
         return data
 
     async def _async_save_token_data_from_response(
-        self, token_resp: ClientResponse
+        self, token_data: dict[str, Any]
     ) -> None:
         """Save token data from a token response."""
-        token_data = await token_resp.json()
         self._token_last_refreshed = datetime.utcnow()
         self.access_token = token_data["access_token"]
         self.refresh_token = token_data["refresh_token"]
@@ -335,16 +334,17 @@ class API:  # pylint: disable=too-many-instance-attributes
         Note that this will execute any callbacks added via add_refresh_token_callback.
         """
         try:
-            token_resp = await self.session.request(
+            token_data = await self._async_api_request(
                 "post",
-                f"{AUTH_URL_BASE}/oauth/token",
+                "oauth/token",
+                url_base=AUTH_URL_BASE,
+                headers={"Host": AUTH_URL_HOSTNAME},
                 json={
                     "grant_type": "refresh_token",
                     "client_id": DEFAULT_CLIENT_ID,
                     "refresh_token": self.refresh_token,
                 },
             )
-            token_resp.raise_for_status()
         except ClientResponseError as err:
             if err.status in (401, 403):
                 raise InvalidCredentialsError("Invalid refresh token") from err
@@ -356,7 +356,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 f"Error while attempting to refresh access token: {err}"
             ) from err
 
-        await self._async_save_token_data_from_response(token_resp)
+        await self._async_save_token_data_from_response(token_data)
 
         for callback in self._refresh_token_callbacks:
             execute_callback(callback, self.refresh_token)

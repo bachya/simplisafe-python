@@ -180,7 +180,7 @@ async def test_client_async_from_authorization_code(
 @pytest.mark.asyncio
 async def test_client_async_from_authorization_code_unknown_error():
     """Test an unknown error while creating a client from an authorization code."""
-    with patch("simplipy.API._async_request", AsyncMock(side_effect=Exception)):
+    with patch("simplipy.API._async_api_request", AsyncMock(side_effect=Exception)):
         async with aiohttp.ClientSession() as session:
             with pytest.raises(SimplipyError):
                 await API.async_from_auth(

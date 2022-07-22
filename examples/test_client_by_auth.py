@@ -1,6 +1,7 @@
 """Test system functionality with an Auth0 code/verifier."""
 import asyncio
 import logging
+import os
 
 from aiohttp import ClientSession
 
@@ -9,8 +10,8 @@ from simplipy.errors import SimplipyError
 
 _LOGGER = logging.getLogger()
 
-SIMPLISAFE_AUTHORIZATION_CODE = "<AUTHORIZATION_CODE>"
-SIMPLISAFE_CODE_VERIFIER = "<CODE_VERIFIER>"
+SIMPLISAFE_AUTHORIZATION_CODE = os.getenv("SIMPLISAFE_AUTHORIZATION_CODE", "")
+SIMPLISAFE_CODE_VERIFIER = os.getenv("SIMPLISAFE_CODE_VERIFIER")
 
 
 async def main() -> None:

@@ -1,6 +1,7 @@
 """Test system functionality with an Auth0 code/verifier."""
 import asyncio
 import logging
+import os
 
 from aiohttp import ClientSession
 

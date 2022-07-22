@@ -96,10 +96,9 @@ Authorization Code: <CODE>
 Code Verifier: <VERIFIER>
 ```
 
-These one-time values can now be used to instantiate an
-{meth}`API <simplipy.api.API>` object. Remember that this Authorization Code and Code
-Verifier pair (a) can only be used once and (b) will expire after a relatively short
-amount of time.
+These values can now be used to instantiate an {meth}`API <simplipy.api.API>` object.
+Remember that this Authorization Code and Code Verifier pair (a) can only be used once
+and (b) will expire after a relatively short amount of time.
 
 ### Creating an API Object
 

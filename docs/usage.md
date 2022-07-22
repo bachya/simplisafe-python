@@ -69,8 +69,8 @@ $ script/auth
    two-factor authentication request. Depending on your account settings, this will
    arrive as either (1) an SMS text message or (2) an email. Follow the provided
    instructions regardless of which form you receive. Once you complete the
-   verification, return to the browser and open its Dev Tools. Look for an error (in
-   either the Console or Network tabs) that contains a URL starting with
+   verification, return to the browser and open its Dev Tools window. Look for an error
+   (in either the Console or Network tab) that contains a URL starting with
    `com.simplisafe.mobile`:
 ```
 com.simplisafe.mobile://auth.simplisafe.com/ios/com.simplisafe.mobile/callback?code=<CODE>
@@ -84,7 +84,7 @@ com.simplisafe.mobile://auth.simplisafe.com/ios/com.simplisafe.mobile/callback?c
 (Note that if you have already logged into SimpliSafe via the browser, you may be sent
 straight to the end of the process. This can present a challenge, since opening Dev
 Tools in that window won't show the previously logged activity. In this case, open a new
-tab, open its Dev Tools nwindow, then copy/paste the URL from the tab opened by
+tab, open its Dev Tools window, then copy/paste the URL from the tab opened by
 `script/auth` into the new tab to see the Console/Network output.)
 
 8. Copy the `code` parameter, return to your terminal, and paste it into the prompt.

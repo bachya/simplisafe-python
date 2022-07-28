@@ -75,10 +75,7 @@ $ script/auth
 ```
 com.simplisafe.mobile://auth.simplisafe.com/ios/com.simplisafe.mobile/callback?code=<CODE>
 ```
-**The Console Tab in Chrome**
 ![The code in the Console Tab](images/ss-auth-code-in-console.png)
-
-**The Network Tab in Chrome**
 ![The code in the Network Tab](images/ss-auth-code-in-network.png)
 
 (Note that if you have already logged into SimpliSafe via the browser, you may be sent
@@ -87,7 +84,7 @@ Tools in that window won't show the previously logged activity. In this case, op
 tab, open its Dev Tools window, then copy/paste the URL from the tab opened by
 `script/auth` into the new tab to see the Console/Network output.)
 
-8. Copy the `code` parameter at the end of the `com.simplisafe.mobile` URL, return to your
+7. Copy the `code` parameter at the end of the `com.simplisafe.mobile` URL, return to your
 terminal, and paste it into the prompt. You should now see this message:
 
 ```sh

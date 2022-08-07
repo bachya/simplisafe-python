@@ -1,4 +1,4 @@
-% simplisafe-python documentation master file, created by
+% simplisafe-python documentation main file, created by
 % sphinx-quickstart on Sat Nov 16 14:00:49 2019.
 % You can adapt this file completely to your liking, but it should at least
 % contain the root `toctree` directive.
@@ -17,7 +17,7 @@
 ```{image} https://img.shields.io/pypi/l/simplisafe-python.svg
 ```
 
-```{image} https://codecov.io/gh/bachya/simplisafe-python/branch/master/graph/badge.svg
+```{image} https://codecov.io/gh/bachya/simplisafe-python/branch/main/graph/badge.svg
 ```
 
 ```{image} https://api.codeclimate.com/v1/badges/f46d8b1dcfde6a2f683d/maintainability

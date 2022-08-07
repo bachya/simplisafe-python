@@ -292,22 +292,22 @@ associated with a SimpliSafe™ account:
 ```python
 # Get all PINs (retrieving fresh or from the cache):
 await system.async_get_pins(cached=False)
-# >>> {"master": "1234", "duress": "9876"}
+# >>> {"main": "1234", "duress": "9876"}
 
 # Set a new user PIN:
 await system.async_set_pin("My New User", "1122")
 await system.async_get_pins(cached=False)
-# >>> {"master": "1234", "duress": "9876", "My New User": "1122"}
+# >>> {"main": "1234", "duress": "9876", "My New User": "1122"}
 
 # Remove a PIN (by value or by label)
 await system.async_remove_pin("My New User")
 await system.async_get_pins(cached=False)
-# >>> {"master": "1234", "duress": "9876"}
+# >>> {"main": "1234", "duress": "9876"}
 
-# Set the master PIN (works for the duress PIN, too):
-await system.async_set_pin("master", "9865")
+# Set the main PIN (works for the duress PIN, too):
+await system.async_set_pin("main", "9865")
 await system.async_get_pins(cached=False)
-# >>> {"master": "9865", "duress": "9876"}
+# >>> {"main": "9865", "duress": "9876"}
 ```
 
 Remember that with V2 systems, many operations – including setting PINs – will cause

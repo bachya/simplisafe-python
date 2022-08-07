@@ -937,7 +937,7 @@ async def test_get_pins(aresponses, v3_server, v3_settings_response):
         system = systems[TEST_SYSTEM_ID]
         pins = await system.async_get_pins()
         assert len(pins) == 4
-        assert pins["master"] == "1234"
+        assert pins["main"] == "1234"
         assert pins["duress"] == "9876"
         assert pins["Test 1"] == "3456"
         assert pins["Test 2"] == "5423"
@@ -1243,7 +1243,7 @@ async def test_remove_reserved_pin(aresponses, v3_server, v3_settings_response):
         system = systems[TEST_SYSTEM_ID]
 
         with pytest.raises(PinError) as err:
-            await system.async_remove_pin("master")
+            await system.async_remove_pin("main")
             assert "Refusing to delete reserved PIN" in str(err)
 
     aresponses.assert_plan_strictly_followed()

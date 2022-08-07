@@ -1,0 +1,84 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Universal Ctags Team	//
+!_TAG_PROGRAM_NAME	Universal Ctags	/Derived from Exuberant Ctags/
+!_TAG_PROGRAM_URL	https://ctags.io/	/official site/
+!_TAG_PROGRAM_VERSION	0.0.0	/23d50b5/
+!_TAG_OUTPUT_MODE	u-ctags	/u-ctags or e-ctags/
+!_TAG_OUTPUT_FILESEP	slash	/slash or backslash/
+!_TAG_PATTERN_LENGTH_LIMIT	96	/0 for no limit/
+Contributions to `simplisafe-python`	AUTHORS.md	/^# Contributions to `simplisafe-python`$/;"	c
+Owners	AUTHORS.md	/^## Owners$/;"	s	chapter:Contributions to `simplisafe-python`
+Contributors	AUTHORS.md	/^## Contributors$/;"	s	chapter:Contributions to `simplisafe-python`
+Change Log	CHANGELOG.md	/^# Change Log$/;"	c
+3.0.0	CHANGELOG.md	/^## 3.0.0$/;"	s	chapter:Change Log
+2.0.2	CHANGELOG.md	/^## 2.0.2$/;"	s	chapter:Change Log
+2.0.1	CHANGELOG.md	/^## 2.0.1$/;"	s	chapter:Change Log
+2.0.0	CHANGELOG.md	/^## 2.0.0$/;"	s	chapter:Change Log
+1.0.5	CHANGELOG.md	/^## 1.0.5$/;"	s	chapter:Change Log
+1.0.4	CHANGELOG.md	/^## 1.0.4$/;"	s	chapter:Change Log
+1.0.3	CHANGELOG.md	/^## 1.0.3$/;"	s	chapter:Change Log
+1.0.2	CHANGELOG.md	/^## 1.0.2$/;"	s	chapter:Change Log
+1.0.1	CHANGELOG.md	/^## 1.0.1$/;"	s	chapter:Change Log
+1.0.0	CHANGELOG.md	/^## 1.0.0$/;"	s	chapter:Change Log
+0.0.1	CHANGELOG.md	/^## 0.0.1$/;"	s	chapter:Change Log
+🚨 simplisafe-python: A Python3, async interface to the SimpliSafe™ API	README.md	/^# 🚨 simplisafe-python: A Python3, async interface to the SimpliSafe™ API$/;"	c
+Documentation	README.md	/^# Documentation$/;"	c
+Contributing	README.md	/^# Contributing$/;"	c
+SPHINXOPTS	docs/Makefile	/^SPHINXOPTS    ?=$/;"	m
+SPHINXBUILD	docs/Makefile	/^SPHINXBUILD   ?= sphinx-build$/;"	m
+SOURCEDIR	docs/Makefile	/^SOURCEDIR     = .$/;"	m
+BUILDDIR	docs/Makefile	/^BUILDDIR      = _build$/;"	m
+help	docs/Makefile	/^help:$/;"	t
+%	docs/Makefile	/^%: Makefile$/;"	t
+API Reference	docs/api.md	/^# API Reference$/;"	c
+API	docs/api.md	/^## API$/;"	s	chapter:API Reference
+Websocket Communication	docs/api.md	/^## Websocket Communication$/;"	s	chapter:API Reference
+Devices	docs/api.md	/^## Devices$/;"	s	chapter:API Reference
+Lock	docs/api.md	/^## Lock$/;"	s	chapter:API Reference
+Sensors	docs/api.md	/^## Sensors$/;"	s	chapter:API Reference
+Systems	docs/api.md	/^## Systems$/;"	s	chapter:API Reference
+Utilities	docs/api.md	/^## Utilities$/;"	s	chapter:API Reference
+`auth`	docs/api.md	/^### `auth`$/;"	S	section:API Reference""Utilities
+`dt`	docs/api.md	/^### `dt`$/;"	S	section:API Reference""Utilities
+`string`	docs/api.md	/^### `string`$/;"	S	section:API Reference""Utilities
+Errors	docs/api.md	/^## Errors$/;"	s	chapter:API Reference
+Cameras	docs/camera.md	/^# Cameras$/;"	c
+Core Properties	docs/camera.md	/^## Core Properties$/;"	s	chapter:Cameras
+Getting the Camera Video URL	docs/camera.md	/^## Getting the Camera Video URL$/;"	s	chapter:Cameras
+project	docs/conf.py	/^project = "simplisafe-python"$/;"	v
+copyright	docs/conf.py	/^copyright = f"{datetime.today().year}, Aaron Bach"$/;"	v
+author	docs/conf.py	/^author = "Aaron Bach"$/;"	v
+release	docs/conf.py	/^release = "2022.07.1"$/;"	v
+master_doc	docs/conf.py	/^master_doc = "index"$/;"	v
+extensions	docs/conf.py	/^extensions = [$/;"	v
+templates_path	docs/conf.py	/^templates_path = ["_templates"]$/;"	v
+exclude_patterns	docs/conf.py	/^exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]$/;"	v
+html_theme	docs/conf.py	/^html_theme = "sphinx_rtd_theme"$/;"	v
+html_theme_options	docs/conf.py	/^html_theme_options = {"display_version": True, "style_external_links": True}$/;"	v
+autodoc_default_options	docs/conf.py	/^autodoc_default_options = {"member-order": "bysource"}$/;"	v
+autosectionlabel_prefix_document	docs/conf.py	/^autosectionlabel_prefix_document = True$/;"	v
+simplisafe-python	docs/index.md	/^# simplisafe-python$/;"	c
+Introduction	docs/intro.md	/^# Introduction$/;"	c
+Locks	docs/lock.md	/^# Locks$/;"	c
+Core Properties	docs/lock.md	/^## Core Properties$/;"	s	chapter:Locks
+Locking/Unlocking	docs/lock.md	/^## Locking\/Unlocking$/;"	s	chapter:Locks
+Updating the Lock	docs/lock.md	/^## Updating the Lock$/;"	s	chapter:Locks
+SPHINXBUILD	docs/make.bat	/^	set SPHINXBUILD=sphinx-build$/;"	v
+SOURCEDIR	docs/make.bat	/^set SOURCEDIR=.$/;"	v
+BUILDDIR	docs/make.bat	/^set BUILDDIR=_build$/;"	v
+help	docs/make.bat	/^:help$/;"	l
+end	docs/make.bat	/^:end$/;"	l
+Sensors	docs/sensor.md	/^# Sensors$/;"	c
+Core Properties	docs/sensor.md	/^## Core Properties$/;"	s	chapter:Sensors
+V2 Properties	docs/sensor.md	/^## V2 Properties$/;"	s	chapter:Sensors
+V3 Properties	docs/sensor.md	/^## V3 Properties$/;"	s	chapter:Sensors
+Updating the Sensor	docs/sensor.md	/^## Updating the Sensor$/;"	s	chapter:Sensors
+Systems	docs/system.md	/^# Systems$/;"	c
+Core Properties	docs/system.md	/^## Core Properties$/;"	s	chapter:Systems
+V3 Properties	docs/system.md	/^## V3 Properties$/;"	s	chapter:Systems
+Updating the System	docs/system.md	/^## Updating the System$/;"	s	chapter:Systems
+Arming/Disarming	docs/system.md	/^## Arming\/Disarming$/;"	s	chapter:Systems
+Events	docs/system.md	/^## Events$/;"	s	chapter:Systems
+System Notifications	docs/system.md	/^## System Notifications$/;"	s	chapter:Systems
+PINs	docs/system.md	/^## PINs$/;"	s	chapter:Systems

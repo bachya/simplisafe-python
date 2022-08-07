@@ -16,10 +16,10 @@ from simplipy.system import (
 def create_pin_payload(pins: dict) -> dict[str, dict[str, dict[str, str]]]:
     """Create the request payload to send for updating PINs."""
     duress_pin = pins.pop(CONF_DURESS_PIN)
-    main_pin = pins.pop(CONF_MASTER_PIN)
+    master_pin = pins.pop(CONF_MASTER_PIN)
 
     payload = {
-        "pins": {CONF_DURESS_PIN: {"value": duress_pin}, "pin1": {"value": main_pin}}
+        "pins": {CONF_DURESS_PIN: {"value": duress_pin}, "pin1": {"value": master_pin}}
     }
 
     empty_user_index = len(pins)
@@ -88,7 +88,7 @@ class SystemV2(System):
             self.sensors[serial] = SensorV2(self, sensor_type, serial)
 
     async def async_get_pins(self, cached: bool = True) -> dict[str, str]:
-        """Return all of the set PINs, including main and duress.
+        """Return all of the set PINs, including master and duress.
 
         The ``cached`` parameter determines whether the SimpliSafe Cloud uses the last
         known values retrieved from the base station (``True``) or retrieves new data.

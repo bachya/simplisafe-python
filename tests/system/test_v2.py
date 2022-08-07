@@ -56,7 +56,7 @@ async def test_get_pins(aresponses, v2_pins_response, v2_server):
         pins = await system.async_get_pins()
 
         assert len(pins) == 4
-        assert pins["main"] == "1234"
+        assert pins["master"] == "1234"
         assert pins["duress"] == "9876"
         assert pins["Mother"] == "3456"
         assert pins["Father"] == "4567"

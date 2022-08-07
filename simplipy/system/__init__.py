@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 CONF_DEFAULT = "default"
 CONF_DURESS_PIN = "duress"
-CONF_MASTER_PIN = "main"
+CONF_MASTER_PIN = "master"
 
 DEFAULT_MAX_USER_PINS = 4
 MAX_PIN_LENGTH = 4
@@ -303,7 +303,7 @@ class System:  # pylint: disable=too-many-public-methods
             raise SimplipyError("SimpliSafe didn't return any events") from None
 
     async def async_get_pins(self, cached: bool = True) -> dict[str, str]:
-        """Return all of the set PINs, including main and duress.
+        """Return all of the set PINs, including master and duress.
 
         The ``cached`` parameter determines whether the SimpliSafe Cloud uses the last
         known values retrieved from the base station (``True``) or retrieves new data.

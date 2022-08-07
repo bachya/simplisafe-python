@@ -47,7 +47,7 @@
             "duress": {
                 "pin": "9876"
             },
-            "main": {
+            "master": {
                 "pin": "1234"
             }
         }

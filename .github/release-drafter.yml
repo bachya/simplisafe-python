@@ -11,9 +11,8 @@ categories:
       - "bug"
   - title: "🧰 Maintenance"
     labels:
-      - "ci/cd"
       - "dependencies"
-      - "docs"
+      - "documentation"
       - "maintenance"
       - "tooling"
 change-template: "- $TITLE (#$NUMBER)"

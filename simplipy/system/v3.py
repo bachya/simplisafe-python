@@ -144,7 +144,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         self.locks: dict[str, Lock] = {}
         self.settings_data: dict[str, dict] = {}
 
-    @property  # type: ignore
+    @property
     @guard_from_missing_data()
     def alarm_duration(self) -> int:
         """Return the number of seconds an activated alarm will sound for.
@@ -158,7 +158,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
             ],
         )
 
-    @property  # type: ignore
+    @property
     @guard_from_missing_data()
     def alarm_volume(self) -> Volume:
         """Return the volume level of the alarm.
@@ -173,7 +173,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
             )
         )
 
-    @property  # type: ignore
+    @property
     @guard_from_missing_data()
     def battery_backup_power_level(self) -> int:
         """Return the power rating of the battery backup.
@@ -182,7 +182,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         """
         return cast(int, self.settings_data["basestationStatus"]["backupBattery"])
 
-    @property  # type: ignore
+    @property
     @guard_from_missing_data()
     def chime_volume(self) -> Volume:
         """Return the volume level of the door chime.
@@ -197,7 +197,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
             )
         )
 
-    @property  # type: ignore
+    @property
     @guard_from_missing_data()
     def entry_delay_away(self) -> int:
         """Return the number of seconds to delay when returning to an "away" alarm.
@@ -211,7 +211,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
             ],
         )
 
-    @property  # type: ignore
+    @property
     @guard_from_missing_data()
     def entry_delay_home(self) -> int:
         """Return the number of seconds to delay when returning to an "home" alarm.
@@ -225,7 +225,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
             ],
         )
 
-    @property  # type: ignore
+    @property
     @guard_from_missing_data()
     def exit_delay_away(self) -> int:
         """Return the number of seconds to delay when exiting an "away" alarm.
@@ -239,7 +239,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
             ],
         )
 
-    @property  # type: ignore
+    @property
     @guard_from_missing_data()
     def exit_delay_home(self) -> int:
         """Return the number of seconds to delay when exiting an "home" alarm.
@@ -253,7 +253,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
             ],
         )
 
-    @property  # type: ignore
+    @property
     @guard_from_missing_data()
     def gsm_strength(self) -> int:
         """Return the signal strength of the cell antenna.
@@ -262,7 +262,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         """
         return cast(int, self.settings_data["basestationStatus"]["gsmRssi"])
 
-    @property  # type: ignore
+    @property
     @guard_from_missing_data()
     def light(self) -> bool:
         """Return whether the base station light is on.
@@ -276,7 +276,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
             ],
         )
 
-    @property  # type: ignore
+    @property
     @guard_from_missing_data(False)
     def offline(self) -> bool:
         """Return whether the system is offline.
@@ -288,7 +288,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
             self._api.subscription_data[self._sid]["location"]["system"]["isOffline"],
         )
 
-    @property  # type: ignore
+    @property
     @guard_from_missing_data(False)
     def power_outage(self) -> bool:
         """Return whether the system is experiencing a power outage.
@@ -300,7 +300,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
             self._api.subscription_data[self._sid]["location"]["system"]["powerOutage"],
         )
 
-    @property  # type: ignore
+    @property
     @guard_from_missing_data(False)
     def rf_jamming(self) -> bool:
         """Return whether the base station is noticing RF jamming.
@@ -309,7 +309,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         """
         return cast(bool, self.settings_data["basestationStatus"]["rfJamming"])
 
-    @property  # type: ignore
+    @property
     @guard_from_missing_data()
     def voice_prompt_volume(self) -> Volume:
         """Return the volume level of the voice prompt.
@@ -324,7 +324,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
             )
         )
 
-    @property  # type: ignore
+    @property
     @guard_from_missing_data()
     def wall_power_level(self) -> int:
         """Return the power rating of the A/C outlet.
@@ -333,7 +333,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         """
         return cast(int, self.settings_data["basestationStatus"]["wallPower"])
 
-    @property  # type: ignore
+    @property
     @guard_from_missing_data()
     def wifi_ssid(self) -> str:
         """Return the ssid of the base station.
@@ -342,7 +342,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         """
         return cast(str, self.settings_data["settings"]["normal"]["wifiSSID"])
 
-    @property  # type: ignore
+    @property
     @guard_from_missing_data()
     def wifi_strength(self) -> int:
         """Return the signal strength of the wifi antenna.

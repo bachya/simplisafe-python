@@ -26,6 +26,7 @@ repos:
           - --skip="./.*,*.json"
           - --quiet-level=4
         exclude_types: [json]
+        files: ^((simplipy)/.+)?[^/]+\.py$
   - repo: https://gitlab.com/pycqa/flake8
     rev: 5.0.4
     hooks:

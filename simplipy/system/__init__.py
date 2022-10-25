@@ -116,7 +116,7 @@ class System:  # pylint: disable=too-many-public-methods
         self.sensor_data: dict[str, dict[str, Any]] = {}
         self.sensors: dict[str, SensorV2 | SensorV3] = {}
 
-    @property  # type: ignore
+    @property
     @guard_from_missing_data()
     def address(self) -> str:
         """Return the street address of the system.
@@ -125,7 +125,7 @@ class System:  # pylint: disable=too-many-public-methods
         """
         return cast(str, self._api.subscription_data[self._sid]["location"]["street1"])
 
-    @property  # type: ignore
+    @property
     @guard_from_missing_data(False)
     def alarm_going_off(self) -> bool:
         """Return whether the alarm is going off.
@@ -137,7 +137,7 @@ class System:  # pylint: disable=too-many-public-methods
             self._api.subscription_data[self._sid]["location"]["system"]["isAlarming"],
         )
 
-    @property  # type: ignore
+    @property
     @guard_from_missing_data()
     def connection_type(self) -> str:
         """Return the system's connection type (cell or WiFi).
@@ -157,7 +157,7 @@ class System:  # pylint: disable=too-many-public-methods
         """
         return self._notifications
 
-    @property  # type: ignore
+    @property
     @guard_from_missing_data()
     def serial(self) -> str:
         """Return the system's serial number.
@@ -177,7 +177,7 @@ class System:  # pylint: disable=too-many-public-methods
         """
         return self._state
 
-    @property  # type: ignore
+    @property
     @guard_from_missing_data()
     def system_id(self) -> int:
         """Return the SimpliSafe identifier for this system.
@@ -186,7 +186,7 @@ class System:  # pylint: disable=too-many-public-methods
         """
         return self._sid
 
-    @property  # type: ignore
+    @property
     @guard_from_missing_data()
     def temperature(self) -> int:
         """Return the overall temperature measured by the system.
@@ -198,7 +198,7 @@ class System:  # pylint: disable=too-many-public-methods
             self._api.subscription_data[self._sid]["location"]["system"]["temperature"],
         )
 
-    @property  # type: ignore
+    @property
     @guard_from_missing_data()
     def version(self) -> int:
         """Return the system version.

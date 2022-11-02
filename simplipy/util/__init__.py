@@ -3,9 +3,10 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Awaitable, Callable
-from typing import Any
+from typing import Any, Optional
 
-CallbackType = Callable[..., Awaitable[None] | None]
+# pylint: disable=consider-alternative-union-syntax
+CallbackType = Callable[..., Optional[Awaitable[None]]]
 
 
 def execute_callback(callback: CallbackType, *args: Any) -> None:

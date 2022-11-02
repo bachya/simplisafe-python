@@ -6,7 +6,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from enum import Enum
 from functools import wraps
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Optional, TypeVar, cast
 
 from simplipy.const import LOGGER
 from simplipy.device import DeviceTypes
@@ -84,7 +84,9 @@ def get_device_type_from_data(device_data: dict[str, Any]) -> DeviceTypes:
 _GuardedCallableReturnType = TypeVar(  # pylint: disable=invalid-name
     "_GuardedCallableReturnType"
 )
-_GuardedCallableType = Callable[..., _GuardedCallableReturnType | None]
+
+# pylint: disable=consider-alternative-union-syntax
+_GuardedCallableType = Callable[..., Optional[_GuardedCallableReturnType]]
 
 
 def guard_from_missing_data(

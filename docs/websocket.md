@@ -29,7 +29,7 @@ await api.websocket.async_disconnect()
 
 ## Responding to Events
 
-Users respond to events by defining callbacks (synchronous functions *or* coroutines).
+Users respond to events by defining callbacks (synchronous functions _or_ coroutines).
 The following events exist:
 
 - `connect`: occurs when the websocket connection is established
@@ -45,8 +45,10 @@ async def async_connect_handler():
     await asyncio.sleep(1)
     print("I connected to the websocket")
 
+
 def connect_handler():
     print("I connected to the websocket")
+
 
 remove_1 = api.websocket.add_connect_callback(async_connect_handler)
 remove_2 = api.websocket.add_connect_callback(connect_handler)
@@ -61,8 +63,10 @@ async def async_connect_handler():
     await asyncio.sleep(1)
     print("I disconnected from the websocket")
 
+
 def connect_handler():
     print("I disconnected from the websocket")
+
 
 remove_1 = api.websocket.add_disconnect_callback(async_connect_handler)
 remove_2 = api.websocket.add_disconnect_callback(connect_handler)
@@ -77,8 +81,10 @@ async def async_connect_handler(event):
     await asyncio.sleep(1)
     print(f"I received a SimpliSafe™ event: {event}")
 
+
 def connect_handler():
     print(f"I received a SimpliSafe™ event: {event}")
+
 
 remove_1 = api.websocket.add_event_callback(async_connect_handler)
 remove_2 = api.websocket.add_event_callback(connect_handler)

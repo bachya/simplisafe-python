@@ -1,6 +1,8 @@
 """Define a V2 (original) SimpliSafe system."""
 from __future__ import annotations
 
+from typing import Any
+
 from simplipy.const import LOGGER
 from simplipy.device.sensor.v2 import SensorV2
 from simplipy.system import (
@@ -13,8 +15,15 @@ from simplipy.system import (
 )
 
 
-def create_pin_payload(pins: dict) -> dict[str, dict[str, dict[str, str]]]:
-    """Create the request payload to send for updating PINs."""
+def create_pin_payload(pins: dict[str, Any]) -> dict[str, dict[str, dict[str, str]]]:
+    """Create the request payload to send for updating PINs.
+
+    Args:
+        pins: A dictionary of pins.
+
+    Returns:
+        A SimpliSafe V2 PIN payload.
+    """
     duress_pin = pins.pop(CONF_DURESS_PIN)
     master_pin = pins.pop(CONF_MASTER_PIN)
 
@@ -47,7 +56,11 @@ class SystemV2(System):
         )
 
     async def _async_set_state(self, value: SystemStates) -> None:
-        """Set the state of the system."""
+        """Set the state of the system.
+
+        Args:
+            value: A :meth:`simplipy.system.SystemStates` object.
+        """
         await self._api.async_request(
             "post",
             f"subscriptions/{self.system_id}/state",
@@ -56,8 +69,12 @@ class SystemV2(System):
 
         self._state = value
 
-    async def _async_set_updated_pins(self, pins: dict) -> None:
-        """Post new PINs."""
+    async def _async_set_updated_pins(self, pins: dict[str, Any]) -> None:
+        """Post new PINs.
+
+        Args:
+            pins: A dictionary of PINs.
+        """
         await self._api.async_request(
             "post",
             f"subscriptions/{self.system_id}/pins",
@@ -65,7 +82,11 @@ class SystemV2(System):
         )
 
     async def _async_update_device_data(self, cached: bool = True) -> None:
-        """Update sensors to the latest values."""
+        """Update all device data.
+
+        Args:
+            cached: Whether to update with cached data.
+        """
         sensor_resp = await self._api.async_request(
             "get",
             f"subscriptions/{self.system_id}/settings",
@@ -78,7 +99,11 @@ class SystemV2(System):
             self.sensor_data[sensor["serial"]] = sensor
 
     async def _async_update_settings_data(self, cached: bool = True) -> None:
-        """Update all settings data."""
+        """Update all settings data.
+
+        Args:
+            cached: Whether to update with cached data.
+        """
         pass
 
     def generate_device_objects(self) -> None:
@@ -93,9 +118,11 @@ class SystemV2(System):
         The ``cached`` parameter determines whether the SimpliSafe Cloud uses the last
         known values retrieved from the base station (``True``) or retrieves new data.
 
-        :param cached: Whether to used cached data.
-        :type cached: ``bool``
-        :rtype: ``dict[str, str]``
+        Args:
+            cached: Whether to update with cached data.
+
+        Returns:
+            A dictionary of PINs.
         """
         pins_resp = await self._api.async_request(
             "get",

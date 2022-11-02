@@ -2,14 +2,15 @@
 from __future__ import annotations
 
 import asyncio
+import sys
+from collections.abc import Awaitable, Callable
 from datetime import datetime
 from json.decoder import JSONDecodeError
-import sys
-from typing import Any, Callable, cast
+from typing import Any, cast
 
+import backoff
 from aiohttp import ClientSession
 from aiohttp.client_exceptions import ClientResponseError
-import backoff
 
 from simplipy.const import DEFAULT_USER_AGENT, LOGGER
 from simplipy.errors import (
@@ -44,20 +45,26 @@ class API:  # pylint: disable=too-many-instance-attributes
     :meth:`simplipy.api.API.async_from_auth` and
     :meth:`simplipy.api.API.async_from_refresh_token` methods should be used.
 
-    :param session: The ``aiohttp`` ``ClientSession`` session used for all HTTP requests
-    :type session: ``aiohttp.client.ClientSession``
-    :param request_retries: The default number of request retries to use
-    :type request_retries: ``int``
+    Args:
+        session: session: An optional ``aiohttp`` ``ClientSession``.
+        request_retries: The default number of request retries to use.
     """
 
     def __init__(
         self,
         *,
-        session: ClientSession,
         request_retries: int = DEFAULT_REQUEST_RETRIES,
+        session: ClientSession,
     ) -> None:
-        """Initialize."""
-        self._refresh_token_callbacks: list[Callable[..., None]] = []
+        """Initialize.
+
+        Args:
+            session: An optional ``aiohttp`` ``ClientSession``.
+            request_retries: The default number of request retries to use.
+        """
+        self._refresh_token_callbacks: list[
+            Callable[[str], Awaitable[None] | None]
+        ] = []
         self._request_retries = request_retries
         self.session: ClientSession = session
 
@@ -78,20 +85,24 @@ class API:  # pylint: disable=too-many-instance-attributes
         authorization_code: str,
         code_verifier: str,
         *,
-        session: ClientSession,
         request_retries: int = DEFAULT_REQUEST_RETRIES,
+        session: ClientSession,
     ) -> API:
         """Get an authenticated API object from an Authorization Code and Code Verifier.
 
-        :param authorization_code: The Authorization Code
-        :type authorization_code: ``str``
-        :param code_verifier: The Code Verifier
-        :type code_verifier: ``str``
-        :param session: The ``aiohttp`` ``ClientSession`` session used for HTTP requests
-        :type session: ``aiohttp.client.ClientSession``
-        :param request_retries: The default number of request retries to use
-        :type request_retries: ``int``
-        :rtype: :meth:`simplipy.api.API`
+        Args:
+            authorization_code: The Authorization Code.
+            code_verifier: The Code Verifier.
+            request_retries: The default number of request retries to use.
+            session: An optional ``aiohttp`` ``ClientSession``.
+
+        Returns:
+            An authenticated API object.
+
+        Raises:
+            InvalidCredentialsError: Raised on invalid username/password.
+            RequestError: Raised on general HTTP error.
+            SimplipyError: Raised on an unknown error.
         """
         api = cls(session=session, request_retries=request_retries)
 
@@ -125,18 +136,18 @@ class API:  # pylint: disable=too-many-instance-attributes
         cls,
         refresh_token: str,
         *,
-        session: ClientSession,
         request_retries: int = DEFAULT_REQUEST_RETRIES,
+        session: ClientSession,
     ) -> API:
         """Get an authenticated API object from a refresh token.
 
-        :param refresh_token: The refresh token
-        :type refresh_token: ``str``
-        :param session: An ``aiohttp`` ``ClientSession``
-        :type session: ``aiohttp.client.ClientSession``
-        :param request_retries: The default number of request retries to use
-        :type request_retries: ``int``
-        :rtype: :meth:`simplipy.api.API`
+        Args:
+            refresh_token: A refresh token.
+            request_retries: The default number of request retries to use.
+            session: An optional ``aiohttp`` ``ClientSession``.
+
+        Returns:
+            An authenticated API object.
         """
         api = cls(session=session, request_retries=request_retries)
         api.refresh_token = refresh_token
@@ -153,9 +164,7 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         LOGGER.debug("Error during request attempt: %s", err)
 
-        if err.status == 401:
-            assert self._token_last_refreshed
-
+        if err.status == 401 and self._token_last_refreshed:
             # Calculate the window between now and the last time the token was
             # refreshed:
             window = (datetime.utcnow() - self._token_last_refreshed).total_seconds()
@@ -181,7 +190,17 @@ class API:  # pylint: disable=too-many-instance-attributes
     async def _async_api_request(
         self, method: str, endpoint: str, url_base: str = API_URL_BASE, **kwargs: Any
     ) -> dict[str, Any]:
-        """Execute an API request."""
+        """Make an API request.
+
+        Args:
+            method: An HTTP method.
+            endpoint: A relative API endpoint.
+            url_base: The base URL of the API.
+            **kwargs: Additional kwargs to send with the request.
+
+        Returns:
+            An API response payload.
+        """
         kwargs.setdefault("headers", {})
         kwargs["headers"].setdefault("Host", API_URL_HOSTNAME)
         kwargs["headers"]["Content-Type"] = "application/json; charset=utf-8"
@@ -219,13 +238,21 @@ class API:  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def _handle_on_giveup(_: dict[str, Any]) -> None:
-        """Handle a give up after retries are exhausted."""
+        """Handle a give up after retries are exhausted.
+
+        Raises:
+            RequestError: Raised upon an underlying HTTP error.
+        """
         err_info = sys.exc_info()
         err = err_info[1].with_traceback(err_info[2])  # type: ignore
         raise RequestError(err) from err
 
     def _save_token_data_from_response(self, token_data: dict[str, Any]) -> None:
-        """Save token data from a token response."""
+        """Save token data from a token response.
+
+        Args:
+            token_data: An API response payload.
+        """
         self._token_last_refreshed = datetime.utcnow()
         self.access_token = token_data["access_token"]
         self.refresh_token = token_data["refresh_token"]
@@ -242,25 +269,39 @@ class API:  # pylint: disable=too-many-instance-attributes
                 which is where this error can occur; we can't control when/how that
                 happens (e.g., we might query the API in the middle of a base station
                 update), so it should be viewed as retryable.
+
+        Args:
+            err: An ``aiohttp`` ``ClientResponseError``
+
+        Returns:
+            Whether the error is a fatal one.
         """
-        assert isinstance(err.status, int)
         if err.status in (401, 409):
             return False
         return 400 <= err.status < 500
 
-    def _wrap_request_method(self, request_retries: int) -> Callable:
-        """Wrap the request method in backoff/retry logic."""
+    def _wrap_request_method(
+        self, request_retries: int
+    ) -> Callable[..., Awaitable[dict[str, Any]]]:
+        """Wrap the request method in backoff/retry logic.
+
+        Args:
+            request_retries: The number of retries to give a failed request.
+
+        Returns:
+            A version of the request callable that can do retries.
+        """
         return cast(
             Callable,
             backoff.on_exception(
                 backoff.expo,
                 ClientResponseError,
-                giveup=self.is_fatal_error,
+                giveup=self.is_fatal_error,  # type: ignore[arg-type]
                 jitter=backoff.random_jitter,
                 logger=LOGGER,
                 max_tries=request_retries,
-                on_backoff=self._async_handle_on_backoff,
-                on_giveup=self._handle_on_giveup,
+                on_backoff=self._async_handle_on_backoff,  # type: ignore[arg-type]
+                on_giveup=self._handle_on_giveup,  # type: ignore[arg-type]
             )(self._async_api_request),
         )
 
@@ -273,14 +314,17 @@ class API:  # pylint: disable=too-many-instance-attributes
         self.async_request = self._wrap_request_method(self._request_retries)
 
     def add_refresh_token_callback(
-        self, callback: Callable[..., Any]
-    ) -> Callable[..., None]:
+        self, callback: Callable[[str], Awaitable[None] | None]
+    ) -> Callable[[], None]:
         """Add a callback that should be triggered when tokens are refreshed.
 
         Note that callbacks should expect to receive a refresh token as a parameter.
 
-        :param callback: The method to call after receiving an event.
-        :type callback: ``Callable[..., None]``
+        Args:
+            callback: The callback to execute.
+
+        Returns:
+            A callable to cancel the callback.
         """
         self._refresh_token_callbacks.append(callback)
 
@@ -296,14 +340,15 @@ class API:  # pylint: disable=too-many-instance-attributes
         In the dict that is returned, the keys are the subscription ID and the values
         are actual ``System`` objects.
 
-        :rtype: ``Dict[int, simplipy.system.System]``
+        Returns:
+            A dictionary of system IDs to System objects.
         """
         systems: dict[int, SystemV2 | SystemV3] = {}
 
         await self.async_update_subscription_data()
 
         for sid, subscription in self.subscription_data.items():
-            if not subscription["status"]["isActive"] != 0:
+            if not subscription["status"]["isActive"]:
                 LOGGER.info("Skipping inactive subscription: %s", sid)
                 continue
 
@@ -312,8 +357,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 continue
 
             system: SystemV2 | SystemV3
-            version = subscription["location"]["system"]["version"]
-            if version == 2:
+            if (_ := subscription["location"]["system"]["version"]) == 2:
                 system = SystemV2(self, sid)
             else:
                 system = SystemV3(self, sid)
@@ -330,6 +374,11 @@ class API:  # pylint: disable=too-many-instance-attributes
         """Initiate a refresh of the access/refresh tokens.
 
         Note that this will execute any callbacks added via add_refresh_token_callback.
+
+        Raises:
+            InvalidCredentialsError: Raised on invalid username/password.
+            RequestError: Raised on general HTTP error.
+            SimplipyError: Raised on an unknown error.
         """
         try:
             token_data = await self._async_api_request(

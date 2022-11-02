@@ -1,0 +1,4 @@
+#!/bin/sh
+set -e
+
+poetry run sphinx-build ./docs ./docs/_build

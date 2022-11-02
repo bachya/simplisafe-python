@@ -1,11 +1,12 @@
 """Define V2 and V3 SimpliSafe systems."""
 from __future__ import annotations
 
-import dataclasses
+from collections.abc import Callable
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from enum import Enum
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from simplipy.const import LOGGER
 from simplipy.device import DeviceTypes
@@ -27,7 +28,7 @@ MAX_PIN_LENGTH = 4
 RESERVED_PIN_LABELS = {CONF_DURESS_PIN, CONF_MASTER_PIN}
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class SystemNotification:
     """Define a representation of a system notification."""
 
@@ -36,6 +37,8 @@ class SystemNotification:
     category: str
     code: str
     timestamp: float
+
+    received_dt: datetime | None = field(init=False)
 
     link: str | None = None
     link_label: str | None = None
@@ -63,7 +66,14 @@ class SystemStates(Enum):
 
 
 def get_device_type_from_data(device_data: dict[str, Any]) -> DeviceTypes:
-    """Get the device type of a raw data payload."""
+    """Get the device type of a raw data payload.
+
+    Args:
+        device_data: An API response payload.
+
+    Returns:
+        The device type.
+    """
     try:
         return DeviceTypes(device_data["type"])
     except ValueError:
@@ -71,15 +81,46 @@ def get_device_type_from_data(device_data: dict[str, Any]) -> DeviceTypes:
         return DeviceTypes.UNKNOWN
 
 
-def guard_from_missing_data(default_value: Any = None) -> Callable:
-    """Guard a missing property by returning a set value."""
+_GuardedCallableReturnType = TypeVar(  # pylint: disable=invalid-name
+    "_GuardedCallableReturnType"
+)
+_GuardedCallableType = Callable[..., _GuardedCallableReturnType | None]
 
-    def decorator(func: Callable) -> Callable:
-        """Decorate."""
+
+def guard_from_missing_data(
+    *,
+    default_value: _GuardedCallableReturnType | None = None,
+) -> Callable[[_GuardedCallableType], _GuardedCallableType]:
+    """Guard a missing property by returning a set value.
+
+    Args:
+        default_value: The optional default value to assign to the property.
+
+    Returns:
+        A decorated callable.
+    """
+
+    def decorator(func: _GuardedCallableType) -> _GuardedCallableType:
+        """Decorate.
+
+        Args:
+            func: The callable to decorate.
+
+        Returns:
+            A decorated callable.
+        """
 
         @wraps(func)
-        def wrapper(system: System) -> Any:
-            """Call the function and handle any issue."""
+        def wrapper(system: System) -> _GuardedCallableReturnType | None:
+            """Call the function and handle any issue.
+
+            Args:
+                system: A :meth:`simplipy.system.System` object (or one of its
+                    subclasses).
+
+            Returns:
+                A decorate callable.
+            """
             try:
                 return func(system)
             except KeyError:
@@ -99,14 +140,18 @@ class System:  # pylint: disable=too-many-public-methods
     Note that this class shouldn't be instantiated directly; it will be instantiated as
     appropriate via :meth:`simplipy.API.async_get_systems`.
 
-    :param api: A :meth:`simplipy.API` object
-    :type api: :meth:`simplipy.API`
-    :param sid: A subscription ID
-    :type sid: ``int``
+    Args:
+        api: A :meth:`simplipy.API` object.
+        sid: A subscription ID.
     """
 
     def __init__(self, api: API, sid: int) -> None:
-        """Initialize."""
+        """Initialize.
+
+        Args:
+            api: A :meth:`simplipy.API` object.
+            sid: A subscription ID.
+        """
         self._api = api
         self._sid = sid
 
@@ -118,19 +163,21 @@ class System:  # pylint: disable=too-many-public-methods
 
     @property
     @guard_from_missing_data()
-    def address(self) -> str:
+    def address(self) -> str | None:
         """Return the street address of the system.
 
-        :rtype: ``str``
+        Returns:
+            The street address.
         """
         return cast(str, self._api.subscription_data[self._sid]["location"]["street1"])
 
     @property
-    @guard_from_missing_data(False)
+    @guard_from_missing_data(default_value=False)
     def alarm_going_off(self) -> bool:
         """Return whether the alarm is going off.
 
-        :rtype: ``bool``
+        Returns:
+            Whether the alarm is going off.
         """
         return cast(
             bool,
@@ -139,10 +186,11 @@ class System:  # pylint: disable=too-many-public-methods
 
     @property
     @guard_from_missing_data()
-    def connection_type(self) -> str:
+    def connection_type(self) -> str | None:
         """Return the system's connection type (cell or WiFi).
 
-        :rtype: ``str``
+        Returns:
+            The connection type.
         """
         return cast(
             str,
@@ -153,16 +201,18 @@ class System:  # pylint: disable=too-many-public-methods
     def notifications(self) -> list[SystemNotification]:
         """Return the system's current messages/notifications.
 
-        :rtype: ``List[:meth:`simplipy.system.SystemNotification`]``
+        Returns:
+            A list of :meth:`simplipy.system.SystemNotification` objects.
         """
         return self._notifications
 
     @property
     @guard_from_missing_data()
-    def serial(self) -> str:
+    def serial(self) -> str | None:
         """Return the system's serial number.
 
-        :rtype: ``str``
+        Returns:
+            The system serial number.
         """
         return cast(
             str,
@@ -173,25 +223,28 @@ class System:  # pylint: disable=too-many-public-methods
     def state(self) -> SystemStates:
         """Return the current state of the system.
 
-        :rtype: :meth:`simplipy.system.SystemStates`
+        Returns:
+            The system state.
         """
         return self._state
 
     @property
     @guard_from_missing_data()
-    def system_id(self) -> int:
+    def system_id(self) -> int | None:
         """Return the SimpliSafe identifier for this system.
 
-        :rtype: ``int``
+        Returns:
+            The system ID.
         """
         return self._sid
 
     @property
     @guard_from_missing_data()
-    def temperature(self) -> int:
+    def temperature(self) -> int | None:
         """Return the overall temperature measured by the system.
 
-        :rtype: ``int``
+        Returns:
+            The average system temperature.
         """
         return cast(
             int,
@@ -200,10 +253,11 @@ class System:  # pylint: disable=too-many-public-methods
 
     @property
     @guard_from_missing_data()
-    def version(self) -> int:
+    def version(self) -> int | None:
         """Return the system version.
 
-        :rtype: ``int``
+        Returns:
+            The system version.
         """
         return cast(
             int,
@@ -211,23 +265,55 @@ class System:  # pylint: disable=too-many-public-methods
         )
 
     async def _async_clear_notifications(self) -> None:
-        """Clear active notifications."""
+        """Clear active notifications.
+
+        Raises:
+            NotImplementedError: Raises when not implemented.
+        """
         raise NotImplementedError()
 
     async def _async_set_state(self, value: SystemStates) -> None:
-        """Raise if calling this undefined based method."""
+        """Set the system state.
+
+        Args:
+            value: A :meth:`simplipy.system.SystemStates` object.
+
+        Raises:
+            NotImplementedError: Raises when not implemented.
+        """
         raise NotImplementedError()
 
     async def _async_set_updated_pins(self, pins: dict[str, Any]) -> None:
-        """Post new PINs."""
+        """Post new PINs.
+
+        Args:
+            pins: A dictionary of PINs.
+
+        Raises:
+            NotImplementedError: Raises when not implemented.
+        """
         raise NotImplementedError()
 
     async def _async_update_device_data(self, cached: bool = False) -> None:
-        """Update all device data."""
+        """Update all device data.
+
+        Args:
+            cached: Whether to update with cached data.
+
+        Raises:
+            NotImplementedError: Raises when not implemented.
+        """
         raise NotImplementedError()
 
     async def _async_update_settings_data(self, cached: bool = True) -> None:
-        """Update all settings data."""
+        """Update all settings data.
+
+        Args:
+            cached: Whether to update with cached data.
+
+        Raises:
+            NotImplementedError: Raises when not implemented.
+        """
         raise NotImplementedError()
 
     async def _async_update_subscription_data(self) -> None:
@@ -235,13 +321,17 @@ class System:  # pylint: disable=too-many-public-methods
         await self._api.async_update_subscription_data()
 
     def as_dict(self) -> dict[str, Any]:
-        """Return dictionary version of this device."""
+        """Return dictionary version of this device.
+
+        Returns:
+            A dict representation of this device.
+        """
         return {
             "address": self.address,
             "alarm_going_off": self.alarm_going_off,
             "connection_type": self.connection_type,
             "notifications": [
-                dataclasses.asdict(notification) for notification in self.notifications
+                asdict(notification) for notification in self.notifications
             ],
             "serial": self.serial,
             "state": self.state.value,
@@ -262,7 +352,11 @@ class System:  # pylint: disable=too-many-public-methods
             self._notifications = []
 
     def generate_device_objects(self) -> None:
-        """Generate device objects for this system."""
+        """Generate device objects for this system.
+
+        Raises:
+            NotImplementedError: Raises when not implemented.
+        """
         raise NotImplementedError()
 
     async def async_get_events(
@@ -272,11 +366,12 @@ class System:  # pylint: disable=too-many-public-methods
 
         If no parameters are provided, this will return the most recent 50 events.
 
-        :param from_datetime: The starting datetime (if desired)
-        :type from_datetime: ``datetime.datetime``
-        :param num_events: The number of events to return.
-        :type num_events: ``int``
-        :rtype: ``list``
+        Args:
+            from_datetime: The starting datetime (if desired).
+            num_events: The number of events to return.
+
+        Returns:
+            An API response payload.
         """
         params = {}
         if from_datetime:
@@ -288,12 +383,16 @@ class System:  # pylint: disable=too-many-public-methods
             "get", f"subscriptions/{self.system_id}/events", params=params
         )
 
-        return cast(List[Dict[str, Any]], events_resp.get("events", []))
+        return cast(list[dict[str, Any]], events_resp.get("events", []))
 
-    async def async_get_latest_event(self) -> dict:
+    async def async_get_latest_event(self) -> dict[str, Any]:
         """Get the most recent system event.
 
-        :rtype: ``dict``
+        Returns:
+            An API response payload.
+
+        Raises:
+            SimplipyError: Raised when there are no events.
         """
         events = await self.async_get_events(num_events=1)
 
@@ -308,17 +407,22 @@ class System:  # pylint: disable=too-many-public-methods
         The ``cached`` parameter determines whether the SimpliSafe Cloud uses the last
         known values retrieved from the base station (``True``) or retrieves new data.
 
-        :param cached: Whether to used cached data.
-        :type cached: ``bool``
-        :rtype: ``Dict[str, str]``
+        Args:
+            cached: Whether to used cached data.
+
+        Raises:
+            NotImplementedError: Raises when not implemented.
         """
         raise NotImplementedError()
 
     async def async_remove_pin(self, pin_or_label: str) -> None:
         """Remove a PIN by its value or label.
 
-        :param pin_or_label: The PIN value or label to remove
-        :type pin_or_label: ``str``
+        Args:
+            pin_or_label: The PIN value or label to remove.
+
+        Raises:
+            PinError: Raised when attempting to remove a PIN that doesn't exist.
         """
         # Because SimpliSafe's API works by sending the entire payload of PINs, we
         # can't reasonably check a local cache for up-to-date PIN data; so, we fetch the
@@ -352,10 +456,12 @@ class System:  # pylint: disable=too-many-public-methods
     async def async_set_pin(self, label: str, pin: str) -> None:
         """Set a PIN.
 
-        :param label: The label to use for the PIN (shown in the SimpliSafe app)
-        :type label: str
-        :param pin: The pin value
-        :type pin: str
+        Args:
+            label: The label to use for the PIN (shown in the SimpliSafe app).
+            pin: The pin value.
+
+        Raises:
+            PinError: Raised when setting an invalid PIN.
         """
         if len(pin) != MAX_PIN_LENGTH:
             raise PinError(f"PINs must be {MAX_PIN_LENGTH} digits long")
@@ -394,14 +500,11 @@ class System:  # pylint: disable=too-many-public-methods
         The ``cached`` parameter determines whether the SimpliSafe Cloud uses the last
         known values retrieved from the base station (``True``) or retrieves new data.
 
-        :param include_subscription: Whether system state/properties should be updated
-        :type include_subscription: ``bool``
-        :param include_settings: Whether system settings (like PINs) should be updated
-        :type include_settings: ``bool``
-        :param include_devices: whether sensors/locks/etc. should be updated
-        :type include_devices: ``bool``
-        :param cached: Whether to used cached data.
-        :type cached: ``bool``
+        Args:
+            include_subscription: Whether system state/properties should be updated.
+            include_settings: Whether system settings (like PINs) should be updated.
+            include_devices: whether sensors/locks/etc. should be updated.
+            cached: Whether to used cached data.
         """
         if include_subscription:
             await self._async_update_subscription_data()

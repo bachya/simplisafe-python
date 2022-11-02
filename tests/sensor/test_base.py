@@ -1,18 +1,20 @@
 """Define base tests for Sensor objects."""
-# pylint: disable=unused-argument
 import aiohttp
 import pytest
+from aresponses import ResponsesMockServer
 
 from simplipy import API
 from simplipy.device import DeviceTypes
-
 from tests.common import TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, TEST_SYSTEM_ID
 
 
 @pytest.mark.asyncio
-async def test_properties_base(aresponses, v2_server):
+async def test_properties_base(
+    aresponses: ResponsesMockServer,
+    authenticated_simplisafe_server_v2: ResponsesMockServer,
+) -> None:
     """Test that base sensor properties are created properly."""
-    async with aiohttp.ClientSession() as session:
+    async with authenticated_simplisafe_server_v2, aiohttp.ClientSession() as session:
         simplisafe = await API.async_from_auth(
             TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
         )

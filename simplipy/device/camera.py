@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, cast
+from typing import TYPE_CHECKING, Any, cast
 from urllib.parse import urlencode
 
 from simplipy.const import LOGGER
@@ -42,17 +42,19 @@ class Camera(DeviceV3):
     def camera_settings(self) -> dict[str, Any]:
         """Return the camera settings.
 
-        :rtype: ``dict``
+        Returns:
+            A dictionary of camera settings.
         """
         return cast(
-            Dict[str, Any], self._system.camera_data[self._serial]["cameraSettings"]
+            dict[str, Any], self._system.camera_data[self._serial]["cameraSettings"]
         )
 
     @property
     def camera_type(self) -> CameraTypes:
         """Return the type of camera.
 
-        :rtype: ``str``
+        Returns:
+            The camera type.
         """
         try:
             return MODEL_TO_TYPE[self._system.camera_data[self._serial]["model"]]
@@ -67,7 +69,8 @@ class Camera(DeviceV3):
     def name(self) -> str:
         """Return the camera name.
 
-        :rtype: ``str``
+        Returns:
+            The camera name.
         """
         return cast(
             str, self._system.camera_data[self._serial]["cameraSettings"]["cameraName"]
@@ -77,7 +80,8 @@ class Camera(DeviceV3):
     def serial(self) -> str:
         """Return the camera's serial number.
 
-        :rtype: ``str``
+        Returns:
+            The camera serial number.
         """
         return self._serial
 
@@ -85,7 +89,8 @@ class Camera(DeviceV3):
     def shutter_open_when_away(self) -> bool:
         """Return whether the privacy shutter is open in away mode.
 
-        :rtype: ``bool``
+        Returns:
+            The camera's "shutter open when away" status.
         """
         val = self._system.camera_data[self._serial]["cameraSettings"]["shutterAway"]
         return cast(bool, val == "open")
@@ -94,7 +99,8 @@ class Camera(DeviceV3):
     def shutter_open_when_home(self) -> bool:
         """Return whether the privacy shutter is open in home mode.
 
-        :rtype: ``bool``
+        Returns:
+            The camera's "shutter open when home" status.
         """
         val = self._system.camera_data[self._serial]["cameraSettings"]["shutterHome"]
         return cast(bool, val == "open")
@@ -103,7 +109,8 @@ class Camera(DeviceV3):
     def shutter_open_when_off(self) -> bool:
         """Return whether the privacy shutter is open when the alarm is disarmed.
 
-        :rtype: ``bool``
+        Returns:
+            The camera's "shutter open when off" status.
         """
         val = self._system.camera_data[self._serial]["cameraSettings"]["shutterOff"]
         return cast(bool, val == "open")
@@ -112,7 +119,8 @@ class Camera(DeviceV3):
     def status(self) -> str:
         """Return the camera status.
 
-        :rtype: ``str``
+        Returns:
+            The camera status.
         """
         return cast(str, self._system.camera_data[self._serial]["status"])
 
@@ -120,14 +128,19 @@ class Camera(DeviceV3):
     def subscription_enabled(self) -> bool:
         """Return the camera subscription status.
 
-        :rtype: ``bool``
+        Returns:
+            The camera subscription status.
         """
         return cast(
             bool, self._system.camera_data[self._serial]["subscription"]["enabled"]
         )
 
     def as_dict(self) -> dict[str, Any]:
-        """Return dictionary version of this device."""
+        """Return dictionary version of this device.
+
+        Returns:
+            A dict representation of this device.
+        """
         return {
             "camera_settings": self.camera_settings,
             "camera_type": self.camera_type.value,
@@ -144,11 +157,17 @@ class Camera(DeviceV3):
         self,
         width: int = DEFAULT_VIDEO_WIDTH,
         audio_encoding: str = DEFAULT_AUDIO_ENCODING,
-        **kwargs: dict[str, Any],
+        **kwargs: Any,
     ) -> str:
         """Return the camera video URL.
 
-        :rtype: ``str``
+        Args:
+            width: The video width.
+            audio_encoding: The audio encoding.
+            kwargs: Additional parameters.
+
+        Returns:
+            The camera video URL.
         """
         url_params = {"x": width, "audioEncoding": audio_encoding, **kwargs}
         return f"{DEFAULT_MEDIA_URL_BASE}/{self.serial}/flv?{urlencode(url_params)}"

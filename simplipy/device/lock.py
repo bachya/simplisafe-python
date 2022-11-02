@@ -1,8 +1,9 @@
 """Define a SimpliSafe lock."""
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from simplipy.const import LOGGER
 from simplipy.device import DeviceTypes, DeviceV3
@@ -26,14 +27,11 @@ class Lock(DeviceV3):
     Note that this class shouldn't be instantiated directly; it will be
     instantiated as appropriate via :meth:`simplipy.API.async_get_systems`.
 
-    :param api: A :meth:`simplipy.API` object
-    :type api: :meth:`simplipy.API`
-    :param system: A :meth:`simplipy.system.System` object (or one of its subclasses)
-    :type system: :meth:`simplipy.system.System`
-    :param device_type: The type of device represented
-    :type device_type: :meth:`simplipy.device.DeviceTypes`
-    :param serial: The serial number of the device
-    :type serial: ``str``
+    Args:
+        request: The request method from the :meth:`simplipy.API` object.
+        system: A :meth:`simplipy.system.System` object (or one of its subclasses).
+        device_type: The type of device represented.
+        serial: The serial number of the device.
     """
 
     class _InternalStates(Enum):
@@ -44,12 +42,19 @@ class Lock(DeviceV3):
 
     def __init__(
         self,
-        request: Callable[..., Awaitable],
+        request: Callable[..., Awaitable[dict[str, Any]]],
         system: System,
         device_type: DeviceTypes,
         serial: str,
     ) -> None:
-        """Initialize."""
+        """Initialize.
+
+        Args:
+            request: The request method from the :meth:`simplipy.API` object.
+            system: A :meth:`simplipy.system.System` object (or one of its subclasses).
+            device_type: The type of device represented.
+            serial: The serial number of the device.
+        """
         super().__init__(system, device_type, serial)
 
         self._request = request
@@ -58,7 +63,8 @@ class Lock(DeviceV3):
     def disabled(self) -> bool:
         """Return whether the lock is disabled.
 
-        :rtype: ``bool``
+        Returns:
+            The lock's disable status.
         """
         return cast(
             bool, self._system.sensor_data[self._serial]["status"]["lockDisabled"]
@@ -68,7 +74,8 @@ class Lock(DeviceV3):
     def lock_low_battery(self) -> bool:
         """Return whether the lock's battery is low.
 
-        :rtype: ``bool``
+        Returns:
+            The lock's low battery status.
         """
         return cast(
             bool, self._system.sensor_data[self._serial]["status"]["lockLowBattery"]
@@ -78,7 +85,8 @@ class Lock(DeviceV3):
     def pin_pad_low_battery(self) -> bool:
         """Return whether the pin pad's battery is low.
 
-        :rtype: ``bool``
+        Returns:
+            The pinpad's low battery status.
         """
         return cast(
             bool, self._system.sensor_data[self._serial]["status"]["pinPadLowBattery"]
@@ -88,7 +96,8 @@ class Lock(DeviceV3):
     def pin_pad_offline(self) -> bool:
         """Return whether the pin pad is offline.
 
-        :rtype: ``bool``
+        Returns:
+            The pinpad's offline status.
         """
         return cast(
             bool, self._system.sensor_data[self._serial]["status"]["pinPadOffline"]
@@ -98,7 +107,8 @@ class Lock(DeviceV3):
     def state(self) -> LockStates:
         """Return the current state of the lock.
 
-        :rtype: :meth:`simplipy.lock.LockStates`
+        Returns:
+            The lock's state.
         """
         if bool(self._system.sensor_data[self._serial]["status"]["lockJamState"]):
             return LockStates.JAMMED
@@ -116,7 +126,11 @@ class Lock(DeviceV3):
         return LockStates.UNLOCKED
 
     def as_dict(self) -> dict[str, Any]:
-        """Return dictionary version of this device."""
+        """Return dictionary version of this device.
+
+        Returns:
+            A dict representation of this device.
+        """
         return {
             **super().as_dict(),
             "disabled": self.disabled,

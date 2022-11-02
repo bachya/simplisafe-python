@@ -5,12 +5,12 @@
 
 # simplisafe-python
 
-```{image} https://github.com/bachya/simplisafe-python/workflows/CI/badge.svg```
-```{image} https://img.shields.io/pypi/v/simplisafe-python.svg```
-```{image} https://img.shields.io/pypi/pyversions/simplisafe-python.svg```
-```{image} https://img.shields.io/pypi/l/simplisafe-python.svg```
-```{image} https://codecov.io/gh/bachya/simplisafe-python/branch/main/graph/badge.svg```
-```{image} https://api.codeclimate.com/v1/badges/f46d8b1dcfde6a2f683d/maintainability```
+`{image} https://github.com/bachya/simplisafe-python/workflows/CI/badge.svg`
+`{image} https://img.shields.io/pypi/v/simplisafe-python.svg`
+`{image} https://img.shields.io/pypi/pyversions/simplisafe-python.svg`
+`{image} https://img.shields.io/pypi/l/simplisafe-python.svg`
+`{image} https://codecov.io/gh/bachya/simplisafe-python/branch/main/graph/badge.svg`
+`{image} https://api.codeclimate.com/v1/badges/f46d8b1dcfde6a2f683d/maintainability`
 
 `simplisafe-python` (hereafter referred to as `simplipy`) is a Python3,
 `asyncio`-driven interface to the unofficial SimpliSafe™ API. With it, users can

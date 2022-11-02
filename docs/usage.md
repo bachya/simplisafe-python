@@ -25,8 +25,8 @@ system state.
 
 ## Accessing the API
 
-Starting in 2021, SimpliSafe™  began to implement an OAuth-based form of authentication.
-To use this library, you must handshake with the SimpliSafe™  API; although this process
+Starting in 2021, SimpliSafe™ began to implement an OAuth-based form of authentication.
+To use this library, you must handshake with the SimpliSafe™ API; although this process
 cannot be fully accomplished programmatically, the procedure is relatively
 straightforward.
 
@@ -35,7 +35,7 @@ straightforward.
 `simplipy` comes with a helper script to get you started. To use it, follow these
 steps from a command line:
 
-1. Clone the ``simplipy`` Git repo and `cd` into it:
+1. Clone the `simplipy` Git repo and `cd` into it:
 
 ```sh
 $ git clone https://github.com/bachya/simplisafe-python.git
@@ -49,13 +49,13 @@ $ python3 -m virtualenv .venv
 $ source .venv/bin/activate
 ```
 
-3. Initialize the dev environment for ``simplipy``:
+3. Initialize the dev environment for `simplipy`:
 
 ```sh
 $ script/setup
 ```
 
-4. Run the ``auth`` script:
+4. Run the `auth` script:
 
 ```sh
 $ script/auth
@@ -72,9 +72,11 @@ $ script/auth
    verification, return to the browser and open its Dev Tools window. Look for an error
    (in either the Console or Network tab) that contains a URL starting with
    `com.simplisafe.mobile`:
+
 ```
 com.simplisafe.mobile://auth.simplisafe.com/ios/com.simplisafe.mobile/callback?code=<CODE>
 ```
+
 ![The code in the Console Tab](images/ss-auth-code-in-console.png)
 ![The code in the Network Tab](images/ss-auth-code-in-network.png)
 
@@ -85,7 +87,7 @@ tab, open its Dev Tools window, then copy/paste the URL from the tab opened by
 `script/auth` into the new tab to see the Console/Network output.)
 
 7. Copy the `code` parameter at the end of the `com.simplisafe.mobile` URL, return to your
-terminal, and paste it into the prompt. You should now see this message:
+   terminal, and paste it into the prompt. You should now see this message:
 
 ```sh
 You are now ready to use the SimpliSafe API!
@@ -110,15 +112,15 @@ import simplipy
 
 
 async def main() -> None:
-  """Create the aiohttp session and run."""
-  async with ClientSession() as session:
-      simplisafe = await simplipy.API(
-          "<AUTHORIZATION_CODE>",
-          "<CODE_VERIFIER>",
-          session=session,
-      )
+    """Create the aiohttp session and run."""
+    async with ClientSession() as session:
+        simplisafe = await simplipy.API(
+            "<AUTHORIZATION_CODE>",
+            "<CODE_VERIFIER>",
+            session=session,
+        )
 
-      # ...
+        # ...
 
 
 asyncio.run(main())
@@ -155,7 +157,7 @@ Remember three essential characteristics of refresh tokens:
 
 It is cumbersome to call
 {meth}`API.async_from_auth <simplipy.api.API.async_from_auth>` every time you want a new
-{meth}`API <simplipy.api.API>` object. Therefore, *after* initial authentication, call
+{meth}`API <simplipy.api.API>` object. Therefore, _after_ initial authentication, call
 {meth}`API.async_from_refresh_token <simplipy.api.API.async_from_refresh_token>`,
 passing the {meth}`refresh_token <simplipy.api.API.refresh_token>` from the previous
 {meth}`API <simplipy.api.API>` object. A common practice is to save a valid refresh

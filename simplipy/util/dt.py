@@ -1,8 +1,7 @@
 """Define datetime utilities."""
 from datetime import datetime
-from typing import cast
 
-import pytz  # type: ignore
+import pytz
 
 UTC = pytz.utc
 
@@ -10,8 +9,10 @@ UTC = pytz.utc
 def utc_from_timestamp(timestamp: float) -> datetime:
     """Return a UTC time from a timestamp.
 
-    :param timestamp: The epoch to convert
-    :type timestamp: ``float``
-    :rtype: ``datetime.datetime``
+    Args:
+        timestamp: The epoch to convert.
+
+    Returns:
+        A parsed ``datetime.datetime`` object.
     """
-    return cast(datetime, UTC.localize(datetime.utcfromtimestamp(timestamp)))
+    return UTC.localize(datetime.utcfromtimestamp(timestamp))

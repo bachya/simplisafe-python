@@ -2,16 +2,13 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from dataclasses import InitVar, dataclass, field
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any, Callable, Dict, Final, cast
+from typing import TYPE_CHECKING, Any, Final, cast
 
 from aiohttp import ClientWebSocketResponse, WSMsgType
-from aiohttp.client_exceptions import (
-    ClientError,
-    ServerDisconnectedError,
-    WSServerHandshakeError,
-)
+from aiohttp.client_exceptions import ClientError
 
 from simplipy.const import DEFAULT_USER_AGENT, LOGGER
 from simplipy.device import DeviceTypes
@@ -22,7 +19,7 @@ from simplipy.errors import (
     InvalidMessageError,
     NotConnectedError,
 )
-from simplipy.util import execute_callback
+from simplipy.util import CallbackType, execute_callback
 from simplipy.util.dt import utc_from_timestamp
 
 if TYPE_CHECKING:
@@ -105,9 +102,16 @@ class Watchdog:
     """Define a watchdog to kick the websocket connection at intervals."""
 
     def __init__(
-        self, action: Callable[..., Any], timeout: timedelta = DEFAULT_WATCHDOG_TIMEOUT
+        self,
+        action: Callable[..., Awaitable[None]],
+        timeout: timedelta = DEFAULT_WATCHDOG_TIMEOUT,
     ):
-        """Initialize."""
+        """Initialize.
+
+        Args:
+            action: The coroutine function to call when the watchdog expires.
+            timeout: The time duration before the watchdog times out.
+        """
         self._action = action
         self._action_task: asyncio.Task | None = None
         self._loop = asyncio.get_running_loop()
@@ -139,15 +143,16 @@ class Watchdog:
 
 
 @dataclass(frozen=True)
-class WebsocketEvent:  # pylint: disable=too-many-instance-attributes
+class WebsocketEvent:
     """Define a representation of a message."""
 
     event_cid: InitVar[int]
     info: str
     system_id: int
-    timestamp: float
+    _raw_timestamp: float
 
     event_type: str | None = field(init=False)
+    timestamp: datetime = field(init=False)
 
     changed_by: str | None = None
     sensor_name: str | None = None
@@ -155,7 +160,11 @@ class WebsocketEvent:  # pylint: disable=too-many-instance-attributes
     sensor_type: DeviceTypes | None = None
 
     def __post_init__(self, event_cid: int) -> None:
-        """Run post-init initialization."""
+        """Run post-init initialization.
+
+        Args:
+            event_cid: A SimpliSafe code for a particular event.
+        """
         if event_cid in EVENT_MAPPING:
             object.__setattr__(self, "event_type", EVENT_MAPPING[event_cid])
         else:
@@ -167,7 +176,7 @@ class WebsocketEvent:  # pylint: disable=too-many-instance-attributes
             )
             object.__setattr__(self, "event_type", None)
 
-        object.__setattr__(self, "timestamp", utc_from_timestamp(self.timestamp))
+        object.__setattr__(self, "timestamp", utc_from_timestamp(self._raw_timestamp))
 
         if self.sensor_type is not None:
             try:
@@ -183,7 +192,14 @@ class WebsocketEvent:  # pylint: disable=too-many-instance-attributes
 
 
 def websocket_event_from_payload(payload: dict[str, Any]) -> WebsocketEvent:
-    """Create a Message object from a websocket event payload."""
+    """Create a Message object from a websocket event payload.
+
+    Args:
+        payload: A raw websocket response payload.
+
+    Returns:
+        A parsed WebsocketEvent object.
+    """
     return WebsocketEvent(
         payload["data"]["eventCid"],
         payload["data"]["info"],
@@ -203,32 +219,48 @@ class WebsocketClient:
     appropriate via :meth:`simplipy.API.async_from_auth` or
     :meth:`simplipy.API.async_from_refresh_token`.
 
-    :param api: A :meth:`simplipy.API` object
-    :type api: :meth:`simplipy.API`
+    Args:
+        api: A simplipy API object.
     """
 
     def __init__(self, api: API) -> None:
-        """Initialize."""
+        """Initialize.
+
+        Args:
+            api: A simplipy API object.
+        """
         self._api = api
-        self._connect_callbacks: list[Callable[..., None]] = []
-        self._disconnect_callbacks: list[Callable[..., None]] = []
-        self._event_callbacks: list[Callable[..., None]] = []
+        self._connect_callbacks: list[CallbackType] = []
+        self._disconnect_callbacks: list[CallbackType] = []
+        self._event_callbacks: list[CallbackType] = []
         self._loop = asyncio.get_running_loop()
         self._watchdog = Watchdog(self.async_reconnect)
 
         # These will get filled in after initial authentication:
-        self._client: ClientWebSocketResponse | None = None
+        self._client: ClientWebSocketResponse = None  # type: ignore[assignment]
 
     @property
     def connected(self) -> bool:
-        """Return if currently connected to the websocket."""
+        """Return if currently connected to the websocket.
+
+        Returns:
+            Whether the websocket is connected.
+        """
         return self._client is not None and not self._client.closed
 
     @staticmethod
     def _add_callback(
-        callback_list: list, callback: Callable[..., Any]
-    ) -> Callable[..., None]:
-        """Add a callback to a particular list."""
+        callback_list: list[CallbackType], callback: CallbackType
+    ) -> Callable[[], None]:
+        """Add a callback to a particular list.
+
+        Args:
+            callback_list: A list on this object to store the callback in.
+            callback: The callback to execute.
+
+        Returns:
+            A callable to cancel the callback.
+        """
         callback_list.append(callback)
 
         def remove() -> None:
@@ -238,8 +270,16 @@ class WebsocketClient:
         return remove
 
     async def _async_receive_json(self) -> dict[str, Any]:
-        """Receive a JSON response from the websocket server."""
-        assert self._client
+        """Receive a JSON response from the websocket server.
+
+        Returns:
+            A websocket response payload.
+
+        Raises:
+            ConnectionClosedError: Raised when the server closes the websocket.
+            ConnectionFailedError: Raised when the websocket fails in anyway.
+            InvalidMessageError: Raised when an invalid message is received.
+        """
         msg = await self._client.receive()
 
         if msg.type in (WSMsgType.CLOSE, WSMsgType.CLOSED, WSMsgType.CLOSING):
@@ -260,60 +300,83 @@ class WebsocketClient:
 
         self._watchdog.trigger()
 
-        return cast(Dict[str, Any], data)
+        return cast(dict[str, Any], data)
 
     async def _async_send_json(self, payload: dict[str, Any]) -> None:
         """Send a JSON message to the websocket server.
 
-        Raises NotConnectedError if client is not connected.
+        Args:
+            payload: A JSON payload.
+
+        Raises:
+            NotConnectedError: Raised if client is not connected.
         """
         if not self.connected:
             raise NotConnectedError
-
-        assert self._client
 
         LOGGER.debug("Sending data to websocket server: %s", payload)
 
         await self._client.send_json(payload)
 
-    def _parse_message(self, message: dict[str, Any]) -> None:
-        """Parse an incoming message."""
-        if message["type"] == "com.simplisafe.event.standard":
-            event = websocket_event_from_payload(message)
+    def _parse_payload(self, payload: dict[str, Any]) -> None:
+        """Parse an incoming payload.
+
+        Args:
+            payload: A JSON payload.
+        """
+        if payload["type"] == "com.simplisafe.event.standard":
+            event = websocket_event_from_payload(payload)
             for callback in self._event_callbacks:
                 execute_callback(callback, event)
 
-    def add_connect_callback(self, callback: Callable[..., Any]) -> Callable[..., None]:
+    def add_connect_callback(
+        self, callback: Callable[[], Awaitable[None] | None]
+    ) -> Callable[[], None]:
         """Add a callback to be called after connecting.
 
-        :param callback: The method to call after connecting
-        :type callback: ``Callable[..., None]``
+        Args:
+            callback: The callback to execute.
+
+        Returns:
+            A callable to cancel the callback.
         """
         return self._add_callback(self._connect_callbacks, callback)
 
     def add_disconnect_callback(
-        self, callback: Callable[..., Any]
-    ) -> Callable[..., None]:
+        self, callback: Callable[[], Awaitable[None] | None]
+    ) -> Callable[[], None]:
         """Add a callback to be called after disconnecting.
 
-        :param callback: The method to call after disconnecting
-        :type callback: ``Callable[..., None]``
+        Args:
+            callback: The callback to execute.
+
+        Returns:
+            A callable to cancel the callback.
         """
         return self._add_callback(self._disconnect_callbacks, callback)
 
-    def add_event_callback(self, callback: Callable[..., Any]) -> Callable[..., None]:
+    def add_event_callback(
+        self, callback: Callable[[WebsocketEvent], Awaitable[None] | None]
+    ) -> Callable[[], None]:
         """Add a callback to be called upon receiving an event.
 
         Note that callbacks should expect to receive a WebsocketEvent object as a
         parameter.
 
-        :param callback: The method to call after receiving an event.
-        :type callback: ``Callable[..., None]``
+        Args:
+            callback: The callback to execute.
+
+        Returns:
+            A callable to cancel the callback.
         """
         return self._add_callback(self._event_callbacks, callback)
 
     async def async_connect(self) -> None:
-        """Connect to the websocket server."""
+        """Connect to the websocket server.
+
+        Raises:
+            CannotConnectError: Raises when we cannot connect to the websocket.
+        """
         if self.connected:
             return
 
@@ -321,7 +384,7 @@ class WebsocketClient:
             self._client = await self._api.session.ws_connect(
                 WEBSOCKET_SERVER_URL, heartbeat=55
             )
-        except (ClientError, ServerDisconnectedError, WSServerHandshakeError) as err:
+        except ClientError as err:
             raise CannotConnectError(err) from err
 
         LOGGER.info("Connected to websocket server")
@@ -336,16 +399,12 @@ class WebsocketClient:
         if not self.connected:
             return
 
-        assert self._client
-
         await self._client.close()
 
         LOGGER.info("Disconnected from websocket server")
 
     async def async_listen(self) -> None:
         """Start listening to the websocket server."""
-        assert self._client
-
         now = datetime.utcnow()
         now_ts = round(now.timestamp() * 1000)
         now_utc_iso = f"{now.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]}Z"
@@ -371,7 +430,7 @@ class WebsocketClient:
 
             while not self._client.closed:
                 message = await self._async_receive_json()
-                self._parse_message(message)
+                self._parse_payload(message)
         except ConnectionClosedError:
             pass
         finally:

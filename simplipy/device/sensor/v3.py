@@ -17,7 +17,8 @@ class SensorV3(DeviceV3):
     def trigger_instantly(self) -> bool:
         """Return whether the sensor will trigger instantly.
 
-        :rtype: ``bool``
+        Returns:
+            The "instant trigger" status.
         """
         return cast(
             bool,
@@ -30,7 +31,8 @@ class SensorV3(DeviceV3):
     def triggered(self) -> bool:
         """Return whether the sensor has been triggered.
 
-        :rtype: ``bool``
+        Returns:
+            The triggered status.
         """
         if self.type in (
             DeviceTypes.CARBON_MONOXIDE,
@@ -56,7 +58,11 @@ class SensorV3(DeviceV3):
 
         If the sensor isn't a temperature sensor, an ``AttributeError`` will be raised.
 
-        :rtype: ``int``
+        Returns:
+            The temperature.
+
+        Raises:
+            AttributeError: Raised when property is read on a non-temperature device.
         """
         if self.type != DeviceTypes.TEMPERATURE:
             raise AttributeError("Non-temperature sensor cannot have a temperature")
@@ -66,7 +72,11 @@ class SensorV3(DeviceV3):
         )
 
     def as_dict(self) -> dict[str, Any]:
-        """Return dictionary version of this device."""
+        """Return dictionary version of this device.
+
+        Returns:
+            A dict representation of this device.
+        """
         data: dict[str, Any] = {
             **super().as_dict(),
             "trigger_instantly": self.trigger_instantly,

@@ -5,14 +5,14 @@ import sys
 import webbrowser
 
 from simplipy.util.auth import (
-    get_auth_url,
     get_auth0_code_challenge,
     get_auth0_code_verifier,
+    get_auth_url,
 )
 
 
 async def main() -> None:
-    """Run!"""
+    """Run."""
     code_verifier = get_auth0_code_verifier()
     code_challenge = get_auth0_code_challenge(code_verifier)
     auth_url = get_auth_url(code_challenge)

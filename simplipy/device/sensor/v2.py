@@ -16,7 +16,8 @@ class SensorV2(Device):
     def data(self) -> int:
         """Return the sensor's current data flag (currently not understood).
 
-        :rtype: ``int``
+        Returns:
+            The current data flag.
         """
         return cast(int, self._system.sensor_data[self._serial]["sensorData"])
 
@@ -24,7 +25,8 @@ class SensorV2(Device):
     def error(self) -> bool:
         """Return the sensor's error status.
 
-        :rtype: ``bool``
+        Returns:
+            The current error status.
         """
         return cast(bool, self._system.sensor_data[self._serial]["error"])
 
@@ -32,7 +34,8 @@ class SensorV2(Device):
     def low_battery(self) -> bool:
         """Return whether the sensor's battery is low.
 
-        :rtype: ``bool``
+        Returns:
+            The current low battery status.
         """
         return cast(
             bool, self._system.sensor_data[self._serial].get("battery", "ok") != "ok"
@@ -42,7 +45,8 @@ class SensorV2(Device):
     def settings(self) -> bool:
         """Return the sensor's settings.
 
-        :rtype: ``bool``
+        Returns:
+            The current settings.
         """
         return cast(bool, self._system.sensor_data[self._serial]["setting"])
 
@@ -50,7 +54,8 @@ class SensorV2(Device):
     def trigger_instantly(self) -> bool:
         """Return whether the sensor will trigger instantly.
 
-        :rtype: ``bool``
+        Returns:
+            The "instant trigger" settings.
         """
         return cast(bool, self._system.sensor_data[self._serial]["instant"])
 
@@ -58,7 +63,11 @@ class SensorV2(Device):
     def triggered(self) -> bool:
         """Return whether the sensor has been triggered.
 
-        :rtype: ``bool``
+        Returns:
+            The triggered status.
+
+        Raises:
+            SimplipyError: Raised when the state can't be determined.
         """
         if self.type == DeviceTypes.ENTRY:
             return cast(

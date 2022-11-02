@@ -139,7 +139,7 @@ system.gsm_strength
 system.light
 # >>> True
 
- # Return any active system messages/notifications
+# Return any active system messages/notifications
 system.notifications
 # >>> [Message(...)]
 
@@ -262,13 +262,12 @@ occurred with their system:
 from datetime import datetime, timedelta
 
 yesterday = datetime.now() - timedelta(days=1)
- await system.async_get_events(
-     from_timestamp=yesterday, num_events=2
- )
- # >>> [{"eventId": 123, ...}, {"eventId": 456, ...}]
 
- await system.async_get_latest_event()
- # >>> {"eventId": 987, ...}
+await system.async_get_events(from_timestamp=yesterday, num_events=2)
+# >>> [{"eventId": 123, ...}, {"eventId": 456, ...}]
+
+await system.async_get_latest_event()
+# >>> {"eventId": 987, ...}
 ```
 
 ## System Notifications

@@ -1,7 +1,7 @@
 {
-    "key": "AbCdEfgHiK",
-    "timeouts": {
-        "heartbeat": 45000,
-        "inactivity": 30000
-    }
+  "key": "AbCdEfgHiK",
+  "timeouts": {
+    "heartbeat": 45000,
+    "inactivity": 30000
+  }
 }

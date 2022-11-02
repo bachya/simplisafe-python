@@ -100,7 +100,14 @@ SYSTEM_PROPERTIES_PAYLOAD_SCHEMA = vol.Schema(
 
 
 def create_pin_payload(pins: dict) -> dict[str, dict[str, dict[str, str]]]:
-    """Create the request payload to send for updating PINs."""
+    """Create the request payload to send for updating PINs.
+
+    Args:
+        pins: A dictionary of pins.
+
+    Returns:
+        A SimpliSafe V3 PIN payload.
+    """
     duress_pin = pins.pop(CONF_DURESS_PIN)
     master_pin = pins.pop(CONF_MASTER_PIN)
 
@@ -130,10 +137,23 @@ def create_pin_payload(pins: dict) -> dict[str, dict[str, dict[str, str]]]:
 
 
 class SystemV3(System):  # pylint: disable=too-many-public-methods
-    """Define a V3 (new) system."""
+    """Define a V3 (new) system.
+
+    Note that this class shouldn't be instantiated directly; it will be instantiated as
+    appropriate via :meth:`simplipy.API.async_get_systems`.
+
+    Args:
+        api: A :meth:`simplipy.API` object.
+        sid: A subscription ID.
+    """
 
     def __init__(self, api: API, system_id: int) -> None:
-        """Initialize."""
+        """Initialize.
+
+        Args:
+            api: A :meth:`simplipy.API` object.
+            system_id: A system ID.
+        """
         super().__init__(api, system_id)
 
         self._last_state_change_dt: datetime | None = None
@@ -146,10 +166,11 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
 
     @property
     @guard_from_missing_data()
-    def alarm_duration(self) -> int:
+    def alarm_duration(self) -> int | None:
         """Return the number of seconds an activated alarm will sound for.
 
-        :rtype: ``int``
+        Returns:
+            The alarm duration.
         """
         return cast(
             int,
@@ -163,7 +184,8 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
     def alarm_volume(self) -> Volume:
         """Return the volume level of the alarm.
 
-        :rtype: ``int``
+        Returns:
+            The alarm volume.
         """
         return Volume(
             int(
@@ -178,7 +200,8 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
     def battery_backup_power_level(self) -> int:
         """Return the power rating of the battery backup.
 
-        :rtype: ``int``
+        Returns:
+            The battery backup power rating.
         """
         return cast(int, self.settings_data["basestationStatus"]["backupBattery"])
 
@@ -187,7 +210,8 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
     def chime_volume(self) -> Volume:
         """Return the volume level of the door chime.
 
-        :rtype: ``int``
+        Returns:
+            The door chime volume.
         """
         return Volume(
             int(
@@ -202,7 +226,8 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
     def entry_delay_away(self) -> int:
         """Return the number of seconds to delay when returning to an "away" alarm.
 
-        :rtype: ``int``
+        Returns:
+            The entry delay when returning to an "away" alarm.
         """
         return cast(
             int,
@@ -214,9 +239,10 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
     @property
     @guard_from_missing_data()
     def entry_delay_home(self) -> int:
-        """Return the number of seconds to delay when returning to an "home" alarm.
+        """Return the number of seconds to delay when returning to a "home" alarm.
 
-        :rtype: ``int``
+        Returns:
+            The entry delay when returning to a "home" alarm.
         """
         return cast(
             int,
@@ -230,7 +256,8 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
     def exit_delay_away(self) -> int:
         """Return the number of seconds to delay when exiting an "away" alarm.
 
-        :rtype: ``int``
+        Returns:
+            The exit delay when exiting an "away" alarm.
         """
         return cast(
             int,
@@ -244,7 +271,8 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
     def exit_delay_home(self) -> int:
         """Return the number of seconds to delay when exiting an "home" alarm.
 
-        :rtype: ``int``
+        Returns:
+            The exit delay when exiting a "home" alarm.
         """
         return cast(
             int,
@@ -258,7 +286,8 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
     def gsm_strength(self) -> int:
         """Return the signal strength of the cell antenna.
 
-        :rtype: ``int``
+        Returns:
+            The cell antenna strength.
         """
         return cast(int, self.settings_data["basestationStatus"]["gsmRssi"])
 
@@ -267,7 +296,8 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
     def light(self) -> bool:
         """Return whether the base station light is on.
 
-        :rtype: ``bool``
+        Returns:
+            The light status.
         """
         return cast(
             bool,
@@ -277,11 +307,12 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         )
 
     @property
-    @guard_from_missing_data(False)
+    @guard_from_missing_data(default_value=False)
     def offline(self) -> bool:
         """Return whether the system is offline.
 
-        :rtype: ``bool``
+        Returns:
+            The offline status.
         """
         return cast(
             bool,
@@ -289,11 +320,12 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         )
 
     @property
-    @guard_from_missing_data(False)
+    @guard_from_missing_data(default_value=False)
     def power_outage(self) -> bool:
         """Return whether the system is experiencing a power outage.
 
-        :rtype: ``bool``
+        Returns:
+            The power outage status.
         """
         return cast(
             bool,
@@ -301,11 +333,12 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         )
 
     @property
-    @guard_from_missing_data(False)
+    @guard_from_missing_data(default_value=False)
     def rf_jamming(self) -> bool:
         """Return whether the base station is noticing RF jamming.
 
-        :rtype: ``bool``
+        Returns:
+            The RF jamming status.
         """
         return cast(bool, self.settings_data["basestationStatus"]["rfJamming"])
 
@@ -314,7 +347,8 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
     def voice_prompt_volume(self) -> Volume:
         """Return the volume level of the voice prompt.
 
-        :rtype: ``int``
+        Returns:
+            The voice prompt volume.
         """
         return Volume(
             int(
@@ -329,7 +363,8 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
     def wall_power_level(self) -> int:
         """Return the power rating of the A/C outlet.
 
-        :rtype: ``int``
+        Returns:
+            The A/C power rating.
         """
         return cast(int, self.settings_data["basestationStatus"]["wallPower"])
 
@@ -338,7 +373,8 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
     def wifi_ssid(self) -> str:
         """Return the ssid of the base station.
 
-        :rtype: ``str``
+        Returns:
+            The connected SSID.
         """
         return cast(str, self.settings_data["settings"]["normal"]["wifiSSID"])
 
@@ -347,7 +383,8 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
     def wifi_strength(self) -> int:
         """Return the signal strength of the wifi antenna.
 
-        :rtype: ``int``
+        Returns:
+            The WiFi strength.
         """
         return cast(int, self.settings_data["basestationStatus"]["wifiRssi"])
 
@@ -358,7 +395,11 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         )
 
     async def _async_set_state(self, value: SystemStates) -> None:
-        """Set the state of the system."""
+        """Set the state of the system.
+
+        Args:
+            value: A :meth:`simplipy.system.SystemStates` object.
+        """
         await self._api.async_request(
             "post", f"ss3/subscriptions/{self.system_id}/state/{value.name.lower()}"
         )
@@ -366,8 +407,12 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         self._state = value
         self._last_state_change_dt = datetime.utcnow()
 
-    async def _async_set_updated_pins(self, pins: dict) -> None:
-        """Post new PINs."""
+    async def _async_set_updated_pins(self, pins: dict[str, Any]) -> None:
+        """Post new PINs.
+
+        Args:
+            pins: A dictionary of PINs.
+        """
         self.settings_data = await self._api.async_request(
             "post",
             f"ss3/subscriptions/{self.system_id}/settings/pins",
@@ -375,7 +420,11 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         )
 
     async def _async_update_device_data(self, cached: bool = True) -> None:
-        """Update sensors to the latest values."""
+        """Update all device data.
+
+        Args:
+            cached: Whether to update with cached data.
+        """
         sensor_resp = await self._api.async_request(
             "get",
             f"ss3/subscriptions/{self.system_id}/sensors",
@@ -386,7 +435,11 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         }
 
     async def _async_update_settings_data(self, cached: bool = True) -> None:
-        """Get all system settings."""
+        """Update all settings data.
+
+        Args:
+            cached: Whether to update with cached data.
+        """
         settings_resp = await self._api.async_request(
             "get",
             f"ss3/subscriptions/{self.system_id}/settings/normal",
@@ -407,6 +460,9 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         This method exists because the SimpliSafe API includes camera data with the
         subscription (and not with other devices); by splitting this out, we can
         separate this action from updating the subscription data itself.
+
+        Returns:
+            A dictionary of camera UUID to camera data.
         """
         return {
             camera["uuid"]: camera
@@ -416,14 +472,16 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         }
 
     def as_dict(self) -> dict[str, Any]:
-        """Return dictionary version of this device."""
-        return {
+        """Return dictionary version of this device.
+
+        Returns:
+            A dict representation of this device.
+        """
+        data = {
             **super().as_dict(),
             "alarm_duration": self.alarm_duration,
-            "alarm_volume": self.alarm_volume.value,
             "battery_backup_power_level": self.battery_backup_power_level,
             "cameras": [camera.as_dict() for camera in self.cameras.values()],
-            "chime_volume": self.chime_volume.value,
             "entry_delay_away": self.entry_delay_away,
             "entry_delay_home": self.entry_delay_home,
             "exit_delay_away": self.exit_delay_away,
@@ -434,17 +492,25 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
             "offline": self.offline,
             "power_outage": self.power_outage,
             "rf_jamming": self.rf_jamming,
-            "voice_prompt_volume": self.voice_prompt_volume.value,
             "wall_power_level": self.wall_power_level,
             "wifi_ssid": self.wifi_ssid,
             "wifi_strength": self.wifi_strength,
         }
 
+        for key, volume_enum in (
+            ("alarm_volume", self.alarm_volume),
+            ("chime_volume", self.chime_volume),
+            ("voice_prompt_volume", self.voice_prompt_volume),
+        ):
+            if volume_enum:
+                data[key] = volume_enum.value
+
+        return data
+
     def generate_device_objects(self) -> None:
         """Generate device objects for this system."""
         for serial, sensor in self.sensor_data.items():
-            sensor_type = get_device_type_from_data(sensor)
-            if sensor_type == DeviceTypes.LOCK:
+            if (sensor_type := get_device_type_from_data(sensor)) == DeviceTypes.LOCK:
                 self.locks[serial] = Lock(
                     self._api.async_request, self, sensor_type, serial
                 )
@@ -460,9 +526,11 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         The ``cached`` parameter determines whether the SimpliSafe Cloud uses the last
         known values retrieved from the base station (``True``) or retrieves new data.
 
-        :param cached: Whether to used cached data.
-        :type cached: ``bool``
-        :rtype: ``dict[str, str]``
+        Args:
+            cached: Whether to update with cached data.
+
+        Returns:
+            A dictionary of PINs.
         """
         await self._async_update_settings_data(cached)
 
@@ -496,8 +564,11 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
            8. light: True or False
            9. voice_prompt_volume: Volume.OFF, Volume.LOW, Volume.MEDIUM, Volume.HIGH
 
-        :param properties: The system properties to set.
-        :type properties: ``dict``
+        Args:
+            properties: The system properties to set.
+
+        Raises:
+            ValueError: Raised on invalid properties.
         """
         try:
             parsed_properties = SYSTEM_PROPERTIES_PAYLOAD_SCHEMA(properties)
@@ -533,14 +604,11 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         The ``cached`` parameter determines whether the SimpliSafe Cloud uses the last
         known values retrieved from the base station (``True``) or retrieves new data.
 
-        :param include_subscription: Whether system state/properties should be updated
-        :type include_subscription: ``bool``
-        :param include_settings: Whether system settings (like PINs) should be updated
-        :type include_settings: ``bool``
-        :param include_devices: whether sensors/locks/etc. should be updated
-        :type include_devices: ``bool``
-        :param cached: Whether to used cached data.
-        :type cached: ``bool``
+        Args:
+            include_subscription: Whether system state/properties should be updated.
+            include_settings: Whether system settings (like PINs) should be updated.
+            include_devices: whether sensors/locks/etc. should be updated.
+            cached: Whether to used cached data.
         """
         if (
             self.locks

@@ -28,14 +28,15 @@ async def main() -> None:
                 SIMPLISAFE_REFRESH_TOKEN, session=session
             )
 
-            try:
-                await simplisafe.websocket.async_connect()
-            except CannotConnectError as err:
-                _LOGGER.error(
-                    "There was a error while connecting to the server: %s", err
-                )
+            if simplisafe.websocket:
+                try:
+                    await simplisafe.websocket.async_connect()
+                except CannotConnectError as err:
+                    _LOGGER.error(
+                        "There was a error while connecting to the server: %s", err
+                    )
 
-            await simplisafe.websocket.async_listen()
+                await simplisafe.websocket.async_listen()
         except SimplipyError as err:
             _LOGGER.error(err)
         except KeyboardInterrupt:

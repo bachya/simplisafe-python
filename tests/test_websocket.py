@@ -1,11 +1,16 @@
 """Define tests for the System object."""
-# pylint: disable=protected-access
-import asyncio
-from datetime import datetime, timedelta
-import logging
-from time import time
-from unittest.mock import Mock
+from __future__ import annotations
 
+import asyncio
+import logging
+from collections import deque
+from datetime import datetime, timedelta
+from time import time
+from typing import Any
+from unittest.mock import AsyncMock, Mock
+
+import pytest
+import pytz
 from aiohttp.client_exceptions import (
     ClientError,
     ServerDisconnectedError,
@@ -13,8 +18,6 @@ from aiohttp.client_exceptions import (
 )
 from aiohttp.client_reqrep import ClientResponse, RequestInfo
 from aiohttp.http_websocket import WSMsgType
-import pytest
-import pytz
 
 from simplipy.const import LOGGER
 from simplipy.device import DeviceTypes
@@ -22,6 +25,7 @@ from simplipy.errors import (
     CannotConnectError,
     ConnectionFailedError,
     InvalidMessageError,
+    WebsocketError,
 )
 from simplipy.websocket import (
     EVENT_DISARMED_BY_MASTER_PIN,
@@ -34,15 +38,24 @@ from .common import create_ws_message
 
 
 @pytest.mark.asyncio
-async def test_callbacks(caplog, mock_api, ws_message_event, ws_messages):
-    """Test that callbacks are executed correctly."""
+async def test_callbacks(
+    caplog: Mock, mock_api: Mock, ws_message_event: dict[str, Any], ws_messages: deque
+) -> None:
+    """Test that callbacks are executed correctly.
+
+    Args:
+        caplog: A mocked logging utility.
+        mock_api: A mocked API client.
+        ws_message_event: A websocket event payload.
+        ws_messages: A queue.
+    """
     caplog.set_level(logging.INFO)
 
     mock_connect_callback = Mock()
     mock_disconnect_callback = Mock()
     mock_event_callback = Mock()
 
-    async def async_mock_connect_callback():
+    async def async_mock_connect_callback() -> None:
         """Define a mock async connect callback."""
         LOGGER.info("We are connected!")
 
@@ -70,7 +83,6 @@ async def test_callbacks(caplog, mock_api, ws_message_event, ws_messages):
 
     await client.async_disconnect()
     assert not client.connected
-    assert mock_disconnect_callback.call_count == 1
 
 
 @pytest.mark.asyncio
@@ -82,8 +94,16 @@ async def test_callbacks(caplog, mock_api, ws_message_event, ws_messages):
         WSServerHandshakeError(Mock(RequestInfo), (Mock(ClientResponse),)),
     ],
 )
-async def test_cannot_connect(error, mock_api, ws_client_session):
-    """Test being unable to connect to the websocket."""
+async def test_cannot_connect(
+    error: BaseException, mock_api: Mock, ws_client_session: AsyncMock
+) -> None:
+    """Test being unable to connect to the websocket.
+
+    Args:
+        error: The error to raise.
+        mock_api: A mocked API client.
+        ws_client_session: A mocked websocket client session.
+    """
     ws_client_session.ws_connect.side_effect = error
     client = WebsocketClient(mock_api)
 
@@ -94,8 +114,12 @@ async def test_cannot_connect(error, mock_api, ws_client_session):
 
 
 @pytest.mark.asyncio
-async def test_connect_disconnect(mock_api):
-    """Test connecting and disconnecting the client."""
+async def test_connect_disconnect(mock_api: Mock) -> None:
+    """Test connecting and disconnecting the client.
+
+    Args:
+        mock_api: A mocked API client.
+    """
     client = WebsocketClient(mock_api)
 
     await client.async_connect()
@@ -108,8 +132,12 @@ async def test_connect_disconnect(mock_api):
     assert not client.connected
 
 
-def test_create_event(ws_message_event):
-    """Test creating an event object."""
+def test_create_event(ws_message_event: dict[str, Any]) -> None:
+    """Test creating an event object.
+
+    Args:
+        ws_message_event: A websocket event payload.
+    """
     event = websocket_event_from_payload(ws_message_event)
     assert event.event_type == EVENT_DISARMED_BY_MASTER_PIN
     assert event.info == "System Disarmed by Master PIN"
@@ -122,8 +150,16 @@ def test_create_event(ws_message_event):
 
 
 @pytest.mark.asyncio
-async def test_listen_invalid_message_data(mock_api, ws_message_event, ws_messages):
-    """Test websocket message data that should raise on listen."""
+async def test_listen_invalid_message_data(
+    mock_api: Mock, ws_message_event: dict[str, Any], ws_messages: deque
+) -> None:
+    """Test websocket message data that should raise on listen.
+
+    Args:
+        mock_api: A mocked API client.
+        ws_message_event: A websocket event payload.
+        ws_messages: A queue.
+    """
     client = WebsocketClient(mock_api)
 
     await client.async_connect()
@@ -138,8 +174,12 @@ async def test_listen_invalid_message_data(mock_api, ws_message_event, ws_messag
 
 
 @pytest.mark.asyncio
-async def test_listen(mock_api):
-    """Test listening to the websocket server."""
+async def test_listen(mock_api: Mock) -> None:
+    """Test listening to the websocket server.
+
+    Args:
+        mock_api: A mocked API client.
+    """
     client = WebsocketClient(mock_api)
 
     await client.async_connect()
@@ -157,9 +197,21 @@ async def test_listen(mock_api):
     "message_type", [WSMsgType.CLOSE, WSMsgType.CLOSED, WSMsgType.CLOSING]
 )
 async def test_listen_disconnect_message_types(
-    message_type, mock_api, ws_client, ws_message_event, ws_messages
-):
-    """Test different websocket message types that stop listen."""
+    message_type: WSMsgType,
+    mock_api: Mock,
+    ws_client: AsyncMock,
+    ws_message_event: dict[str, Any],
+    ws_messages: deque,
+) -> None:
+    """Test different websocket message types that stop listen.
+
+    Args:
+        message_type: The message type from the websocket.
+        mock_api: A mocked API client.
+        ws_client: A mocked websocket client.
+        ws_message_event: A websocket event payload.
+        ws_messages: A queue.
+    """
     client = WebsocketClient(mock_api)
 
     await client.async_connect()
@@ -186,9 +238,21 @@ async def test_listen_disconnect_message_types(
     ],
 )
 async def test_listen_error_message_types(
-    exception, message_type, mock_api, ws_message_event, ws_messages
-):
-    """Test different websocket message types that should raise on listen."""
+    exception: WebsocketError,
+    message_type: WSMsgType,
+    mock_api: Mock,
+    ws_message_event: dict[str, Any],
+    ws_messages: deque,
+) -> None:
+    """Test different websocket message types that should raise on listen.
+
+    Args:
+        exception: The exception being raised.
+        message_type: The message type from the websocket.
+        mock_api: A mocked API client.
+        ws_message_event: A websocket event payload.
+        ws_messages: A queue.
+    """
     client = WebsocketClient(mock_api)
 
     await client.async_connect()
@@ -198,13 +262,17 @@ async def test_listen_error_message_types(
     ws_message.type = message_type
     ws_messages.append(ws_message)
 
-    with pytest.raises(exception):
+    with pytest.raises(exception):  # type: ignore[call-overload]
         await client.async_listen()
 
 
 @pytest.mark.asyncio
-async def test_reconnect(mock_api):
-    """Test reconnecting to the websocket."""
+async def test_reconnect(mock_api: Mock) -> None:
+    """Test reconnecting to the websocket.
+
+    Args:
+        mock_api: A mocked API client.
+    """
     client = WebsocketClient(mock_api)
 
     await client.async_connect()
@@ -214,8 +282,12 @@ async def test_reconnect(mock_api):
 
 
 @pytest.mark.asyncio
-async def test_remove_callback_callback(mock_api):
-    """Test that a removed callback doesn't get executed."""
+async def test_remove_callback_callback(mock_api: Mock) -> None:
+    """Test that a removed callback doesn't get executed.
+
+    Args:
+        mock_api: A mocked API client.
+    """
     mock_callback = Mock()
     client = WebsocketClient(mock_api)
     remove = client.add_connect_callback(mock_callback)
@@ -229,8 +301,13 @@ async def test_remove_callback_callback(mock_api):
     assert not client.connected
 
 
-def test_unknown_event(caplog, ws_message_event):
-    """Test that an unknown event type is handled correctly."""
+def test_unknown_event(caplog: Mock, ws_message_event: dict[str, Any]) -> None:
+    """Test that an unknown event type is handled correctly.
+
+    Args:
+        caplog: A mocked logging utility.
+        ws_message_event: A websocket event payload.
+    """
     ws_message_event["data"]["eventCid"] = 9999
     event = websocket_event_from_payload(ws_message_event)
     assert event.event_type is None
@@ -239,8 +316,15 @@ def test_unknown_event(caplog, ws_message_event):
     )
 
 
-def test_unknown_sensor_type_in_event(caplog, ws_message_event):
-    """Test that an unknown sensor type in a websocket event is handled correctly."""
+def test_unknown_sensor_type_in_event(
+    caplog: Mock, ws_message_event: dict[str, Any]
+) -> None:
+    """Test that an unknown sensor type in a websocket event is handled correctly.
+
+    Args:
+        caplog: A mocked logging utility.
+        ws_message_event: A websocket event payload.
+    """
     ws_message_event["data"]["sensorType"] = 999
     event = websocket_event_from_payload(ws_message_event)
     assert event.sensor_type is None
@@ -248,11 +332,15 @@ def test_unknown_sensor_type_in_event(caplog, ws_message_event):
 
 
 @pytest.mark.asyncio
-async def test_watchdog_async_trigger(caplog):
-    """Test that the watchdog works with a coroutine as a trigger."""
+async def test_watchdog_async_trigger(caplog: Mock) -> None:
+    """Test that the watchdog works with a coroutine as a trigger.
+
+    Args:
+        caplog: A mocked logging utility.
+    """
     caplog.set_level(logging.INFO)
 
-    async def mock_trigger():
+    async def mock_trigger() -> None:
         """Define a mock trigger."""
         LOGGER.info("Triggered mock_trigger")
 
@@ -266,11 +354,15 @@ async def test_watchdog_async_trigger(caplog):
 
 
 @pytest.mark.asyncio
-async def test_watchdog_cancel(caplog):
-    """Test that canceling the watchdog resets and stops it."""
+async def test_watchdog_cancel(caplog: Mock) -> None:
+    """Test that canceling the watchdog resets and stops it.
+
+    Args:
+        caplog: A mocked logging utility.
+    """
     caplog.set_level(logging.INFO)
 
-    async def mock_trigger():
+    async def mock_trigger() -> None:
         """Define a mock trigger."""
         LOGGER.info("Triggered mock_trigger")
 
@@ -287,8 +379,12 @@ async def test_watchdog_cancel(caplog):
 
 
 @pytest.mark.asyncio
-async def test_watchdog_quick_trigger(caplog):
-    """Test that quick triggering of the watchdog resets the timer task."""
+async def test_watchdog_quick_trigger(caplog: Mock) -> None:
+    """Test that quick triggering of the watchdog resets the timer task.
+
+    Args:
+        caplog: A mocked logging utility.
+    """
     caplog.set_level(logging.INFO)
 
     mock_trigger = Mock()
@@ -302,8 +398,12 @@ async def test_watchdog_quick_trigger(caplog):
 
 
 @pytest.mark.asyncio
-async def test_watchdog_sync_trigger(caplog):
-    """Test that the watchdog works with a normal function as a trigger."""
+async def test_watchdog_sync_trigger(caplog: Mock) -> None:
+    """Test that the watchdog works with a normal function as a trigger.
+
+    Args:
+        caplog: A mocked logging utility.
+    """
     caplog.set_level(logging.INFO)
 
     mock_trigger = Mock()

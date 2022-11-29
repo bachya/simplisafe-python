@@ -348,7 +348,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         await self.async_update_subscription_data()
 
         for sid, subscription in self.subscription_data.items():
-            if subscription["activated"] == 0:
+            if subscription["activated"] == 0 or not subscription["status"]["isActive"]:
                 LOGGER.info("Skipping inactive subscription: %s", sid)
                 continue
 

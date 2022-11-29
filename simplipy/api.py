@@ -348,7 +348,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         await self.async_update_subscription_data()
 
         for sid, subscription in self.subscription_data.items():
-            if not subscription["status"]["isActive"]:
+            if subscription["activated"] == 0 or not subscription["status"]["isActive"]:
                 LOGGER.info("Skipping inactive subscription: %s", sid)
                 continue
 
@@ -357,7 +357,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 continue
 
             system: SystemV2 | SystemV3
-            if (_ := subscription["location"]["system"]["version"]) == 2:
+            if subscription["location"]["system"]["version"] == 2:
                 system = SystemV2(self, sid)
             else:
                 system = SystemV3(self, sid)

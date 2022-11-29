@@ -34,7 +34,7 @@ async def test_deactivated_system(
         authenticated_simplisafe_server: A authenticated API connection.
         subscriptions_response: An API response payload.
     """
-    subscriptions_response["subscriptions"][0]["status"]["isActive"] = False
+    subscriptions_response["subscriptions"][0]["activated"] = 0
 
     async with authenticated_simplisafe_server:
         authenticated_simplisafe_server.add(

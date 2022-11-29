@@ -209,8 +209,7 @@ class System:  # pylint: disable=too-many-public-methods
         return self._notifications
 
     @property
-    @guard_from_missing_data()
-    def serial(self) -> str | None:
+    def serial(self) -> str:
         """Return the system's serial number.
 
         Returns:
@@ -231,8 +230,7 @@ class System:  # pylint: disable=too-many-public-methods
         return self._state
 
     @property
-    @guard_from_missing_data()
-    def system_id(self) -> int | None:
+    def system_id(self) -> int:
         """Return the SimpliSafe identifier for this system.
 
         Returns:

@@ -16,12 +16,9 @@ pip install simplisafe-python
 
 ## SimpliSafe™ Plans
 
-SimpliSafe™ offers several [monitoring plans](https://support.simplisafe.com/hc/en-us/articles/360023809972-What-are-the-service-plan-options-).
-Only the **Standard** and **Interactive** plans work with this library.
-
-Please note that only Interactive plans can access sensor values and set the system
-state; using the API with a Standard plan will be limited to retrieving the current
-system state.
+SimpliSafe™ offers several [monitoring plans][simplisafe-plans]. To date,
+`simplisafe-python` is known to work with all plans; if you should find differently,
+please consider submitting an [issue][simplisafe-python-issues].
 
 ## Accessing the API
 
@@ -208,3 +205,6 @@ However, should you need to refresh an access token manually at runtime, you can
 **It is vitally important not to let these tokens leave your control.** If
 exposed, savvy attackers could use them to view and alter your system's state. **You
 have been warned; proper storage/usage of tokens is solely your responsibility.**
+
+[simplisafe-plans]: https://support.simplisafe.com/hc/en-us/articles/360023809972-What-are-the-service-plan-options-
+[simplisafe-python-issues]: https://github.com/bachya/simplisafe-python/issues

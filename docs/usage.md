@@ -77,11 +77,14 @@ com.simplisafe.mobile://auth.simplisafe.com/ios/com.simplisafe.mobile/callback?c
 ![The code in the Console Tab](images/ss-auth-code-in-console.png)
 ![The code in the Network Tab](images/ss-auth-code-in-network.png)
 
-(Note that if you have already logged into SimpliSafe via the browser, you may be sent
+**NOTE:** This process is very inconsistent with non-Chromium browsers (Chrome, Edge,
+Brave, etc.); if you are unsuccessful at finding the code, try a Chromium-based browser.
+
+**NOTE:** if you have already logged into SimpliSafe via the browser, you may be sent
 straight to the end of the process. This can present a challenge, since opening Dev
 Tools in that window won't show the previously logged activity. In this case, open a new
 tab, open its Dev Tools window, then copy/paste the URL from the tab opened by
-`script/auth` into the new tab to see the Console/Network output.)
+`script/auth` into the new tab to see the Console/Network output.
 
 7. Copy the `code` parameter at the end of the `com.simplisafe.mobile` URL, return to your
    terminal, and paste it into the prompt. You should now see this message:

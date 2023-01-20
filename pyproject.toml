@@ -72,7 +72,6 @@ voluptuous = ">=0.11.7"
 websockets = ">=8.1"
 
 [tool.poetry.group.dev.dependencies]
-Sphinx = "^5.0.1"
 aresponses = "^2.1.6"
 asynctest = "^0.13.0"
 bandit = "^1.7.4"
@@ -92,7 +91,6 @@ flake8-markdown = "^0.3.0"
 flake8-simplify = "^0.19.3"
 isort = "^5.10.1"
 mypy = "^0.982"
-myst-parser = "^0.18.0"
 pre-commit = "^2.20.0"
 pre-commit-hooks = "^4.3.0"
 pylint = "^2.15.5"
@@ -105,6 +103,10 @@ sphinx-rtd-theme = "^1.0.0"
 types-pytz = "^2022.1.0"
 vulture = "^2.6"
 yamllint = "^1.28.0"
+
+[tool.poetry.group.docs.dependencies]
+Sphinx = "^5.0.1"
+myst-parser = "^0.18.0"
 
 [tool.poetry.urls]
 "Bug Tracker" = "https://github.com/bachya/simplipy/issues"

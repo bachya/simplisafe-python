@@ -106,7 +106,7 @@ yamllint = "^1.28.0"
 
 [tool.poetry.group.docs.dependencies]
 Sphinx = "^5.0.1"
-myst-parser = "^0.18.0"
+myst-parser = ">=0.18,<0.20"
 
 [tool.poetry.urls]
 "Bug Tracker" = "https://github.com/bachya/simplipy/issues"

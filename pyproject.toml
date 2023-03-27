@@ -100,7 +100,7 @@ pytest-cov = "^4.0.0"
 pyupgrade = "^3.1.0"
 safety = "^2.3.1"
 sphinx-rtd-theme = "^1.0.0"
-types-pytz = "^2022.1.0"
+types-pytz = ">=2022.1,<2024.0"
 vulture = "^2.6"
 yamllint = "^1.28.0"
 

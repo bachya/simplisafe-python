@@ -255,7 +255,8 @@ class API:  # pylint: disable=too-many-instance-attributes
         """
         self._token_last_refreshed = datetime.utcnow()
         self.access_token = token_data["access_token"]
-        self.refresh_token = token_data["refresh_token"]
+        if refresh_token := token_data.get("refresh_token"):
+            self.refresh_token = refresh_token
 
     @staticmethod
     def is_fatal_error(err: ClientResponseError) -> bool:

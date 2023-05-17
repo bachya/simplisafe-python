@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any
 
 from simplipy.const import LOGGER
+from simplipy.device import get_device_type_from_data
 from simplipy.device.sensor.v2 import SensorV2
 from simplipy.system import (
     CONF_DURESS_PIN,
@@ -11,7 +12,6 @@ from simplipy.system import (
     DEFAULT_MAX_USER_PINS,
     System,
     SystemStates,
-    get_device_type_from_data,
 )
 
 

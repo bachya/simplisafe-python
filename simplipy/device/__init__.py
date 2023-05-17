@@ -4,6 +4,8 @@ from __future__ import annotations
 from enum import Enum
 from typing import TYPE_CHECKING, Any, cast
 
+from simplipy.const import LOGGER
+
 if TYPE_CHECKING:
     from simplipy.system import System
 
@@ -29,6 +31,22 @@ class DeviceTypes(Enum):
     OUTDOOR_CAMERA = 17
     LOCK_KEYPAD = 253
     UNKNOWN = 99
+
+
+def get_device_type_from_data(device_data: dict[str, Any]) -> DeviceTypes:
+    """Get the device type of a raw data payload.
+
+    Args:
+        device_data: An API response payload.
+
+    Returns:
+        The device type.
+    """
+    try:
+        return DeviceTypes(device_data["type"])
+    except ValueError:
+        LOGGER.error("Unknown device type: %s", device_data["type"])
+        return DeviceTypes.UNKNOWN
 
 
 class Device:

@@ -9,7 +9,6 @@ from functools import wraps
 from typing import TYPE_CHECKING, Any, Optional, TypeVar, cast
 
 from simplipy.const import LOGGER
-from simplipy.device import DeviceTypes
 from simplipy.device.sensor.v2 import SensorV2
 from simplipy.device.sensor.v3 import SensorV3
 from simplipy.errors import PinError, SimplipyError
@@ -63,22 +62,6 @@ class SystemStates(Enum):
     OFF = 10
     TEST = 11
     UNKNOWN = 99
-
-
-def get_device_type_from_data(device_data: dict[str, Any]) -> DeviceTypes:
-    """Get the device type of a raw data payload.
-
-    Args:
-        device_data: An API response payload.
-
-    Returns:
-        The device type.
-    """
-    try:
-        return DeviceTypes(device_data["type"])
-    except ValueError:
-        LOGGER.error("Unknown device type: %s", device_data["type"])
-        return DeviceTypes.UNKNOWN
 
 
 _GuardedCallableReturnType = TypeVar(  # pylint: disable=invalid-name

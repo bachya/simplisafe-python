@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Final, cast
 import voluptuous as vol
 
 from simplipy.const import LOGGER
-from simplipy.device import DeviceTypes
+from simplipy.device import DeviceTypes, get_device_type_from_data
 from simplipy.device.camera import Camera
 from simplipy.device.lock import Lock
 from simplipy.device.sensor.v3 import SensorV3
@@ -18,7 +18,6 @@ from simplipy.system import (
     DEFAULT_MAX_USER_PINS,
     System,
     SystemStates,
-    get_device_type_from_data,
     guard_from_missing_data,
 )
 

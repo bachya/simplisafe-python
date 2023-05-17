@@ -20,11 +20,11 @@ class SensorV3(DeviceV3):
         Returns:
             The "instant trigger" status.
         """
-        return cast(
-            bool,
+        return (
             self._system.sensor_data[self._serial]["setting"].get(
                 "instantTrigger", False
-            ),
+            )
+            is True
         )
 
     @property
@@ -43,11 +43,21 @@ class SensorV3(DeviceV3):
             DeviceTypes.SMOKE,
             DeviceTypes.TEMPERATURE,
         ):
-            return cast(
-                bool,
+            return (
+                self._system.sensor_data[self._serial]["status"].get("triggered")
+                is True
+            )
+
+        if self.type == DeviceTypes.SMOKE_AND_CARBON_MONOXIDE:
+            return (
                 self._system.sensor_data[self._serial]["status"].get(
-                    "triggered", False
-                ),
+                    "coTriggered", False
+                )
+                is True
+                or self._system.sensor_data[self._serial]["status"].get(
+                    "smokeTriggered", False
+                )
+                is True
             )
 
         return False

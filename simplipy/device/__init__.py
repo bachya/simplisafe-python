@@ -26,6 +26,7 @@ class DeviceTypes(Enum):
     TEMPERATURE = 10
     CAMERA = 12
     SIREN = 13
+    SMOKE_AND_CARBON_MONOXIDE = 14
     DOORBELL = 15
     LOCK = 16
     OUTDOOR_CAMERA = 17

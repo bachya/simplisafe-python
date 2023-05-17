@@ -411,6 +411,17 @@ async def test_as_dict(
                     "trigger_instantly": False,
                     "triggered": False,
                 },
+                {
+                    "name": "Kitchen",
+                    "serial": "00000000",
+                    "type": 14,
+                    "error": False,
+                    "low_battery": False,
+                    "offline": True,
+                    "settings": {},
+                    "trigger_instantly": False,
+                    "triggered": False,
+                },
             ],
             "alarm_duration": 240,
             "alarm_volume": 3,
@@ -991,7 +1002,7 @@ async def test_async_get_systems(
         system = systems[TEST_SYSTEM_ID]
         assert system.serial == TEST_SYSTEM_SERIAL_NO
         assert system.system_id == TEST_SYSTEM_ID
-        assert len(system.sensors) == 24
+        assert len(system.sensors) == 25
 
     aresponses.assert_plan_strictly_followed()
 
@@ -1728,7 +1739,7 @@ async def test_update_system_data(
 
             assert system.serial == TEST_SYSTEM_SERIAL_NO
             assert system.system_id == TEST_SYSTEM_ID
-            assert len(system.sensors) == 24
+            assert len(system.sensors) == 25
 
     aresponses.assert_plan_strictly_followed()
 

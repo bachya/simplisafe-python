@@ -509,6 +509,33 @@
         "lowBattery": false,
         "offline": false
       }
+    },
+    {
+      "serial": "00000000",
+      "type": 14,
+      "name": "Kitchen",
+      "setting": {},
+      "status": {
+        "coTriggered": false,
+        "malfunction": false,
+        "tamper": true,
+        "lowSensitivity": false,
+        "endOfLife": false,
+        "test": false,
+        "smokeTriggered": false,
+        "preSmokeAlarm": false
+      },
+      "timestamp": 0,
+      "rssi": -45,
+      "WDTCount": 23,
+      "nonce": 0,
+      "rebootCnt": 17,
+      "deviceGroupID": 0,
+      "flags": {
+        "offline": true,
+        "lowBattery": false,
+        "swingerShutdown": false
+      }
     }
   ],
   "lastUpdated": 1534626361,

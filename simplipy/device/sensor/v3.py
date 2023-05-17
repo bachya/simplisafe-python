@@ -50,6 +50,15 @@ class SensorV3(DeviceV3):
                 ),
             )
 
+        if self.type == DeviceTypes.SMOKE_AND_CARBON_MONOXIDE:
+            co_triggered = self._system.sensor_data[self._serial]["status"].get(
+                "coTriggered", False
+            )
+            smoke_triggered = self._system.sensor_data[self._serial]["status"].get(
+                "smokeTriggered", False
+            )
+            return cast(bool, co_triggered or smoke_triggered)
+
         return False
 
     @property

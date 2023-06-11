@@ -40,6 +40,7 @@ class SensorV3(DeviceV3):
             DeviceTypes.GLASS_BREAK,
             DeviceTypes.LEAK,
             DeviceTypes.MOTION,
+            DeviceTypes.MOTION_V2,
             DeviceTypes.SMOKE,
             DeviceTypes.TEMPERATURE,
         ):

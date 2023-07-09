@@ -22,6 +22,12 @@ class InvalidCredentialsError(SimplipyError):
     pass
 
 
+class MaxUserPinsExceededError(SimplipyError):
+    """An error related to exceeding the maximum number of user PINs."""
+
+    pass
+
+
 class PinError(SimplipyError):
     """An error related to invalid PINs or PIN operations."""
 

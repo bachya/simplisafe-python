@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, Optional, TypeVar, cast
 from simplipy.const import LOGGER
 from simplipy.device.sensor.v2 import SensorV2
 from simplipy.device.sensor.v3 import SensorV3
-from simplipy.errors import PinError, SimplipyError
+from simplipy.errors import MaxUserPinsExceededError, PinError, SimplipyError
 from simplipy.util.dt import utc_from_timestamp
 from simplipy.util.string import convert_to_underscore
 
@@ -24,6 +24,7 @@ CONF_MASTER_PIN = "master"
 
 DEFAULT_MAX_USER_PINS = 4
 MAX_PIN_LENGTH = 4
+PIN_SEQUENCES = {"1234567890", "0987654321"}
 RESERVED_PIN_LABELS = {CONF_DURESS_PIN, CONF_MASTER_PIN}
 
 
@@ -444,6 +445,8 @@ class System:  # pylint: disable=too-many-public-methods
             pin: The pin value.
 
         Raises:
+            MaxUserPinsExceededError: Raised when attempting to add more than the
+                maximum number of user PINs.
             PinError: Raised when setting an invalid PIN.
         """
         if len(pin) != MAX_PIN_LENGTH:
@@ -454,17 +457,21 @@ class System:  # pylint: disable=too-many-public-methods
         except ValueError:
             raise PinError("PINs can only contain numbers") from None
 
+        if any(pin in sequence for sequence in PIN_SEQUENCES):
+            raise PinError(f"Refusing to create PIN that is a sequence: {pin}")
+
         # Because SimpliSafe's API works by sending the entire payload of PINs, we
         # can't reasonably check a local cache for up-to-date PIN data; so, we fetch the
         # latest each time.
         latest_pins = await self.async_get_pins(cached=False)
-
         if pin in latest_pins.values():
             raise PinError(f"Refusing to create duplicate PIN: {pin}")
 
         max_pins = DEFAULT_MAX_USER_PINS + len(RESERVED_PIN_LABELS)
         if len(latest_pins) == max_pins and label not in RESERVED_PIN_LABELS:
-            raise PinError(f"Refusing to create more than {max_pins} user PINs")
+            raise MaxUserPinsExceededError(
+                f"Refusing to create more than {max_pins} user PINs"
+            )
 
         latest_pins[label] = pin
 

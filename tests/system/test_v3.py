@@ -14,6 +14,7 @@ from simplipy import API
 from simplipy.errors import (
     EndpointUnavailableError,
     InvalidCredentialsError,
+    MaxUserPinsExceededError,
     PinError,
     RequestError,
     SimplipyError,
@@ -980,8 +981,8 @@ async def test_get_pins(
             assert len(pins) == 4
             assert pins["master"] == "1234"
             assert pins["duress"] == "9876"
-            assert pins["Test 1"] == "3456"
-            assert pins["Test 2"] == "5423"
+            assert pins["Test 1"] == "3454"
+            assert pins["Test 2"] == "5424"
 
     aresponses.assert_plan_strictly_followed()
 
@@ -1380,7 +1381,7 @@ async def test_set_duplicate_pin(
                 )
                 systems = await simplisafe.async_get_systems()
                 system = systems[TEST_SYSTEM_ID]
-                await system.async_set_pin("whatever", "1234")
+                await system.async_set_pin("whatever", "3454")
                 assert "Refusing to create duplicate PIN" in str(err)
 
     aresponses.assert_plan_strictly_followed()
@@ -1465,7 +1466,7 @@ async def test_set_max_user_pins(
         )
 
         async with aiohttp.ClientSession() as session:
-            with pytest.raises(PinError) as err:
+            with pytest.raises(MaxUserPinsExceededError) as err:
                 simplisafe = await API.async_from_auth(
                     TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
                 )
@@ -1535,6 +1536,31 @@ async def test_set_pin(
             await system.async_set_pin("whatever", "1274")
             latest_pins = await system.async_get_pins()
             assert len(latest_pins) == 5
+
+    aresponses.assert_plan_strictly_followed()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "pin",
+    ["1234", "5678", "7890", "6543", "4321"],
+)
+async def test_set_pin_sequence(
+    aresponses: ResponsesMockServer,
+    authenticated_simplisafe_server_v3: ResponsesMockServer,
+    pin: str,
+) -> None:
+    """Test throwing an error when setting a PIN that is in a sequence."""
+    async with authenticated_simplisafe_server_v3, aiohttp.ClientSession() as session:
+        with pytest.raises(PinError) as err:
+            simplisafe = await API.async_from_auth(
+                TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
+            )
+            systems = await simplisafe.async_get_systems()
+            system = systems[TEST_SYSTEM_ID]
+
+            await system.async_set_pin("label", pin)
+            assert "Refusing to create PIN that is a sequence" in str(err)
 
     aresponses.assert_plan_strictly_followed()
 

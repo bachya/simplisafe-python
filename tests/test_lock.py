@@ -66,13 +66,15 @@ async def test_lock_unlock(
             systems = await simplisafe.async_get_systems()
             system: SystemV3 = cast(SystemV3, systems[TEST_SYSTEM_ID])
             lock = system.locks[TEST_LOCK_ID]
-            assert lock.state == LockStates.LOCKED
 
+            state = lock.state
+            assert state == LockStates.LOCKED
             await lock.async_unlock()
-            assert lock.state == LockStates.UNLOCKED
-
+            state = lock.state
+            assert state == LockStates.UNLOCKED
             await lock.async_lock()
-            assert lock.state == LockStates.LOCKED
+            state = lock.state
+            assert state == LockStates.LOCKED
 
     aresponses.assert_plan_strictly_followed()
 
@@ -256,13 +258,14 @@ async def test_update(
             systems = await simplisafe.async_get_systems()
             system: SystemV3 = cast(SystemV3, systems[TEST_SYSTEM_ID])
             lock = system.locks[TEST_LOCK_ID]
-            assert lock.state == LockStates.LOCKED
 
+            state = lock.state
+            assert state == LockStates.LOCKED
             await lock.async_unlock()
-            assert lock.state == LockStates.UNLOCKED
-
-            # Simulate a manual lock and an update some time later:
+            state = lock.state
+            assert state == LockStates.UNLOCKED
             await lock.async_update()
-            assert lock.state == LockStates.LOCKED
+            state = lock.state
+            assert state == LockStates.LOCKED
 
     aresponses.assert_plan_strictly_followed()

@@ -72,8 +72,8 @@ async def test_lock_unlock(
             await lock.async_unlock()
             state = lock.state
             assert state == LockStates.UNLOCKED
-            state = lock.state
             await lock.async_lock()
+            state = lock.state
             assert state == LockStates.LOCKED
 
     aresponses.assert_plan_strictly_followed()

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools >= 35.0.2", "wheel >= 0.29.0", "poetry>=0.12"]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.black]
@@ -69,7 +69,6 @@ beautifulsoup4 = ">=4.11.1"
 certifi = ">=2023.07.22"
 python = "^3.9.0"
 pytz = ">=2019.3"
-setuptools = ">=65.5.1"
 voluptuous = ">=0.11.7"
 websockets = ">=8.1"
 

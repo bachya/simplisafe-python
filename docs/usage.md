@@ -108,7 +108,7 @@ this:
 import asyncio
 
 from aiohttp import ClientSession
-import simplipy
+from simplipy import API
 
 
 async def main() -> None:

@@ -108,13 +108,13 @@ this:
 import asyncio
 
 from aiohttp import ClientSession
-import simplipy
+from simplipy import API
 
 
 async def main() -> None:
     """Create the aiohttp session and run."""
     async with ClientSession() as session:
-        simplisafe = await simplipy.API(
+        simplisafe = await API.async_from_auth(
             "<AUTHORIZATION_CODE>",
             "<CODE_VERIFIER>",
             session=session,

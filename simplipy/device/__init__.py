@@ -31,6 +31,7 @@ class DeviceTypes(Enum):
     LOCK = 16
     OUTDOOR_CAMERA = 17
     MOTION_V2 = 20
+    INDOOR_CAMERA = 22
     LOCK_KEYPAD = 253
     UNKNOWN = 99
 

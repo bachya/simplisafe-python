@@ -4,13 +4,12 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections import deque
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from time import time
 from typing import Any
 from unittest.mock import AsyncMock, Mock
 
 import pytest
-import pytz
 from aiohttp.client_exceptions import (
     ClientError,
     ServerDisconnectedError,
@@ -142,7 +141,7 @@ def test_create_event(ws_message_event: dict[str, Any]) -> None:
     assert event.event_type == EVENT_DISARMED_BY_MASTER_PIN
     assert event.info == "System Disarmed by Master PIN"
     assert event.system_id == 12345
-    assert event.timestamp == datetime(2021, 9, 29, 23, 14, 46, tzinfo=pytz.UTC)
+    assert event.timestamp == datetime(2021, 9, 29, 23, 14, 46, tzinfo=timezone.utc)
     assert event.changed_by == "Master PIN"
     assert event.sensor_name == ""
     assert event.sensor_serial == "abcdef12"

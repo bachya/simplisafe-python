@@ -1,9 +1,7 @@
 """Define datetime utilities."""
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
-
-UTC = pytz.utc
+UTC = timezone.utc
 
 
 def utc_from_timestamp(timestamp: float) -> datetime:
@@ -15,4 +13,4 @@ def utc_from_timestamp(timestamp: float) -> datetime:
     Returns:
         A parsed ``datetime.datetime`` object.
     """
-    return UTC.localize(datetime.utcfromtimestamp(timestamp))
+    return datetime.fromtimestamp(timestamp, tz=UTC)

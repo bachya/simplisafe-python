@@ -53,7 +53,9 @@ async def test_as_dict(
                     "category": "error",
                     "code": "2000",
                     "timestamp": 1581823228,
-                    "received_dt": datetime(2020, 2, 16, 3, 20, 28, tzinfo=timezone.utc),
+                    "received_dt": datetime(
+                        2020, 2, 16, 3, 20, 28, tzinfo=timezone.utc
+                    ),
                     "link": "http://link.to.info",
                     "link_label": "More Info",
                 }

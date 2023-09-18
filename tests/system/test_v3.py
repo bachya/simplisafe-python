@@ -1,13 +1,12 @@
 """Define tests for v3 System objects."""
 # pylint: disable=too-many-lines
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, cast
 from unittest.mock import Mock
 
 import aiohttp
 import pytest
-import pytz
 from aresponses import ResponsesMockServer
 
 from simplipy import API
@@ -54,7 +53,9 @@ async def test_as_dict(
                     "category": "error",
                     "code": "2000",
                     "timestamp": 1581823228,
-                    "received_dt": datetime(2020, 2, 16, 3, 20, 28, tzinfo=pytz.UTC),
+                    "received_dt": datetime(
+                        2020, 2, 16, 3, 20, 28, tzinfo=timezone.utc
+                    ),
                     "link": "http://link.to.info",
                     "link_label": "More Info",
                 }
@@ -1680,7 +1681,7 @@ async def test_system_notifications(
         assert notification1.category == "error"
         assert notification1.code == "2000"
         assert notification1.received_dt == datetime(
-            2020, 2, 16, 3, 20, 28, tzinfo=pytz.UTC
+            2020, 2, 16, 3, 20, 28, tzinfo=timezone.utc
         )
         assert notification1.link == "http://link.to.info"
         assert notification1.link_label == "More Info"

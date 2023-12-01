@@ -45,6 +45,7 @@ async def main() -> None:
                 # await system.async_set_away()
                 # await system.async_set_home()
                 # await system.async_set_off()
+
         except SimplipyError as err:
             _LOGGER.error(err)
 

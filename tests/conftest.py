@@ -250,7 +250,7 @@ def v2_state_response_fixture() -> dict[str, Any]:
 
 @pytest.fixture(name="v2_subscriptions_response")
 def v2_subscriptions_response_fixture(
-    subscriptions_response: dict[str, Any]
+    subscriptions_response: dict[str, Any],
 ) -> dict[str, Any]:
     """Define a fixture that returns a V2 subscriptions response.
 
@@ -450,7 +450,7 @@ def ws_message_registered_data_fixture() -> dict[str, Any]:
 
 @pytest.fixture(name="ws_message_subscribed")
 def ws_message_subscribed_fixture(
-    ws_message_subscribed_data: dict[str, Any]
+    ws_message_subscribed_data: dict[str, Any],
 ) -> dict[str, Any]:
     """Define a fixture to represent the "registered" response.
 

@@ -150,9 +150,12 @@ class WebsocketEvent:
     info: str
     system_id: int
     _raw_timestamp: float
+    _video: dict | None
+    _vid: str | None
 
     event_type: str | None = field(init=False)
     timestamp: datetime = field(init=False)
+    mediaUrls: dict | None = field(init=False)
 
     changed_by: str | None = None
     sensor_name: str | None = None
@@ -190,6 +193,14 @@ class WebsocketEvent:
                 )
                 object.__setattr__(self, "sensor_type", None)
 
+        if self._vid is not None:
+            object.__setattr__(self, "mediaUrls", {
+                "imageUrl": self._video[self._vid]["_links"]["snapshot/jpg"]["href"],
+                "clipUrl": self._video[self._vid]["_links"]["download/mp4"]["href"],
+                "hlsUrl": self._video[self._vid]["_links"]["playback/hls"]["href"],
+            })
+            object.__setattr__(self, "_vid", None)
+            object.__setattr__(self, "_video", None)
 
 def websocket_event_from_payload(payload: dict[str, Any]) -> WebsocketEvent:
     """Create a Message object from a websocket event payload.
@@ -205,6 +216,8 @@ def websocket_event_from_payload(payload: dict[str, Any]) -> WebsocketEvent:
         payload["data"]["info"],
         payload["data"]["sid"],
         payload["data"]["eventTimestamp"],
+        payload["data"].get("video"),
+        payload["data"].get("videoStartedBy"),
         changed_by=payload["data"]["pinName"],
         sensor_name=payload["data"]["sensorName"],
         sensor_serial=payload["data"]["sensorSerial"],

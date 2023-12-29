@@ -34,6 +34,7 @@ API_URL_HOSTNAME = "api.simplisafe.com"
 API_URL_BASE = f"https://{API_URL_HOSTNAME}/v1"
 
 DEFAULT_REQUEST_RETRIES = 4
+DEFAULT_MEDIA_RETRIES = 10
 DEFAULT_TIMEOUT = 10
 DEFAULT_TOKEN_EXPIRATION_WINDOW = 5
 
@@ -48,12 +49,14 @@ class API:  # pylint: disable=too-many-instance-attributes
     Args:
         session: session: An optional ``aiohttp`` ``ClientSession``.
         request_retries: The default number of request retries to use.
+        media_retries: The default number of request retries to use to fetch media files.
     """
 
     def __init__(
         self,
         *,
         request_retries: int = DEFAULT_REQUEST_RETRIES,
+        media_retries: int = DEFAULT_MEDIA_RETRIES,
         session: ClientSession,
     ) -> None:
         """Initialize.
@@ -66,6 +69,7 @@ class API:  # pylint: disable=too-many-instance-attributes
             Callable[[str], Awaitable[None] | None]
         ] = []
         self._request_retries = request_retries
+        self._media_retries = media_retries
         self.session: ClientSession = session
 
         # These will get filled in after initial authentication:
@@ -78,6 +82,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         self.websocket: WebsocketClient | None = None
 
         self.async_request = self._wrap_request_method(self._request_retries)
+        self.async_media = self._wrap_media_method(self._media_retries)
 
     @classmethod
     async def async_from_auth(
@@ -236,6 +241,26 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         return data
 
+    async def _async_media_request(
+        self, url: str
+    ) -> bytes | None:
+        """Fetch a media file.
+
+        Args:
+            url: An absolute url for the media file.
+
+        Returns:
+            The raw bytes of the media file
+        """
+        async with self.session.request(
+            "get", url, headers={
+                "User-Agent": DEFAULT_USER_AGENT,
+                "Authorization": f"Bearer {self.access_token}"
+            }
+        ) as resp:
+            resp.raise_for_status()
+            return await resp.read()
+
     @staticmethod
     def _handle_on_giveup(_: dict[str, Any]) -> None:
         """Handle a give up after retries are exhausted.
@@ -270,6 +295,9 @@ class API:  # pylint: disable=too-many-instance-attributes
                 which is where this error can occur; we can't control when/how that
                 happens (e.g., we might query the API in the middle of a base station
                 update), so it should be viewed as retryable.
+        3. 404: When fetching media files, you may get a 404 if the media file is not
+                yet available to read.  Keep trying however, and it will eventually
+                return a 200.
 
         Args:
             err: An ``aiohttp`` ``ClientResponseError``
@@ -277,7 +305,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         Returns:
             Whether the error is a fatal one.
         """
-        if err.status in (401, 409):
+        if err.status in (401, 409, 404):
             return False
         return 400 <= err.status < 500
 
@@ -304,6 +332,31 @@ class API:  # pylint: disable=too-many-instance-attributes
                 on_backoff=self._async_handle_on_backoff,  # type: ignore[arg-type]
                 on_giveup=self._handle_on_giveup,  # type: ignore[arg-type]
             )(self._async_api_request),
+        )
+
+    def _wrap_media_method(
+        self, media_retries: int
+    ) -> Callable[..., Awaitable[dict[str, Any]]]:
+        """Wrap the request method in backoff/retry logic.
+
+        Args:
+            media_retries: The number of retries to give a failed request.
+
+        Returns:
+            A version of the request callable that can do retries.
+        """
+        return cast(
+            Callable,
+            backoff.on_exception(
+                backoff.expo,
+                ClientResponseError,
+                giveup=self.is_fatal_error,  # type: ignore[arg-type]
+                jitter=backoff.random_jitter,
+                logger=LOGGER,
+                max_tries=media_retries,
+                on_backoff=self._async_handle_on_backoff,  # type: ignore[arg-type]
+                on_giveup=self._handle_on_giveup,  # type: ignore[arg-type]
+            )(self._async_media_request),
         )
 
     def disable_request_retries(self) -> None:

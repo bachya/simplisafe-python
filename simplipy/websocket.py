@@ -155,7 +155,7 @@ class WebsocketEvent:
 
     event_type: str | None = field(init=False)
     timestamp: datetime = field(init=False)
-    mediaUrls: dict | None = field(init=False)
+    media_urls: dict[str, str] | None = field(init=False)
 
     changed_by: str | None = None
     sensor_name: str | None = None
@@ -193,14 +193,23 @@ class WebsocketEvent:
                 )
                 object.__setattr__(self, "sensor_type", None)
 
-        if self._vid is not None:
-            object.__setattr__(self, "mediaUrls", {
-                "imageUrl": self._video[self._vid]["_links"]["snapshot/jpg"]["href"],
-                "clipUrl": self._video[self._vid]["_links"]["download/mp4"]["href"],
-                "hlsUrl": self._video[self._vid]["_links"]["playback/hls"]["href"],
-            })
+        if self._vid is not None and self._video is not None:
+            object.__setattr__(
+                self,
+                "media_urls",
+                {
+                    "imageUrl": self._video[self._vid]["_links"]["snapshot/jpg"][
+                        "href"
+                    ],
+                    "clipUrl": self._video[self._vid]["_links"]["download/mp4"]["href"],
+                    "hlsUrl": self._video[self._vid]["_links"]["playback/hls"]["href"],
+                },
+            )
             object.__setattr__(self, "_vid", None)
             object.__setattr__(self, "_video", None)
+        else:
+            object.__setattr__(self, "media_urls", None)
+
 
 def websocket_event_from_payload(payload: dict[str, Any]) -> WebsocketEvent:
     """Create a Message object from a websocket event payload.

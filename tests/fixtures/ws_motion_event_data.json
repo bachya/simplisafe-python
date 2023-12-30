@@ -1,0 +1,94 @@
+{
+  "eventUuid": "xxx",
+  "eventTimestamp": 1703882325,
+  "eventCid": 1170,
+  "zoneCid": "1",
+  "sensorType": 17,
+  "sensorSerial": "f11b6abd",
+  "account": "abcdef12",
+  "userId": 12345,
+  "sid": 12345,
+  "info": "Back Yard Camera Detected Motion",
+  "pinName": "",
+  "sensorName": "Back Yard",
+  "messageSubject": "Camera Detected Motion",
+  "messageBody": "Back Yard Camera Detected Motion on 12/29/2023 at 12:38 PM",
+  "eventType": "activityCam",
+  "timezone": 3,
+  "locationOffset": -480,
+  "internal": {
+    "dispatcher": "my_dispatcher"
+  },
+  "senderId": "",
+  "eventId": 38552328826,
+  "serviceFeatures": {
+    "monitoring": false,
+    "alerts": true,
+    "online": true,
+    "hazard": false,
+    "video": true,
+    "cameras": 10,
+    "dispatch": false,
+    "proInstall": false,
+    "discount": 0,
+    "vipCS": false,
+    "medical": false,
+    "careVisit": false,
+    "storageDays": 30
+  },
+  "copsVideoOptIn": false,
+  "videoStartedBy": "6172311af9da430ab2e11c59f11b6abd",
+  "video": {
+    "6172311af9da430ab2e11c59f11b6abd": {
+      "clipId": "26361666077",
+      "preroll": 3,
+      "postroll": 7,
+      "cameraName": "Back Yard",
+      "eventId": "38552328826",
+      "sid": 12345,
+      "timestamp": 1703882325,
+      "recordingType": "KVS",
+      "account": "abcdef12",
+      "region": "us-east-1",
+      "actualDuration": 0,
+      "status": "PENDING",
+      "_links": {
+        "_self": {
+          "href": "https://chronicle.us-east-1.prd.cam.simplisafe.com/v1/recordings/26361666077",
+          "method": "GET"
+        },
+        "preview/mjpg": {
+          "href": "https://remix.us-east-1.prd.cam.simplisafe.com/v1/preview/6172311af9da430ab2e11c59f11b6abd/12345/time/1703882322/1703882332?account=611485993050&region=us-east-1{&fps,width}",
+          "method": "GET",
+          "templated": true
+        },
+        "snapshot/mjpg": {
+          "href": "https://remix.us-east-1.prd.cam.simplisafe.com/v1/preview/6172311af9da430ab2e11c59f11b6abd/12345/time/1703882322/1703882326?account=611485993050&region=us-east-1{&fps,width}",
+          "method": "GET",
+          "templated": true
+        },
+        "snapshot/jpg": {
+          "href": "https://image-url{&width}",
+          "method": "GET",
+          "templated": true
+        },
+        "download/mp4": {
+          "href": "https://clip-url",
+          "method": "GET"
+        },
+        "share": {
+          "href": "https://remix.us-east-1.prd.cam.simplisafe.com/v2/share/6172311af9da430ab2e11c59f11b6abd/12345/time/1703882322/1703882332?account=611485993050&region=us-east-1",
+          "method": "POST"
+        },
+        "playback/dash": {
+          "href": "https://mediator.prd.cam.simplisafe.com/v1/recording/6172311af9da430ab2e11c59f11b6abd/12345/time/1703882322/1703882332/dash?account=611485993050&region=us-east-1",
+          "method": "GET"
+        },
+        "playback/hls": {
+          "href": "https://hls-url",
+          "method": "GET"
+        }
+      }
+    }
+  }
+}

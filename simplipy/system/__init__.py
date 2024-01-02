@@ -343,15 +343,6 @@ class System:  # pylint: disable=too-many-public-methods
         """
         raise NotImplementedError()
 
-    async def async_get_media(self, url: str) -> bytes:
-        """Return a media file in bytes.
-
-        Outdoor camera motion events (for example) generate media urls that do not have a common base
-        like the rest of the SS apis, but do require the same bearer token to access.  Use this method to
-        fetch them.
-        """
-        return self._api.async_request("get", url)
-
     async def async_get_events(
         self, from_datetime: datetime | None = None, num_events: int | None = None
     ) -> list[dict[str, Any]]:

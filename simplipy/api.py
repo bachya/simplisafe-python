@@ -6,7 +6,7 @@ import sys
 from collections.abc import Awaitable, Callable
 from datetime import datetime
 from json.decoder import JSONDecodeError
-from typing import Any, cast
+from typing import Any
 
 import backoff
 from aiohttp import ClientSession
@@ -49,7 +49,8 @@ class API:  # pylint: disable=too-many-instance-attributes
     Args:
         session: session: An optional ``aiohttp`` ``ClientSession``.
         request_retries: The default number of request retries to use.
-        media_retries: The default number of request retries to use to fetch media files.
+        media_retries: The default number of request retries to use to
+        fetch media files.
     """
 
     def __init__(
@@ -81,8 +82,16 @@ class API:  # pylint: disable=too-many-instance-attributes
         self.user_id: int | None = None
         self.websocket: WebsocketClient | None = None
 
-        self.async_request = self._wrap_request_method(self._request_retries)
-        self.async_media = self._wrap_media_method(self._media_retries)
+        self.async_request = self._wrap_request_method(
+            request_retries=self._request_retries,
+            giveup_func=self.is_fatal_error([401, 409]),
+            request_func=self._async_api_request,
+        )
+        self.async_media = self._wrap_request_method(
+            request_retries=self._media_retries,
+            giveup_func=self.is_fatal_error([401, 409, 404]),
+            request_func=self._async_media_request,
+        )
 
     @classmethod
     async def async_from_auth(
@@ -241,9 +250,7 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         return data
 
-    async def _async_media_request(
-        self, url: str
-    ) -> bytes | None:
+    async def _async_media_request(self, url: str) -> bytes | None:
         """Fetch a media file.
 
         Args:
@@ -253,10 +260,12 @@ class API:  # pylint: disable=too-many-instance-attributes
             The raw bytes of the media file
         """
         async with self.session.request(
-            "get", url, headers={
+            "get",
+            url,
+            headers={
                 "User-Agent": DEFAULT_USER_AGENT,
-                "Authorization": f"Bearer {self.access_token}"
-            }
+                "Authorization": f"Bearer {self.access_token}",
+            },
         ) as resp:
             resp.raise_for_status()
             return await resp.read()
@@ -284,88 +293,85 @@ class API:  # pylint: disable=too-many-instance-attributes
             self.refresh_token = refresh_token
 
     @staticmethod
-    def is_fatal_error(err: ClientResponseError) -> bool:
+    def is_fatal_error(retriable: list) -> Callable:
         """Determine whether a ClientResponseError is fatal and shouldn't be retried.
 
-        In general, we retry anything outside of HTTP 4xx codes (client errors) with a
-        few exceptions:
+        This call returns the check function.  The arguments to this call are the
+        list of status codes that are retriable.  Generally you'd want to pass
 
         1. 401: We catch this, refresh the access token, and retry the original request.
         2. 409: SimpliSafe base stations regular synchronize themselves with the API,
                 which is where this error can occur; we can't control when/how that
                 happens (e.g., we might query the API in the middle of a base station
                 update), so it should be viewed as retryable.
+
+        But when fetching media files:
+
         3. 404: When fetching media files, you may get a 404 if the media file is not
                 yet available to read.  Keep trying however, and it will eventually
                 return a 200.
 
         Args:
-            err: An ``aiohttp`` ``ClientResponseError``
+            retriable: A list of retry-able error status codes.
 
         Returns:
-            Whether the error is a fatal one.
+            A callable function used by backoff to check for errors.
         """
-        if err.status in (401, 409, 404):
-            return False
-        return 400 <= err.status < 500
+
+        def check(err: ClientResponseError) -> bool:
+            """The actual check function used by backoff.
+
+            Args:
+                err:       An ``aiohttp`` ``ClientResponseError``
+
+            Returns:
+                Whether the error is a fatal one.
+            """
+            if err.status in retriable:
+                return False
+            return 400 <= err.status < 500
+
+        return check
 
     def _wrap_request_method(
-        self, request_retries: int
+        self, request_retries: int, giveup_func: Callable, request_func: Callable
     ) -> Callable[..., Awaitable[dict[str, Any]]]:
-        """Wrap the request method in backoff/retry logic.
+        """Wrap a request method in backoff/retry logic.
 
         Args:
             request_retries: The number of retries to give a failed request.
+            giveup_func: A function to terminate retries based on response status code.
+            request_func: A function that performs the request.
 
         Returns:
             A version of the request callable that can do retries.
         """
-        return cast(
-            Callable,
-            backoff.on_exception(
-                backoff.expo,
-                ClientResponseError,
-                giveup=self.is_fatal_error,  # type: ignore[arg-type]
-                jitter=backoff.random_jitter,
-                logger=LOGGER,
-                max_tries=request_retries,
-                on_backoff=self._async_handle_on_backoff,  # type: ignore[arg-type]
-                on_giveup=self._handle_on_giveup,  # type: ignore[arg-type]
-            )(self._async_api_request),
-        )
-
-    def _wrap_media_method(
-        self, media_retries: int
-    ) -> Callable[..., Awaitable[dict[str, Any]]]:
-        """Wrap the request method in backoff/retry logic.
-
-        Args:
-            media_retries: The number of retries to give a failed request.
-
-        Returns:
-            A version of the request callable that can do retries.
-        """
-        return cast(
-            Callable,
-            backoff.on_exception(
-                backoff.expo,
-                ClientResponseError,
-                giveup=self.is_fatal_error,  # type: ignore[arg-type]
-                jitter=backoff.random_jitter,
-                logger=LOGGER,
-                max_tries=media_retries,
-                on_backoff=self._async_handle_on_backoff,  # type: ignore[arg-type]
-                on_giveup=self._handle_on_giveup,  # type: ignore[arg-type]
-            )(self._async_media_request),
-        )
+        return backoff.on_exception(
+            backoff.expo,
+            ClientResponseError,
+            giveup=giveup_func,
+            jitter=backoff.random_jitter,
+            logger=LOGGER,
+            max_tries=request_retries,
+            on_backoff=self._async_handle_on_backoff,  # type: ignore[arg-type]
+            on_giveup=self._handle_on_giveup,  # type: ignore[arg-type]
+        )(request_func)
 
     def disable_request_retries(self) -> None:
         """Disable the request retry mechanism."""
-        self.async_request = self._wrap_request_method(1)
+        self.async_request = self._wrap_request_method(
+            request_retries=1,
+            giveup_func=self.is_fatal_error([401, 409]),
+            request_func=self._async_api_request,
+        )
 
     def enable_request_retries(self) -> None:
         """Enable the request retry mechanism."""
-        self.async_request = self._wrap_request_method(self._request_retries)
+        self.async_request = self._wrap_request_method(
+            request_retries=self._request_retries,
+            giveup_func=self.is_fatal_error([401, 409]),
+            request_func=self._async_api_request,
+        )
 
     def add_refresh_token_callback(
         self, callback: Callable[[str], Awaitable[None] | None]

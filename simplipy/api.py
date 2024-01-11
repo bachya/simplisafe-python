@@ -6,7 +6,7 @@ import sys
 from collections.abc import Awaitable, Callable
 from datetime import datetime
 from json.decoder import JSONDecodeError
-from typing import Any
+from typing import Any, cast
 
 import backoff
 from aiohttp import ClientSession
@@ -84,12 +84,12 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         self.async_request = self._wrap_request_method(
             request_retries=self._request_retries,
-            giveup_func=self.is_fatal_error([401, 409]),
+            retry_codes=[401, 409],
             request_func=self._async_api_request,
         )
-        self.async_media = self._wrap_request_method(
+        self._async_media_data = self._wrap_request_method(
             request_retries=self._media_retries,
-            giveup_func=self.is_fatal_error([401, 409, 404]),
+            retry_codes=[401, 409, 404],
             request_func=self._async_media_request,
         )
 
@@ -250,14 +250,29 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         return data
 
-    async def _async_media_request(self, url: str) -> bytes | None:
+    async def async_media(self, url: str) -> bytes | None:
+        """Fetch a media file and return raw bytes to caller.
+
+        Args:
+            url: An absolute url for the media file.
+
+        Returns:
+            The raw bytes of the media file.
+        """
+        data = await self._async_media_data(url)
+        if data["bytes"] is None:
+            return None
+
+        return cast(bytes, data["bytes"])
+
+    async def _async_media_request(self, url: str) -> dict[str, Any]:
         """Fetch a media file.
 
         Args:
             url: An absolute url for the media file.
 
         Returns:
-            The raw bytes of the media file
+            A dict that looks like { "bytes": <raw-bytes> }.
         """
         async with self.session.request(
             "get",
@@ -268,7 +283,7 @@ class API:  # pylint: disable=too-many-instance-attributes
             },
         ) as resp:
             resp.raise_for_status()
-            return await resp.read()
+            return {"bytes": await resp.read()}
 
     @staticmethod
     def _handle_on_giveup(_: dict[str, Any]) -> None:
@@ -293,7 +308,7 @@ class API:  # pylint: disable=too-many-instance-attributes
             self.refresh_token = refresh_token
 
     @staticmethod
-    def is_fatal_error(retriable: list) -> Callable:
+    def is_fatal_error(retriable: list[int]) -> Callable:
         """Determine whether a ClientResponseError is fatal and shouldn't be retried.
 
         This call returns the check function.  The arguments to this call are the
@@ -334,13 +349,17 @@ class API:  # pylint: disable=too-many-instance-attributes
         return check
 
     def _wrap_request_method(
-        self, request_retries: int, giveup_func: Callable, request_func: Callable
+        self,
+        request_retries: int,
+        retry_codes: list[int],
+        request_func: Callable[..., Awaitable[dict[str, Any]]],
     ) -> Callable[..., Awaitable[dict[str, Any]]]:
         """Wrap a request method in backoff/retry logic.
 
         Args:
             request_retries: The number of retries to give a failed request.
-            giveup_func: A function to terminate retries based on response status code.
+            retry_codes: A list of http status codes that cause the retry
+                loop to continue.
             request_func: A function that performs the request.
 
         Returns:
@@ -349,7 +368,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         return backoff.on_exception(
             backoff.expo,
             ClientResponseError,
-            giveup=giveup_func,
+            giveup=self.is_fatal_error(retry_codes),
             jitter=backoff.random_jitter,
             logger=LOGGER,
             max_tries=request_retries,
@@ -361,7 +380,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         """Disable the request retry mechanism."""
         self.async_request = self._wrap_request_method(
             request_retries=1,
-            giveup_func=self.is_fatal_error([401, 409]),
+            retry_codes=[401, 409],
             request_func=self._async_api_request,
         )
 
@@ -369,7 +388,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         """Enable the request retry mechanism."""
         self.async_request = self._wrap_request_method(
             request_retries=self._request_retries,
-            giveup_func=self.is_fatal_error([401, 409]),
+            retry_codes=[401, 409],
             request_func=self._async_api_request,
         )
 

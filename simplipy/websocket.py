@@ -41,7 +41,7 @@ EVENT_AWAY_EXIT_DELAY_BY_REMOTE: Final = "away_exit_delay_by_remote"
 EVENT_CAMERA_MOTION_DETECTED: Final = "camera_motion_detected"
 EVENT_CONNECTION_LOST: Final = "connection_lost"
 EVENT_CONNECTION_RESTORED: Final = "connection_restored"
-EVENT_DISARMED_BY_MASTER_PIN: Final = "disarmed_by_master_pin"
+EVENT_DISARMED_BY_KEYPAD: Final = "disarmed_by_keypad"
 EVENT_DISARMED_BY_REMOTE: Final = "disarmed_by_remote"
 EVENT_DOORBELL_DETECTED: Final = "doorbell_detected"
 EVENT_DEVICE_TEST: Final = "device_test"
@@ -70,7 +70,7 @@ EVENT_MAPPING = {
     1301: EVENT_POWER_OUTAGE,
     1350: EVENT_CONNECTION_LOST,
     1381: EVENT_SENSOR_NOT_RESPONDING,
-    1400: EVENT_DISARMED_BY_MASTER_PIN,
+    1400: EVENT_DISARMED_BY_KEYPAD,
     1406: EVENT_ALARM_CANCELED,
     1407: EVENT_DISARMED_BY_REMOTE,
     1409: EVENT_SECRET_ALERT_TRIGGERED,

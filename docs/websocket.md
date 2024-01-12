@@ -120,7 +120,7 @@ The `event_type` property will be one of the following values:
 - `camera_motion_detected`
 - `connection_lost`
 - `connection_restored`
-- `disarmed_by_master_pin`
+- `disarmed_by_keypad`
 - `disarmed_by_remote`
 - `doorbell_detected`
 - `entity_test`

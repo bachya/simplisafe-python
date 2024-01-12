@@ -27,7 +27,7 @@ from simplipy.errors import (
     WebsocketError,
 )
 from simplipy.websocket import (
-    EVENT_DISARMED_BY_MASTER_PIN,
+    EVENT_DISARMED_BY_KEYPAD,
     Watchdog,
     WebsocketClient,
     websocket_event_from_payload,
@@ -138,7 +138,7 @@ def test_create_event(ws_message_event: dict[str, Any]) -> None:
         ws_message_event: A websocket event payload.
     """
     event = websocket_event_from_payload(ws_message_event)
-    assert event.event_type == EVENT_DISARMED_BY_MASTER_PIN
+    assert event.event_type == EVENT_DISARMED_BY_KEYPAD
     assert event.info == "System Disarmed by Master PIN"
     assert event.system_id == 12345
     assert event.timestamp == datetime(2021, 9, 29, 23, 14, 46, tzinfo=timezone.utc)

@@ -50,7 +50,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         session: session: An optional ``aiohttp`` ``ClientSession``.
         request_retries: The default number of request retries to use.
         media_retries: The default number of request retries to use to
-        fetch media files.
+            fetch media files.
     """
 
     def __init__(

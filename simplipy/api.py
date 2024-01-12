@@ -310,11 +310,10 @@ class API:  # pylint: disable=too-many-instance-attributes
     @staticmethod
     def is_fatal_error(
         retriable_error_codes: list[int],
-    ) -> Callable[..., bool]:
+    ) -> Callable[[ClientResponseError], bool]:
         """Determine whether a ClientResponseError is fatal and shouldn't be retried.
 
-        This call returns the check function.  The arguments to this call are the
-        list of status codes that are retriable.  Generally you'd want to pass
+        When sending general API requests:
 
         1. 401: We catch this, refresh the access token, and retry the original request.
         2. 409: SimpliSafe base stations regular synchronize themselves with the API,
@@ -325,7 +324,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         But when fetching media files:
 
         3. 404: When fetching media files, you may get a 404 if the media file is not
-                yet available to read.  Keep trying however, and it will eventually
+                yet available to read. Keep trying however, and it will eventually
                 return a 200.
 
         Args:
@@ -336,10 +335,10 @@ class API:  # pylint: disable=too-many-instance-attributes
         """
 
         def check(err: ClientResponseError) -> bool:
-            """The actual check function used by backoff.
+            """Perform the check.
 
             Args:
-                err:       An ``aiohttp`` ``ClientResponseError``
+                err: An ``aiohttp`` ``ClientResponseError``
 
             Returns:
                 Whether the error is a fatal one.
@@ -360,7 +359,7 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         Args:
             request_retries: The number of retries to give a failed request.
-            retry_codes: A list of http status codes that cause the retry
+            retry_codes: A list of HTTP status codes that cause the retry
                 loop to continue.
             request_func: A function that performs the request.
 
@@ -370,7 +369,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         return backoff.on_exception(
             backoff.expo,
             ClientResponseError,
-            giveup=self.is_fatal_error(retry_codes),
+            giveup=self.is_fatal_error(retry_codes),  # type: ignore[arg-type]
             jitter=backoff.random_jitter,
             logger=LOGGER,
             max_tries=request_retries,

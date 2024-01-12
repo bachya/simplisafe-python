@@ -329,7 +329,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 return a 200.
 
         Args:
-            retriable_error_codes: A list of retry-able error status codes.
+            retriable_error_codes: A list of retriable error status codes.
 
         Returns:
             A callable function used by backoff to check for errors.

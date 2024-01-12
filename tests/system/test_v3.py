@@ -1,7 +1,7 @@
 """Define tests for v3 System objects."""
 # pylint: disable=too-many-lines
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from typing import Any, cast
 from unittest.mock import Mock
 
@@ -1134,7 +1134,7 @@ async def test_no_state_change_on_failure(
 
             # pylint: disable=protected-access
             # Manually set the expiration datetime to force a refresh token flow:
-            simplisafe._token_last_refreshed = datetime.utcnow() - timedelta(seconds=30)
+            simplisafe._token_last_refreshed = datetime.now(UTC) - timedelta(seconds=30)
 
             systems = await simplisafe.async_get_systems()
             system = systems[TEST_SYSTEM_ID]

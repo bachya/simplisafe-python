@@ -1,7 +1,7 @@
 """Define a V3 (new) SimpliSafe system."""
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Final, cast
 
@@ -404,7 +404,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         )
 
         self._state = value
-        self._last_state_change_dt = datetime.utcnow()
+        self._last_state_change_dt = datetime.now(UTC)
 
     async def _async_set_updated_pins(self, pins: dict[str, Any]) -> None:
         """Post new PINs.
@@ -612,7 +612,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         if (
             self.locks
             and self._last_state_change_dt
-            and datetime.utcnow()
+            and datetime.now(UTC)
             <= self._last_state_change_dt + DEFAULT_LOCK_STATE_CHANGE_WINDOW
         ):
             # The SimpliSafe cloud API currently has a bug wherein systems with locks

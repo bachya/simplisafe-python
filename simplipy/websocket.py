@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Awaitable, Callable
 from dataclasses import InitVar, dataclass, field
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any, Final, cast
 
 from aiohttp import ClientWebSocketResponse, WSMsgType
@@ -405,7 +405,7 @@ class WebsocketClient:
 
     async def async_listen(self) -> None:
         """Start listening to the websocket server."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         now_ts = round(now.timestamp() * 1000)
         now_utc_iso = f"{now.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]}Z"
 

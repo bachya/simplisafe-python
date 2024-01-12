@@ -2,7 +2,7 @@
 # pylint: disable=protected-access
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any, cast
 from unittest.mock import Mock
 
@@ -139,7 +139,7 @@ async def test_no_state_change_on_failure(
             )
 
             # Manually set the expiration datetime to force a refresh token flow:
-            simplisafe._token_last_refreshed = datetime.utcnow() - timedelta(seconds=30)
+            simplisafe._token_last_refreshed = datetime.now(UTC) - timedelta(seconds=30)
 
             systems = await simplisafe.async_get_systems()
             system: SystemV3 = cast(SystemV3, systems[TEST_SYSTEM_ID])

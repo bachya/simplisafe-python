@@ -157,9 +157,9 @@ def test_create_motion_event(ws_motion_event: dict[str, Any]) -> None:
     """
     event = websocket_event_from_payload(ws_motion_event)
     assert event.media_urls is not None
-    assert event.media_urls["imageUrl"] == "https://image-url{&width}"
-    assert event.media_urls["clipUrl"] == "https://clip-url"
-    assert event.media_urls["hlsUrl"] == "https://hls-url"
+    assert event.media_urls["image_url"] == "https://image-url{&width}"
+    assert event.media_urls["clip_url"] == "https://clip-url"
+    assert event.media_urls["hls_url"] == "https://hls-url"
 
 
 @pytest.mark.asyncio

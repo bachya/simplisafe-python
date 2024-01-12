@@ -309,8 +309,9 @@ class API:  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def is_fatal_error(
+        err: ClientResponseError,
         retriable_error_codes: list[int],
-    ) -> Callable[..., bool]:
+    ) -> bool:
         """Determine whether a ClientResponseError is fatal and shouldn't be retried.
 
         This call returns the check function.  The arguments to this call are the
@@ -329,26 +330,16 @@ class API:  # pylint: disable=too-many-instance-attributes
                 return a 200.
 
         Args:
+            err: The HTTP response from a request.
             retriable_error_codes: A list of retriable error status codes.
 
         Returns:
-            A callable function used by backoff to check for errors.
+            True if the response is a unretriable fatal error.
         """
 
-        def check(err: ClientResponseError) -> bool:
-            """The actual check function used by backoff.
-
-            Args:
-                err:       An ``aiohttp`` ``ClientResponseError``
-
-            Returns:
-                Whether the error is a fatal one.
-            """
-            if err.status in retriable_error_codes:
-                return False
-            return 400 <= err.status < 500
-
-        return check
+        if err.status in retriable_error_codes:
+            return False
+        return 400 <= err.status < 500
 
     def _wrap_request_method(
         self,
@@ -370,7 +361,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         return backoff.on_exception(
             backoff.expo,
             ClientResponseError,
-            giveup=self.is_fatal_error(retry_codes),
+            giveup=lambda err: self.is_fatal_error(err, retry_codes),  # type: ignore[arg-type] # pylint: disable-line-too-long
             jitter=backoff.random_jitter,
             logger=LOGGER,
             max_tries=request_retries,

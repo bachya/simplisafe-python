@@ -198,11 +198,13 @@ class WebsocketEvent:
                 self,
                 "media_urls",
                 {
-                    "imageUrl": self._video[self._vid]["_links"]["snapshot/jpg"][
+                    "image_url": self._video[self._vid]["_links"]["snapshot/jpg"][
                         "href"
                     ],
-                    "clipUrl": self._video[self._vid]["_links"]["download/mp4"]["href"],
-                    "hlsUrl": self._video[self._vid]["_links"]["playback/hls"]["href"],
+                    "clip_url": self._video[self._vid]["_links"]["download/mp4"][
+                        "href"
+                    ],
+                    "hls_url": self._video[self._vid]["_links"]["playback/hls"]["href"],
                 },
             )
             object.__setattr__(self, "_vid", None)

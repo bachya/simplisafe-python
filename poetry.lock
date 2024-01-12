@@ -123,18 +123,21 @@ files = [
 
 [[package]]
 name = "aresponses"
-version = "2.1.6"
+version = "3.0.0"
 description = "Asyncio response mocking. Similar to the responses library used for 'requests'"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.7"
 files = [
-    {file = "aresponses-2.1.6-py3-none-any.whl", hash = "sha256:06525f6911063f0f8d370cbc96bd273e6cddc89c7b5163ddf91e0c8abf148a32"},
-    {file = "aresponses-2.1.6.tar.gz", hash = "sha256:231dfa0756e39ca9f1e82212038f98e773d1ed9c0993caf2667e25ba535697ca"},
+    {file = "aresponses-3.0.0-py3-none-any.whl", hash = "sha256:8093ab4758eb4aba91c765a50295b269ecfc0a9e7c7158954760bc0c23503970"},
+    {file = "aresponses-3.0.0.tar.gz", hash = "sha256:8731d0609fe4c954e21f17753dc868dca9e2e002b020a33dc9212004599b11e7"},
 ]
 
 [package.dependencies]
-aiohttp = ">=3.1.0,<4.dev0"
-pytest-asyncio = "*"
+aiohttp = [
+    {version = ">=3.7.0", markers = "python_version >= \"3.10\" and python_version < \"3.12\""},
+    {version = ">=3.7.0,<3.8.dev0 || >=3.9.dev0", markers = "python_version >= \"3.12\""},
+]
+pytest-asyncio = {version = ">=0.17.0", markers = "python_version >= \"3.7\""}
 
 [[package]]
 name = "astroid"
@@ -760,13 +763,13 @@ colors = ["colorama (>=0.4.6)"]
 
 [[package]]
 name = "jinja2"
-version = "3.1.2"
+version = "3.1.3"
 description = "A very fast and expressive template engine."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "Jinja2-3.1.2-py3-none-any.whl", hash = "sha256:6088930bfe239f0e6710546ab9c19c9ef35e29792895fed6e6e31a023a182a61"},
-    {file = "Jinja2-3.1.2.tar.gz", hash = "sha256:31351a702a408a9e7595a8fc6150fc3f43bb6bf7e319770cbc0db9df9437e852"},
+    {file = "Jinja2-3.1.3-py3-none-any.whl", hash = "sha256:7d6d50dd97d52cbc355597bd845fabfbac3f551e1f99619e39a35ce8c370b5fa"},
+    {file = "Jinja2-3.1.3.tar.gz", hash = "sha256:ac8bd6544d4bb2c9792bf3a159e80bba8fda7f07e81bc3aed565432d5925ba90"},
 ]
 
 [package.dependencies]
@@ -1206,8 +1209,8 @@ astroid = ">=3.0.1,<=3.1.0-dev0"
 colorama = {version = ">=0.4.5", markers = "sys_platform == \"win32\""}
 dill = [
     {version = ">=0.2", markers = "python_version < \"3.11\""},
-    {version = ">=0.3.7", markers = "python_version >= \"3.12\""},
     {version = ">=0.3.6", markers = "python_version >= \"3.11\" and python_version < \"3.12\""},
+    {version = ">=0.3.7", markers = "python_version >= \"3.12\""},
 ]
 isort = ">=4.2.5,<5.13.0 || >5.13.0,<6"
 mccabe = ">=0.6,<0.8"
@@ -2045,4 +2048,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "e0e5e2c7313fad6d84f299c6101afda1d38a4e72caf87ab4364ac02bb2bcdadf"
+content-hash = "7efacb261833a0a364061efd1a8d4f0787b0e22243f2c168bcc8d006f17307ef"

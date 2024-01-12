@@ -50,7 +50,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         session: session: An optional ``aiohttp`` ``ClientSession``.
         request_retries: The default number of request retries to use.
         media_retries: The default number of request retries to use to
-        fetch media files.
+            fetch media files.
     """
 
     def __init__(
@@ -309,13 +309,11 @@ class API:  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def is_fatal_error(
-        err: ClientResponseError,
         retriable_error_codes: list[int],
-    ) -> bool:
+    ) -> Callable[[ClientResponseError], bool]:
         """Determine whether a ClientResponseError is fatal and shouldn't be retried.
 
-        This call returns the check function.  The arguments to this call are the
-        list of status codes that are retriable.  Generally you'd want to pass
+        When sending general API requests:
 
         1. 401: We catch this, refresh the access token, and retry the original request.
         2. 409: SimpliSafe base stations regular synchronize themselves with the API,
@@ -326,20 +324,30 @@ class API:  # pylint: disable=too-many-instance-attributes
         But when fetching media files:
 
         3. 404: When fetching media files, you may get a 404 if the media file is not
-                yet available to read.  Keep trying however, and it will eventually
+                yet available to read. Keep trying however, and it will eventually
                 return a 200.
 
         Args:
-            err: The HTTP response from a request.
             retriable_error_codes: A list of retriable error status codes.
 
         Returns:
-            True if the response is a unretriable fatal error.
+            A callable function used by backoff to check for errors.
         """
 
-        if err.status in retriable_error_codes:
-            return False
-        return 400 <= err.status < 500
+        def check(err: ClientResponseError) -> bool:
+            """Perform the check.
+
+            Args:
+                err: An ``aiohttp`` ``ClientResponseError``
+
+            Returns:
+                Whether the error is a fatal one.
+            """
+            if err.status in retriable_error_codes:
+                return False
+            return 400 <= err.status < 500
+
+        return check
 
     def _wrap_request_method(
         self,
@@ -351,7 +359,7 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         Args:
             request_retries: The number of retries to give a failed request.
-            retry_codes: A list of http status codes that cause the retry
+            retry_codes: A list of HTTP status codes that cause the retry
                 loop to continue.
             request_func: A function that performs the request.
 
@@ -361,7 +369,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         return backoff.on_exception(
             backoff.expo,
             ClientResponseError,
-            giveup=lambda err: self.is_fatal_error(err, retry_codes),  # type: ignore[arg-type] # pylint: disable-line-too-long
+            giveup=self.is_fatal_error(retry_codes),  # type: ignore[arg-type]
             jitter=backoff.random_jitter,
             logger=LOGGER,
             max_tries=request_retries,

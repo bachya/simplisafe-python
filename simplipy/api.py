@@ -89,7 +89,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         )
         self._async_media_data = self._wrap_request_method(
             request_retries=self._media_retries,
-            retry_codes=[401, 409, 404],
+            retry_codes=[401, 404, 409],
             request_func=self._async_media_request,
         )
 
@@ -308,7 +308,9 @@ class API:  # pylint: disable=too-many-instance-attributes
             self.refresh_token = refresh_token
 
     @staticmethod
-    def is_fatal_error(retriable: list[int]) -> Callable:
+    def is_fatal_error(
+        retriable_error_codes: list[int],
+    ) -> Callable[..., bool]:
         """Determine whether a ClientResponseError is fatal and shouldn't be retried.
 
         This call returns the check function.  The arguments to this call are the
@@ -327,7 +329,7 @@ class API:  # pylint: disable=too-many-instance-attributes
                 return a 200.
 
         Args:
-            retriable: A list of retry-able error status codes.
+            retriable_error_codes: A list of retry-able error status codes.
 
         Returns:
             A callable function used by backoff to check for errors.
@@ -342,7 +344,7 @@ class API:  # pylint: disable=too-many-instance-attributes
             Returns:
                 Whether the error is a fatal one.
             """
-            if err.status in retriable:
+            if err.status in retriable_error_codes:
                 return False
             return 400 <= err.status < 500
 

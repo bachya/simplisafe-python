@@ -1,6 +1,8 @@
 """Define tests for motion detection media fetching."""
 from __future__ import annotations
 
+from typing import Any
+
 import aiohttp
 import pytest
 from aresponses import ResponsesMockServer
@@ -40,7 +42,8 @@ async def test_media_file_fetching(
         repeat=5,
     )
 
-    def delayed() -> aresponses.Response:
+    # pylint: disable-next=unused-argument
+    def delayed(request: Any) -> aresponses.Response:
         """Return a 404 a few times, then a 200."""
         global COUNT  # pylint: disable=global-statement
         if COUNT >= 3:

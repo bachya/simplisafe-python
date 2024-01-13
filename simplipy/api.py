@@ -34,7 +34,7 @@ API_URL_HOSTNAME = "api.simplisafe.com"
 API_URL_BASE = f"https://{API_URL_HOSTNAME}/v1"
 
 DEFAULT_REQUEST_RETRIES = 4
-DEFAULT_MEDIA_RETRIES = 10
+DEFAULT_MEDIA_RETRIES = 4
 DEFAULT_TIMEOUT = 10
 DEFAULT_TOKEN_EXPIRATION_WINDOW = 5
 
@@ -260,9 +260,6 @@ class API:  # pylint: disable=too-many-instance-attributes
             The raw bytes of the media file.
         """
         data = await self._async_media_data(url)
-        if data["bytes"] is None:
-            return None
-
         return cast(bytes, data["bytes"])
 
     async def _async_media_request(self, url: str) -> dict[str, Any]:

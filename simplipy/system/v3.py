@@ -1,7 +1,7 @@
 """Define a V3 (new) SimpliSafe system."""
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Final, cast
 
@@ -20,6 +20,7 @@ from simplipy.system import (
     SystemStates,
     guard_from_missing_data,
 )
+from simplipy.util.dt import utcnow
 
 if TYPE_CHECKING:
     from simplipy.api import API
@@ -404,7 +405,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         )
 
         self._state = value
-        self._last_state_change_dt = datetime.now(UTC)
+        self._last_state_change_dt = utcnow()
 
     async def _async_set_updated_pins(self, pins: dict[str, Any]) -> None:
         """Post new PINs.
@@ -612,7 +613,7 @@ class SystemV3(System):  # pylint: disable=too-many-public-methods
         if (
             self.locks
             and self._last_state_change_dt
-            and datetime.now(UTC)
+            and utcnow()
             <= self._last_state_change_dt + DEFAULT_LOCK_STATE_CHANGE_WINDOW
         ):
             # The SimpliSafe cloud API currently has a bug wherein systems with locks

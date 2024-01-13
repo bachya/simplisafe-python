@@ -6,7 +6,7 @@ build-backend = "poetry.core.masonry.api"
 target-version = ["py39"]
 
 [tool.coverage.report]
-exclude_lines = ["raise NotImplementedError", "TYPE_CHECKING"]
+exclude_lines = ["raise NotImplementedError", "TYPE_CHECKING", "ImportError"]
 fail_under = 100
 show_missing = true
 

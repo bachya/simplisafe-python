@@ -33,7 +33,7 @@ Thanks to all of [our contributors][contributors] so far!
 9. Update `README.md` with any new documentation.
 10. Submit a pull request!
 
-[ci-badge]: https://github.com/bachya/simplisafe-python/workflows/CI/badge.svg
+[ci-badge]: https://img.shields.io/github/actions/workflow/status/bachya/simplisafe-python/test.yml
 [ci]: https://github.com/bachya/simplisafe-python/actions
 [codecov-badge]: https://codecov.io/gh/bachya/simplisafe-python/branch/dev/graph/badge.svg
 [codecov]: https://codecov.io/gh/bachya/simplisafe-python

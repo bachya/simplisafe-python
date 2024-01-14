@@ -2,7 +2,7 @@
 # pylint: disable=protected-access
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Any, cast
 from unittest.mock import Mock
 
@@ -14,6 +14,7 @@ from simplipy import API
 from simplipy.device.lock import LockStates
 from simplipy.errors import InvalidCredentialsError
 from simplipy.system.v3 import SystemV3
+from simplipy.util.dt import utcnow
 
 from .common import (
     TEST_AUTHORIZATION_CODE,
@@ -139,7 +140,7 @@ async def test_no_state_change_on_failure(
             )
 
             # Manually set the expiration datetime to force a refresh token flow:
-            simplisafe._token_last_refreshed = datetime.utcnow() - timedelta(seconds=30)
+            simplisafe._token_last_refreshed = utcnow() - timedelta(seconds=30)
 
             systems = await simplisafe.async_get_systems()
             system: SystemV3 = cast(SystemV3, systems[TEST_SYSTEM_ID])

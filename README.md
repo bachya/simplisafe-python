@@ -29,11 +29,11 @@ Thanks to all of [our contributors][contributors] so far!
 5. Install the dev environment: `script/setup`
 6. Code your new feature or bug fix on a new branch.
 7. Write tests that cover your new functionality.
-8. Run tests and ensure 100% code coverage: `poetry run pytest --cov simplisafe-python tests`
+8. Run tests and ensure 100% code coverage: `poetry run pytest --cov simplipy tests`
 9. Update `README.md` with any new documentation.
 10. Submit a pull request!
 
-[ci-badge]: https://github.com/bachya/simplisafe-python/workflows/CI/badge.svg
+[ci-badge]: https://img.shields.io/github/actions/workflow/status/bachya/simplisafe-python/test.yml
 [ci]: https://github.com/bachya/simplisafe-python/actions
 [codecov-badge]: https://codecov.io/gh/bachya/simplisafe-python/branch/dev/graph/badge.svg
 [codecov]: https://codecov.io/gh/bachya/simplisafe-python

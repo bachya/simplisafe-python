@@ -28,6 +28,7 @@ from simplipy.util.auth import (
     DEFAULT_CLIENT_ID,
     DEFAULT_REDIRECT_URI,
 )
+from simplipy.util.dt import utcnow
 from simplipy.websocket import WebsocketClient
 
 API_URL_HOSTNAME = "api.simplisafe.com"
@@ -181,7 +182,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         if err.status == 401 and self._token_last_refreshed:
             # Calculate the window between now and the last time the token was
             # refreshed:
-            window = (datetime.utcnow() - self._token_last_refreshed).total_seconds()
+            window = (utcnow() - self._token_last_refreshed).total_seconds()
 
             # Since we might have multiple requests (each running their own retry
             # sequence) land here, we only refresh the access token if it hasn't
@@ -299,7 +300,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         Args:
             token_data: An API response payload.
         """
-        self._token_last_refreshed = datetime.utcnow()
+        self._token_last_refreshed = utcnow()
         self.access_token = token_data["access_token"]
         if refresh_token := token_data.get("refresh_token"):
             self.refresh_token = refresh_token

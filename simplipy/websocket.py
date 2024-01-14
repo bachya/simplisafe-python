@@ -20,7 +20,7 @@ from simplipy.errors import (
     NotConnectedError,
 )
 from simplipy.util import CallbackType, execute_callback
-from simplipy.util.dt import utc_from_timestamp
+from simplipy.util.dt import utc_from_timestamp, utcnow
 
 if TYPE_CHECKING:
     from simplipy import API
@@ -429,7 +429,7 @@ class WebsocketClient:
 
     async def async_listen(self) -> None:
         """Start listening to the websocket server."""
-        now = datetime.utcnow()
+        now = utcnow()
         now_ts = round(now.timestamp() * 1000)
         now_utc_iso = f"{now.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]}Z"
 

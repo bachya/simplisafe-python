@@ -382,6 +382,11 @@ class API:  # pylint: disable=too-many-instance-attributes
             retry_codes=[401, 409],
             request_func=self._async_api_request,
         )
+        self._async_media_data = self._wrap_request_method(
+            request_retries=1,
+            retry_codes=[401, 404, 409],
+            request_func=self._async_media_request,
+        )
 
     def enable_request_retries(self) -> None:
         """Enable the request retry mechanism."""
@@ -389,6 +394,11 @@ class API:  # pylint: disable=too-many-instance-attributes
             request_retries=self._request_retries,
             retry_codes=[401, 409],
             request_func=self._async_api_request,
+        )
+        self._async_media_data = self._wrap_request_method(
+            request_retries=self._media_retries,
+            retry_codes=[401, 404, 409],
+            request_func=self._async_media_request,
         )
 
     def add_refresh_token_callback(

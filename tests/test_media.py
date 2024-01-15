@@ -83,3 +83,51 @@ async def test_media_file_fetching(
         assert res == content
 
     aresponses.assert_plan_strictly_followed()
+
+
+@pytest.mark.asyncio
+async def test_media_file_enabe_disable_retires(
+    aresponses: ResponsesMockServer,
+    authenticated_simplisafe_server_v3: ResponsesMockServer,
+) -> None:
+    """Test the ability to enable/disable retries."""
+
+    my_string = "this is an image"
+    content = my_string.encode("utf-8")
+
+    authenticated_simplisafe_server_v3.add(
+        "remix.us-east-1.prd.cam.simplisafe.com",
+        "/v1/preview/timeout",
+        "get",
+        aresponses.Response(status=404),
+        repeat=2,
+    )
+
+    authenticated_simplisafe_server_v3.add(
+        "remix.us-east-1.prd.cam.simplisafe.com",
+        "/v1/preview/timeout",
+        "get",
+        aresponses.Response(body=content, status=200),
+        repeat=1,
+    )
+
+    async with authenticated_simplisafe_server_v3, aiohttp.ClientSession() as session:
+        simplisafe = await API.async_from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
+        )
+
+        # With retries disabled, the first attempt will raise an error
+        simplisafe.disable_request_retries()
+        with pytest.raises(SimplipyError):
+            await simplisafe.async_media(
+                url="https://remix.us-east-1.prd.cam.simplisafe.com/v1/preview/timeout"
+            )
+
+        # When re-enabled, there will be one 404 followed by a 200, no error
+        simplisafe.enable_request_retries()
+        res = await simplisafe.async_media(
+            url="https://remix.us-east-1.prd.cam.simplisafe.com/v1/preview/timeout"
+        )
+        assert res == content
+
+    aresponses.assert_plan_strictly_followed()

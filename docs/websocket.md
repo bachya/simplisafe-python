@@ -105,7 +105,7 @@ The `event` argument provided to event callbacks is a
 - `sensor_type`: the type of the entity that triggered the event
 - `system_id`: the SimpliSafe™ system ID
 - `timestamp`: the UTC timestamp that the event occurred
-- `media_urls`: a dict containing media file urls if the `event_type` is "camera_motion_detected" (see below)
+- `media_urls`: a dict containing media URLs if the `event_type` is "camera_motion_detected" (see below)
 
 The `event_type` property will be one of the following values:
 
@@ -138,7 +138,8 @@ The `event_type` property will be one of the following values:
 - `sensor_restored`
 - `user_initiated_test`
 
-If the `event_type` is "camera_motion_detected" then the `event` attribute "media_urls" will be a dictionary that looks something like
+If the `event_type` is "camera_motion_detected," then the `event` attribute "media_urls"
+will be a dictionary that looks like this:
 
 ```python
 {
@@ -147,8 +148,9 @@ If the `event_type` is "camera_motion_detected" then the `event` attribute "medi
 }
 ```
 
-The "image_url" is an absolute url to a jpeg file. The "clip_url" is an absolute url to a short mpeg4 video clip. Both refer to the motion
-detected by the camera. These urls are still protected by the SimpliSafe access token, so you should fetch the urls using
+The "image_url" is an absolute URL to a JPEG file. The "clip_url" is an absolute URL to
+a short MPEG4 video clip. Both refer to the motion detected by the camera. These URLs
+are still protected by the SimpliSafe access token, so you should fetch the urls using:
 
 ```python
 bytes = await api.async_media(url)

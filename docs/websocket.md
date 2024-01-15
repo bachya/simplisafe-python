@@ -149,14 +149,14 @@ will be a dictionary that looks like this:
 ```
 
 The "image_url" is an absolute URL to a JPEG file. The "clip_url" is an absolute URL to
-a short MPEG4 video clip. Both refer to the motion detected by the camera. These URLs
-are still protected by the SimpliSafe access token, so you should fetch the urls using:
+a short MPEG4 video clip. Both refer to the motion detected by the camera. You can
+retrieve the raw bytes of the media files at these URLs with the following method:
 
 ```python
 bytes = await api.async_media(url)
 ```
 
-If the `event_type` is not "camera_motion_detected" then "media_urls" will be set to None.
+If the `event_type` is not "camera_motion_detected," then "media_urls" will be set to None.
 
 If you should come across an event type that the library does not know about (and see
 a log message about it), please open an issue at

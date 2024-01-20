@@ -146,6 +146,20 @@ def test_create_event(ws_message_event: dict[str, Any]) -> None:
     assert event.sensor_name == ""
     assert event.sensor_serial == "abcdef12"
     assert event.sensor_type == DeviceTypes.KEYPAD
+    assert event.media_urls is None
+
+
+def test_create_motion_event(ws_motion_event: dict[str, Any]) -> None:
+    """Test creating a motion event object.
+
+    Args:
+        ws_motion_event: A websocket motion event payload with media urls.
+    """
+    event = websocket_event_from_payload(ws_motion_event)
+    assert event.media_urls is not None
+    assert event.media_urls["image_url"] == "https://image-url{&width}"
+    assert event.media_urls["clip_url"] == "https://clip-url"
+    assert event.media_urls["hls_url"] == "https://hls-url"
 
 
 @pytest.mark.asyncio

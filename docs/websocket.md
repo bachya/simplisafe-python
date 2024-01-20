@@ -138,7 +138,7 @@ The `event_type` property will be one of the following values:
 - `sensor_restored`
 - `user_initiated_test`
 
-If the `event_type` is "camera_motion_detected," then the `event` attribute "media_urls"
+If the `event_type` is `camera_motion_detected`, then the `event` attribute `media_urls`
 will be a dictionary that looks like this:
 
 ```python

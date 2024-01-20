@@ -148,7 +148,7 @@ will be a dictionary that looks like this:
 }
 ```
 
-The "image_url" is an absolute URL to a JPEG file. The "clip_url" is an absolute URL to
+The `image_url` is an absolute URL to a JPEG file. The `clip_url` is an absolute URL to
 a short MPEG4 video clip. Both refer to the motion detected by the camera. You can
 retrieve the raw bytes of the media files at these URLs with the following method:
 

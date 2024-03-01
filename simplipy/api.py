@@ -1,4 +1,5 @@
 """Define functionality for interacting with the SimpliSafe API."""
+
 from __future__ import annotations
 
 import asyncio

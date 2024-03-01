@@ -1,4 +1,5 @@
 """Define various string utilities."""
+
 import re
 
 

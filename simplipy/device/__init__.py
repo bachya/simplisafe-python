@@ -1,4 +1,5 @@
 """Define a base SimpliSafe device."""
+
 from __future__ import annotations
 
 from enum import Enum

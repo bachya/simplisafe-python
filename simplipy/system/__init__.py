@@ -1,4 +1,5 @@
 """Define V2 and V3 SimpliSafe systems."""
+
 from __future__ import annotations
 
 from collections.abc import Callable

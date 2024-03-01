@@ -1,4 +1,5 @@
 """Define a SimpliSafe lock."""
+
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
@@ -149,9 +150,9 @@ class Lock(DeviceV3):
         )
 
         # Update the internal state representation:
-        self._system.sensor_data[self._serial]["status"][
-            "lockState"
-        ] = self._InternalStates.LOCKED.value
+        self._system.sensor_data[self._serial]["status"]["lockState"] = (
+            self._InternalStates.LOCKED.value
+        )
 
     async def async_unlock(self) -> None:
         """Unlock the lock."""
@@ -162,6 +163,6 @@ class Lock(DeviceV3):
         )
 
         # Update the internal state representation:
-        self._system.sensor_data[self._serial]["status"][
-            "lockState"
-        ] = self._InternalStates.UNLOCKED.value
+        self._system.sensor_data[self._serial]["status"]["lockState"] = (
+            self._InternalStates.UNLOCKED.value
+        )

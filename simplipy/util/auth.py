@@ -1,4 +1,5 @@
 """Define some utilities to work with SimpliSafe's authentication mechanism."""
+
 from __future__ import annotations
 
 import base64

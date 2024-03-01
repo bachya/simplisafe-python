@@ -1,4 +1,5 @@
 """Define a V3 (new) SimpliSafe system."""
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta

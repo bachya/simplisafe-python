@@ -1,4 +1,5 @@
 """Define tests for the Camera objects."""
+
 from __future__ import annotations
 
 from typing import cast

@@ -1,4 +1,5 @@
 """Define a v2 (old) SimpliSafe sensor."""
+
 from typing import cast
 
 from simplipy.device import Device, DeviceTypes

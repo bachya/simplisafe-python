@@ -1,4 +1,5 @@
 """Define tests for v3 Sensor objects."""
+
 from typing import cast
 
 import aiohttp

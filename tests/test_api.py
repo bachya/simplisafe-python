@@ -1,4 +1,5 @@
 """Define tests for the System object."""
+
 # pylint: disable=protected-access
 from __future__ import annotations
 

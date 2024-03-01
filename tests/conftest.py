@@ -1,4 +1,5 @@
 """Define fixtures, constants, etc. available for all tests."""
+
 from __future__ import annotations
 
 import asyncio

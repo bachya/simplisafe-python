@@ -1,4 +1,5 @@
 """Define a V2 (original) SimpliSafe system."""
+
 from __future__ import annotations
 
 from typing import Any

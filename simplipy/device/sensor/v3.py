@@ -1,4 +1,5 @@
 """Define a v3 (new) SimpliSafe sensor."""
+
 from __future__ import annotations
 
 from typing import Any, cast

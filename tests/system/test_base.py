@@ -1,4 +1,5 @@
 """Define base tests for System objects."""
+
 from datetime import datetime
 from typing import Any, cast
 from unittest.mock import Mock
@@ -262,9 +263,9 @@ async def test_unknown_system_state(  # pylint: disable=too-many-arguments
         v3_sensors_response: An API response payload.
         v3_settings_response: An API response payload.
     """
-    subscriptions_response["subscriptions"][0]["location"]["system"][
-        "alarmState"
-    ] = "NOT_REAL_STATE"
+    subscriptions_response["subscriptions"][0]["location"]["system"]["alarmState"] = (
+        "NOT_REAL_STATE"
+    )
 
     async with authenticated_simplisafe_server:
         authenticated_simplisafe_server.add(

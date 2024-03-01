@@ -1,4 +1,5 @@
 """Define tests for v2 System objects."""
+
 from typing import Any
 
 import aiohttp

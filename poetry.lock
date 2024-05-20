@@ -141,13 +141,13 @@ pytest-asyncio = {version = ">=0.17.0", markers = "python_version >= \"3.7\""}
 
 [[package]]
 name = "astroid"
-version = "3.2.0"
+version = "3.2.2"
 description = "An abstract syntax tree for Python with inference support."
 optional = false
 python-versions = ">=3.8.0"
 files = [
-    {file = "astroid-3.2.0-py3-none-any.whl", hash = "sha256:16ee8ca5c75ac828783028cc1f967777f0e507c6886a295ad143e0f405b975a2"},
-    {file = "astroid-3.2.0.tar.gz", hash = "sha256:f7f829f8506ade59f1b3c6c93d8fac5b1ebc721685fa9af23e9794daf1d450a3"},
+    {file = "astroid-3.2.2-py3-none-any.whl", hash = "sha256:e8a0083b4bb28fcffb6207a3bfc9e5d0a68be951dd7e336d5dcf639c682388c0"},
+    {file = "astroid-3.2.2.tar.gz", hash = "sha256:8ead48e31b92b2e217b6c9733a21afafe479d52d6e164dd25fb1a770c7c3cf94"},
 ]
 
 [package.dependencies]
@@ -1162,17 +1162,17 @@ windows-terminal = ["colorama (>=0.4.6)"]
 
 [[package]]
 name = "pylint"
-version = "3.2.0"
+version = "3.2.1"
 description = "python code static checker"
 optional = false
 python-versions = ">=3.8.0"
 files = [
-    {file = "pylint-3.2.0-py3-none-any.whl", hash = "sha256:9f20c05398520474dac03d7abb21ab93181f91d4c110e1e0b32bc0d016c34fa4"},
-    {file = "pylint-3.2.0.tar.gz", hash = "sha256:ad8baf17c8ea5502f23ae38d7c1b7ec78bd865ce34af9a0b986282e2611a8ff2"},
+    {file = "pylint-3.2.1-py3-none-any.whl", hash = "sha256:93643d4caa0f5ca3c24e16ed0cc835e9a1481870c3abcb481aad0cb4cb121243"},
+    {file = "pylint-3.2.1.tar.gz", hash = "sha256:c4ab2acdffeb1bead50ecf41b15b38ebe61a173e4234d5545bddd732f1f3380a"},
 ]
 
 [package.dependencies]
-astroid = ">=3.2.0,<=3.3.0-dev0"
+astroid = ">=3.2.1,<=3.3.0-dev0"
 colorama = {version = ">=0.4.5", markers = "sys_platform == \"win32\""}
 dill = [
     {version = ">=0.2", markers = "python_version < \"3.11\""},
@@ -1232,13 +1232,13 @@ testing = ["coverage (==6.2)", "mypy (==0.931)"]
 
 [[package]]
 name = "pytest-asyncio"
-version = "0.23.6"
+version = "0.23.7"
 description = "Pytest support for asyncio"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pytest-asyncio-0.23.6.tar.gz", hash = "sha256:ffe523a89c1c222598c76856e76852b787504ddb72dd5d9b6617ffa8aa2cde5f"},
-    {file = "pytest_asyncio-0.23.6-py3-none-any.whl", hash = "sha256:68516fdd1018ac57b846c9846b954f0393b26f094764a28c955eabb0536a4e8a"},
+    {file = "pytest_asyncio-0.23.7-py3-none-any.whl", hash = "sha256:009b48127fbe44518a547bddd25611551b0e43ccdbf1e67d12479f569832c20b"},
+    {file = "pytest_asyncio-0.23.7.tar.gz", hash = "sha256:5f5c72948f4c49e7db4f29f2521d4031f1c27f86e57b046126654083d4770268"},
 ]
 
 [package.dependencies]

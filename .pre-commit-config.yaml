@@ -127,7 +127,7 @@ repos:
         name: 👔 Enforcing style guide with ruff
         language: system
         types: [python]
-        entry: poetry run ruff --fix
+        entry: poetry run ruff check --fix
         exclude: ^docs\/conf.py$
       - id: trailing-whitespace
         name: ✄  Trimming trailing whitespace

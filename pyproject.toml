@@ -103,8 +103,8 @@ Sphinx = ">=5.0.1,<8.0.0"
 myst-parser = ">=0.18,<4.1"
 
 [tool.poetry.urls]
-"Bug Tracker" = "https://github.com/bachya/simplipy/issues"
-Changelog = "https://github.com/bachya/simplipy/releases"
+"Bug Tracker" = "https://github.com/bachya/simplisafe-python/issues"
+Changelog = "https://github.com/bachya/simplisafe-python/releases"
 
 [tool.pylint.BASIC]
 expected-line-ending-format = "LF"

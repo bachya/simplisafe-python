@@ -39,6 +39,7 @@ EVENT_ARMED_HOME: Final = "armed_home"
 EVENT_AUTOMATIC_TEST: Final = "automatic_test"
 EVENT_AWAY_EXIT_DELAY_BY_KEYPAD: Final = "away_exit_delay_by_keypad"
 EVENT_AWAY_EXIT_DELAY_BY_REMOTE: Final = "away_exit_delay_by_remote"
+EVENT_BASE_STATION_UPDATE_SUCCEEDED: Final = "base_station_update_succeeded"
 EVENT_CAMERA_MOTION_DETECTED: Final = "camera_motion_detected"
 EVENT_CONNECTION_LOST: Final = "connection_lost"
 EVENT_CONNECTION_RESTORED: Final = "connection_restored"
@@ -98,6 +99,7 @@ EVENT_MAPPING = {
     9700: EVENT_LOCK_UNLOCKED,
     9701: EVENT_LOCK_LOCKED,
     9703: EVENT_LOCK_ERROR,
+    9903: EVENT_BASE_STATION_UPDATE_SUCCEEDED,
 }
 
 

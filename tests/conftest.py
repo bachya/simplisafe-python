@@ -46,7 +46,7 @@ def auth_check_response_fixture() -> dict[str, Any]:
 @pytest.fixture(name="authenticated_simplisafe_server")
 def authenticated_simplisafe_server_fixture(
     api_token_response: dict[str, Any], auth_check_response: dict[str, Any]
-) -> Generator[ResponsesMockServer, None, None]:
+) -> Generator[ResponsesMockServer]:
     """Define a fixture that returns an authenticated API connection.
 
     Args:
@@ -74,7 +74,7 @@ def authenticated_simplisafe_server_v2_fixture(
     authenticated_simplisafe_server: ResponsesMockServer,
     v2_settings_response: dict[str, Any],
     v2_subscriptions_response: dict[str, Any],
-) -> Generator[ResponsesMockServer, None, None]:
+) -> Generator[ResponsesMockServer]:
     """Define a fixture that returns an authenticated API connection to a V2 system.
 
     Args:
@@ -105,7 +105,7 @@ def authenticated_simplisafe_server_v3_fixture(
     subscriptions_response: dict[str, Any],
     v3_sensors_response: dict[str, Any],
     v3_settings_response: dict[str, Any],
-) -> Generator[ResponsesMockServer, None, None]:
+) -> Generator[ResponsesMockServer]:
     """Define a fixture that returns an authenticated API connection to a V3 system.
 
     Args:

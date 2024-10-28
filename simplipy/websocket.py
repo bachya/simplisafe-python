@@ -43,10 +43,10 @@ EVENT_BASE_STATION_UPDATE_SUCCEEDED: Final = "base_station_update_succeeded"
 EVENT_CAMERA_MOTION_DETECTED: Final = "camera_motion_detected"
 EVENT_CONNECTION_LOST: Final = "connection_lost"
 EVENT_CONNECTION_RESTORED: Final = "connection_restored"
+EVENT_DEVICE_TEST: Final = "device_test"
 EVENT_DISARMED_BY_KEYPAD: Final = "disarmed_by_keypad"
 EVENT_DISARMED_BY_REMOTE: Final = "disarmed_by_remote"
 EVENT_DOORBELL_DETECTED: Final = "doorbell_detected"
-EVENT_DEVICE_TEST: Final = "device_test"
 EVENT_ENTRY_DELAY: Final = "entry_delay"
 EVENT_HOME_EXIT_DELAY: Final = "home_exit_delay"
 EVENT_LOCK_ERROR: Final = "lock_error"
@@ -54,6 +54,8 @@ EVENT_LOCK_LOCKED: Final = "lock_locked"
 EVENT_LOCK_UNLOCKED: Final = "lock_unlocked"
 EVENT_POWER_OUTAGE: Final = "power_outage"
 EVENT_POWER_RESTORED: Final = "power_restored"
+EVENT_RF_INTERFERENCE_DETECTED: Final = "rf_interference_detected"
+EVENT_RF_INTERFERENCE_STOPPED: Final = "rf_interference_stopped"
 EVENT_SECRET_ALERT_TRIGGERED: Final = "secret_alert_triggered"
 EVENT_SENSOR_NOT_RESPONDING: Final = "sensor_not_responding"
 EVENT_SENSOR_PAIRED_AND_NAMED: Final = "sensor_paired_and_named"
@@ -71,6 +73,7 @@ EVENT_MAPPING = {
     1162: EVENT_ALARM_TRIGGERED,
     1170: EVENT_CAMERA_MOTION_DETECTED,
     1301: EVENT_POWER_OUTAGE,
+    1344: EVENT_RF_INTERFERENCE_DETECTED,
     1350: EVENT_CONNECTION_LOST,
     1381: EVENT_SENSOR_NOT_RESPONDING,
     1400: EVENT_DISARMED_BY_KEYPAD,
@@ -85,6 +88,7 @@ EVENT_MAPPING = {
     1604: EVENT_DEVICE_TEST,
     1609: EVENT_USER_INITIATED_CAMERA_RECORDING,
     3301: EVENT_POWER_RESTORED,
+    3344: EVENT_RF_INTERFERENCE_STOPPED,
     3350: EVENT_CONNECTION_RESTORED,
     3381: EVENT_SENSOR_RESTORED,
     3401: EVENT_ARMED_AWAY_BY_KEYPAD,

@@ -151,7 +151,7 @@ def test_create_event(ws_message_event: dict[str, Any]) -> None:
 
 
 def test_create_motion_event(ws_motion_event: dict[str, Any]) -> None:
-    """Test creating a motion event object.
+    """Test creating a motion event object with HLS links.
 
     Args:
         ws_motion_event: A websocket motion event payload with media urls.
@@ -161,6 +161,21 @@ def test_create_motion_event(ws_motion_event: dict[str, Any]) -> None:
     assert event.media_urls["image_url"] == "https://image-url{&width}"
     assert event.media_urls["clip_url"] == "https://clip-url"
     assert event.media_urls["hls_url"] == "https://hls-url"
+    assert event.media_urls["flv_url"] is None
+
+
+def test_create_motion_event_flv(ws_motion_event_flv: dict[str, Any]) -> None:
+    """Test creating a motion event object with FLV links (no HLS).
+
+    Args:
+        ws_motion_event_flv: A websocket motion event payload with FLV-only links.
+    """
+    event = websocket_event_from_payload(ws_motion_event_flv)
+    assert event.media_urls is not None
+    assert event.media_urls["image_url"] == "https://snapshot-jpg-url"
+    assert event.media_urls["clip_url"] == "https://clip-url"
+    assert event.media_urls["hls_url"] is None
+    assert event.media_urls["flv_url"] == "https://flv-url"
 
 
 @pytest.mark.asyncio

@@ -164,7 +164,7 @@ class WebsocketEvent:
 
     event_type: str | None = field(init=False)
     timestamp: datetime = field(init=False)
-    media_urls: dict[str, str] | None = field(init=False)
+    media_urls: dict[str, str | None] | None = field(init=False)
 
     changed_by: str | None = None
     sensor_name: str | None = None
@@ -203,17 +203,17 @@ class WebsocketEvent:
                 object.__setattr__(self, "sensor_type", None)
 
         if self._vid is not None and self._video is not None:
+            links = self._video[self._vid]["_links"]
+            hls_safe_obj = links.get("playback/hls") or {}
+            flv_safe_obj = links.get("playback/flv") or {}
             object.__setattr__(
                 self,
                 "media_urls",
                 {
-                    "image_url": self._video[self._vid]["_links"]["snapshot/jpg"][
-                        "href"
-                    ],
-                    "clip_url": self._video[self._vid]["_links"]["download/mp4"][
-                        "href"
-                    ],
-                    "hls_url": self._video[self._vid]["_links"]["playback/hls"]["href"],
+                    "image_url": links["snapshot/jpg"]["href"],
+                    "clip_url": links["download/mp4"]["href"],
+                    "hls_url": hls_safe_obj.get("href"),
+                    "flv_url": flv_safe_obj.get("href"),
                 },
             )
             object.__setattr__(self, "_vid", None)

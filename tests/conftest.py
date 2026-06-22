@@ -420,6 +420,41 @@ def ws_motion_event_data_fixture() -> dict[str, Any]:
     return cast(dict[str, Any], json.loads(load_fixture("ws_motion_event_data.json")))
 
 
+@pytest.fixture(name="ws_motion_event_flv_data", scope="session")
+def ws_motion_event_flv_data_fixture() -> dict[str, Any]:
+    """Define a fixture that returns the data payload from a FLV-only event.
+
+    Returns:
+        A API response payload.
+    """
+    return cast(
+        dict[str, Any], json.loads(load_fixture("ws_motion_event_flv_data.json"))
+    )
+
+
+@pytest.fixture(name="ws_motion_event_flv")
+def ws_motion_event_flv_fixture(
+    ws_motion_event_flv_data: dict[str, Any],
+) -> dict[str, Any]:
+    """Define a fixture to represent a FLV-only event response.
+
+    Args:
+        ws_motion_event_flv_data: A mocked websocket response payload.
+
+    Returns:
+        A websocket response payload.
+    """
+    return {
+        "data": ws_motion_event_flv_data,
+        "datacontenttype": "application/json",
+        "id": "id:16803409109",
+        "source": "messagequeue",
+        "specversion": "1.0",
+        "time": "2021-09-29T23:14:46.000Z",
+        "type": "com.simplisafe.event.standard",
+    }
+
+
 @pytest.fixture(name="ws_message_hello")
 def ws_message_hello_fixture(ws_message_hello_data: dict[str, Any]) -> dict[str, Any]:
     """Define a fixture to represent the "hello" response.

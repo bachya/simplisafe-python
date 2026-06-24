@@ -84,7 +84,9 @@ class Device:
         Returns:
             The device name.
         """
-        return cast(str, self._system.sensor_data[self._serial].get("name", self._serial))
+        return cast(
+            str, self._system.sensor_data[self._serial].get("name", self._serial)
+        )
 
     @property
     def serial(self) -> str:
@@ -93,7 +95,9 @@ class Device:
         Returns:
             The device serial number.
         """
-        return cast(str, self._system.sensor_data[self._serial].get("serial", self._serial))
+        return cast(
+            str, self._system.sensor_data[self._serial].get("serial", self._serial)
+        )
 
     @property
     def type(self) -> DeviceTypes:
@@ -160,7 +164,9 @@ class DeviceV3(Device):
         """
         return cast(
             bool,
-            self._system.sensor_data[self._serial].get("flags", {}).get("lowBattery", False),
+            self._system.sensor_data[self._serial]
+            .get("flags", {})
+            .get("lowBattery", False),
         )
 
     @property
@@ -172,7 +178,9 @@ class DeviceV3(Device):
         """
         return cast(
             bool,
-            self._system.sensor_data[self._serial].get("flags", {}).get("offline", False),
+            self._system.sensor_data[self._serial]
+            .get("flags", {})
+            .get("offline", False),
         )
 
     @property
@@ -184,7 +192,9 @@ class DeviceV3(Device):
         Returns:
             A settings dictionary.
         """
-        return cast(dict[str, Any], self._system.sensor_data[self._serial].get("setting", {}))
+        return cast(
+            dict[str, Any], self._system.sensor_data[self._serial].get("setting", {})
+        )
 
     def as_dict(self) -> dict[str, Any]:
         """Return dictionary version of this device.

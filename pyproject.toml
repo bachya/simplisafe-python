@@ -66,6 +66,7 @@ classifiers = [
 aiohttp = ">=3.9.0b0"
 backoff = ">=1.11.1"
 certifi = ">=2023.07.22"
+multidict = ">=6.0.5"
 python = "^3.10"
 voluptuous = ">=0.11.7"
 websockets = ">=8.1"

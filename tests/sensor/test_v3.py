@@ -44,3 +44,33 @@ async def test_properties_v3(
             assert siren.temperature == 42
 
     aresponses.assert_plan_strictly_followed()
+
+
+@pytest.mark.asyncio
+async def test_properties_v3_missing_fields_return_defaults(
+    aresponses: ResponsesMockServer,
+    authenticated_simplisafe_server_v3: ResponsesMockServer,
+) -> None:
+    """Test that V3 properties return safe defaults when API fields are absent.
+
+    Regression test for home-assistant/core#172599.
+    """
+    async with authenticated_simplisafe_server_v3, aiohttp.ClientSession() as session:
+        simplisafe = await API.async_from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
+        )
+        systems = await simplisafe.async_get_systems()
+        system = systems[TEST_SYSTEM_ID]
+        sensor: SensorV3 = cast(SensorV3, system.sensors["825"])
+
+        # Remove optional nested fields to simulate a sparse API response
+        system.sensor_data["825"].pop("status", None)
+        system.sensor_data["825"].pop("flags", None)
+        system.sensor_data["825"].pop("setting", None)
+
+        assert not sensor.error
+        assert not sensor.low_battery
+        assert not sensor.offline
+        assert sensor.settings == {}
+
+    aresponses.assert_plan_strictly_followed()

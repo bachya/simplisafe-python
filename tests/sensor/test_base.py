@@ -27,3 +27,25 @@ async def test_properties_base(
         assert sensor.type == DeviceTypes.KEYPAD
 
     aresponses.assert_plan_strictly_followed()
+
+
+@pytest.mark.asyncio
+async def test_properties_base_missing_name_falls_back_to_serial(
+    aresponses: ResponsesMockServer,
+    authenticated_simplisafe_server_v3: ResponsesMockServer,
+) -> None:
+    """Test that name falls back to serial when the API omits the 'name' field.
+
+    Regression test for home-assistant/core#172599.
+    """
+    async with authenticated_simplisafe_server_v3, aiohttp.ClientSession() as session:
+        simplisafe = await API.async_from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
+        )
+        systems = await simplisafe.async_get_systems()
+        system = systems[TEST_SYSTEM_ID]
+        sensor = system.sensors["825"]
+        del system.sensor_data["825"]["name"]
+        assert sensor.name == "825"
+
+    aresponses.assert_plan_strictly_followed()

@@ -84,7 +84,7 @@ class Device:
         Returns:
             The device name.
         """
-        return cast(str, self._system.sensor_data[self._serial]["name"])
+        return cast(str, self._system.sensor_data[self._serial].get("name", self._serial))
 
     @property
     def serial(self) -> str:
@@ -93,7 +93,7 @@ class Device:
         Returns:
             The device serial number.
         """
-        return cast(str, self._system.sensor_data[self._serial]["serial"])
+        return cast(str, self._system.sensor_data[self._serial].get("serial", self._serial))
 
     @property
     def type(self) -> DeviceTypes:
@@ -146,7 +146,9 @@ class DeviceV3(Device):
         """
         return cast(
             bool,
-            self._system.sensor_data[self._serial]["status"].get("malfunction", False),
+            self._system.sensor_data[self._serial]
+            .get("status", {})
+            .get("malfunction", False),
         )
 
     @property
@@ -156,7 +158,10 @@ class DeviceV3(Device):
         Returns:
             The device's low battery status.
         """
-        return cast(bool, self._system.sensor_data[self._serial]["flags"]["lowBattery"])
+        return cast(
+            bool,
+            self._system.sensor_data[self._serial].get("flags", {}).get("lowBattery", False),
+        )
 
     @property
     def offline(self) -> bool:
@@ -165,7 +170,10 @@ class DeviceV3(Device):
         Returns:
             The device's offline status.
         """
-        return cast(bool, self._system.sensor_data[self._serial]["flags"]["offline"])
+        return cast(
+            bool,
+            self._system.sensor_data[self._serial].get("flags", {}).get("offline", False),
+        )
 
     @property
     def settings(self) -> dict[str, Any]:
@@ -176,7 +184,7 @@ class DeviceV3(Device):
         Returns:
             A settings dictionary.
         """
-        return cast(dict[str, Any], self._system.sensor_data[self._serial]["setting"])
+        return cast(dict[str, Any], self._system.sensor_data[self._serial].get("setting", {}))
 
     def as_dict(self) -> dict[str, Any]:
         """Return dictionary version of this device.

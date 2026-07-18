@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import sys
+from base64 import urlsafe_b64decode
 from collections.abc import Awaitable, Callable
 from datetime import datetime
-from json.decoder import JSONDecodeError
+from json import JSONDecodeError, loads
 from typing import Any, cast
 
 import backoff
@@ -39,6 +40,7 @@ DEFAULT_REQUEST_RETRIES = 4
 DEFAULT_MEDIA_RETRIES = 4
 DEFAULT_TIMEOUT = 10
 DEFAULT_TOKEN_EXPIRATION_WINDOW = 5
+USER_ID_CLAIM = "http://simplisafe.com/uid"
 
 
 class API:  # pylint: disable=too-many-instance-attributes
@@ -199,9 +201,40 @@ class API:  # pylint: disable=too-many-instance-attributes
 
     async def _async_post_init(self) -> None:
         """Perform some post-init actions."""
-        auth_check_resp = await self._async_api_request("get", "api/authCheck")
-        self.user_id = auth_check_resp["userId"]
+        try:
+            auth_check_resp = await self._async_api_request("get", "api/authCheck")
+        except ClientResponseError as err:
+            if (
+                err.status != 403
+                or not self.access_token
+                or (user_id := self._user_id_from_access_token(self.access_token))
+                is None
+            ):
+                raise
+
+            LOGGER.debug(
+                "Authorization check returned 403; using user ID from access token"
+            )
+            self.user_id = user_id
+        else:
+            self.user_id = auth_check_resp["userId"]
         self.websocket = WebsocketClient(self)
+
+    @staticmethod
+    def _user_id_from_access_token(access_token: str) -> int | None:
+        """Extract the SimpliSafe user ID from an access token."""
+        try:
+            encoded_payload = access_token.split(".")[1]
+            padding = "=" * (-len(encoded_payload) % 4)
+            payload = loads(urlsafe_b64decode(encoded_payload + padding))
+            return int(payload[USER_ID_CLAIM])
+        except (
+            IndexError,
+            KeyError,
+            TypeError,
+            ValueError,
+        ):
+            return None
 
     async def _async_api_request(
         self, method: str, endpoint: str, url_base: str = API_URL_BASE, **kwargs: Any

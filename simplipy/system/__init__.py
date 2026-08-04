@@ -469,7 +469,7 @@ class System:  # pylint: disable=too-many-public-methods
             raise PinError(f"Refusing to create duplicate PIN: {pin}")
 
         max_pins = DEFAULT_MAX_USER_PINS + len(RESERVED_PIN_LABELS)
-        if len(latest_pins) == max_pins and label not in RESERVED_PIN_LABELS:
+        if len(latest_pins) == max_pins and label not in latest_pins:
             raise MaxUserPinsExceededError(
                 f"Refusing to create more than {max_pins} user PINs"
             )

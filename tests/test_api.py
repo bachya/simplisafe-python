@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import asyncio
+from base64 import urlsafe_b64encode
 from datetime import timedelta
+from json import dumps
 from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -22,7 +24,15 @@ from .common import (
     TEST_CODE_VERIFIER,
     TEST_REFRESH_TOKEN,
     TEST_SUBSCRIPTION_ID,
+    TEST_USER_ID,
 )
+
+
+def create_access_token(user_id: int | None = TEST_USER_ID) -> str:
+    """Create an unsigned access token containing a SimpliSafe user ID."""
+    payload = {} if user_id is None else {"http://simplisafe.com/uid": user_id}
+    encoded_payload = urlsafe_b64encode(dumps(payload).encode()).decode().rstrip("=")
+    return f"header.{encoded_payload}.signature"
 
 
 @pytest.mark.asyncio
@@ -225,6 +235,66 @@ async def test_client_async_from_authorization_code(
         )
         assert simplisafe.access_token == TEST_ACCESS_TOKEN
         assert simplisafe.refresh_token == TEST_REFRESH_TOKEN
+
+    aresponses.assert_plan_strictly_followed()
+
+
+@pytest.mark.asyncio
+async def test_client_uses_access_token_user_id_when_auth_check_is_forbidden(
+    api_token_response: dict[str, Any],
+    aresponses: ResponsesMockServer,
+) -> None:
+    """Test extracting the user ID when the authorization check returns 403."""
+    api_token_response["access_token"] = create_access_token()
+    aresponses.add(
+        "auth.simplisafe.com",
+        "/oauth/token",
+        "post",
+        response=aiohttp.web_response.json_response(api_token_response, status=200),
+    )
+    aresponses.add(
+        "api.simplisafe.com",
+        "/v1/api/authCheck",
+        "get",
+        response=aresponses.Response(text="Forbidden", status=403),
+    )
+
+    async with aiohttp.ClientSession() as session:
+        simplisafe = await API.async_from_auth(
+            TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
+        )
+        assert simplisafe.user_id == TEST_USER_ID
+
+    aresponses.assert_plan_strictly_followed()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("access_token", [TEST_ACCESS_TOKEN, create_access_token(None)])
+async def test_client_rejects_forbidden_auth_check_without_user_id(
+    access_token: str,
+    api_token_response: dict[str, Any],
+    aresponses: ResponsesMockServer,
+) -> None:
+    """Test preserving a 403 when the access token has no usable user ID."""
+    api_token_response["access_token"] = access_token
+    aresponses.add(
+        "auth.simplisafe.com",
+        "/oauth/token",
+        "post",
+        response=aiohttp.web_response.json_response(api_token_response, status=200),
+    )
+    aresponses.add(
+        "api.simplisafe.com",
+        "/v1/api/authCheck",
+        "get",
+        response=aresponses.Response(text="Forbidden", status=403),
+    )
+
+    async with aiohttp.ClientSession() as session:
+        with pytest.raises(aiohttp.ClientResponseError, match="403"):
+            await API.async_from_auth(
+                TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
+            )
 
     aresponses.assert_plan_strictly_followed()
 

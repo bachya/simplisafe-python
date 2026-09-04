@@ -32,6 +32,7 @@ from simplipy.util.auth import (
 from simplipy.util.dt import utcnow
 from simplipy.websocket import WebsocketClient
 
+API_COOKIE_OVERRIDES = {"AWSALB": "", "AWSALBCORS": ""}
 API_URL_HOSTNAME = "api.simplisafe.com"
 API_URL_BASE = f"https://{API_URL_HOSTNAME}/v1"
 
@@ -223,6 +224,12 @@ class API:  # pylint: disable=too-many-instance-attributes
         kwargs["headers"]["User-Agent"] = DEFAULT_USER_AGENT
         if self.access_token:
             kwargs["headers"]["Authorization"] = f"Bearer {self.access_token}"
+
+        if url_base == API_URL_BASE:
+            kwargs["cookies"] = {
+                **(kwargs.get("cookies") or {}),
+                **API_COOKIE_OVERRIDES,
+            }
 
         data: dict[str, Any] | str = {}
         async with self.session.request(

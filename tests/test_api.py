@@ -5,12 +5,14 @@ from __future__ import annotations
 
 import asyncio
 from datetime import timedelta
+from http.cookies import SimpleCookie
 from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
 import aiohttp
 import pytest
 from aresponses import ResponsesMockServer
+from yarl import URL
 
 from simplipy import API
 from simplipy.errors import InvalidCredentialsError, RequestError, SimplipyError
@@ -114,12 +116,20 @@ async def test_401_refresh_token_success(
         v2_settings_response: An API response payload.
         v2_subscriptions_response: An API response payload.
     """
+
+    def unauthorized(request: Any) -> aresponses.Response:
+        """Return a 401 after checking that ALB cookies are masked."""
+        cookies = SimpleCookie(request.headers["Cookie"])
+        assert cookies["AWSALB"].value == ""
+        assert cookies["AWSALBCORS"].value == ""
+        return aresponses.Response(text="Unauthorized", status=401)
+
     async with authenticated_simplisafe_server:
         authenticated_simplisafe_server.add(
             "api.simplisafe.com",
             f"/v1/users/{TEST_SUBSCRIPTION_ID}/subscriptions",
             "get",
-            response=aresponses.Response(text="Unauthorized", status=401),
+            response=unauthorized,
         )
 
         api_token_response["access_token"] = "jjhhgg66"  # noqa: S105
@@ -151,6 +161,11 @@ async def test_401_refresh_token_success(
         async with aiohttp.ClientSession() as session:
             simplisafe = await API.async_from_auth(
                 TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
+            )
+
+            session.cookie_jar.update_cookies(
+                {"AWSALB": "stale", "AWSALBCORS": "stale"},
+                response_url=URL("https://api.simplisafe.com"),
             )
 
             # Manually set the expiration datetime to force a refresh token flow:

@@ -23,6 +23,7 @@ class CameraTypes(Enum):
     CAMERA = 0
     DOORBELL = 1
     OUTDOOR_CAMERA = 2
+    SCOUT_CAMERA = 3
     UNKNOWN = 99
 
 
@@ -31,6 +32,7 @@ MODEL_TO_TYPE = {
     "SS002": CameraTypes.DOORBELL,
     "SS003": CameraTypes.CAMERA,
     "SSOBCM4": CameraTypes.OUTDOOR_CAMERA,
+    "scout": CameraTypes.SCOUT_CAMERA,
 }
 
 

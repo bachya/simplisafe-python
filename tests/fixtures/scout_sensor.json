@@ -1,0 +1,22 @@
+{
+  "flags": {
+    "offline": false,
+    "lowBattery": false,
+    "swingerShutdown": false
+  },
+  "serial": "0000abcd",
+  "type": 21,
+  "name": "REDACTED",
+  "setting": {
+    "off": 0,
+    "home": 0,
+    "home2": 0,
+    "away": 1,
+    "away2": 0,
+    "instantTrigger": false
+  },
+  "status": {},
+  "timestamp": 1794080623,
+  "deviceGroupID": 0,
+  "firmwareVersion": "0.0.0"
+}

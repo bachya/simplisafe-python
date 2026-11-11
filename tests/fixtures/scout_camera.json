@@ -65,11 +65,7 @@
     "vaZoningCols": 0,
     "vaZoningMask": [],
     "maxDigitalZoom": 10,
-    "supportedResolutions": [
-      "640p",
-      "960p",
-      "1536p"
-    ],
+    "supportedResolutions": ["640p", "960p", "1536p"],
     "admin": {
       "tinyYolo": {
         "numFramesToAnalyze": 5,
@@ -179,80 +175,26 @@
       "account": "000000000000",
       "ivLicense": "",
       "battery": [
-        [
-          1794080675,
-          92
-        ],
-        [
-          1794080841,
-          99
-        ],
-        [
-          1794080866,
-          92
-        ],
-        [
-          1794080960,
-          100
-        ],
-        [
-          1794081153,
-          100
-        ],
-        [
-          1794081441,
-          100
-        ],
-        [
-          1794081868,
-          100
-        ],
-        [
-          1794329327,
-          100
-        ]
+        [1794080675, 92],
+        [1794080841, 99],
+        [1794080866, 92],
+        [1794080960, 100],
+        [1794081153, 100],
+        [1794081441, 100],
+        [1794081868, 100],
+        [1794329327, 100]
       ],
       "rssi": [
-        [
-          1794080675,
-          -57
-        ],
-        [
-          1794080841,
-          -49
-        ],
-        [
-          1794080866,
-          -52
-        ],
-        [
-          1794080960,
-          -53
-        ],
-        [
-          1794081017,
-          -51
-        ],
-        [
-          1794081101,
-          -45
-        ],
-        [
-          1794081153,
-          -46
-        ],
-        [
-          1794081441,
-          -41
-        ],
-        [
-          1794081868,
-          -55
-        ],
-        [
-          1794329327,
-          -53
-        ]
+        [1794080675, -57],
+        [1794080841, -49],
+        [1794080866, -52],
+        [1794080960, -53],
+        [1794081017, -51],
+        [1794081101, -45],
+        [1794081153, -46],
+        [1794081441, -41],
+        [1794081868, -55],
+        [1794329327, -53]
       ],
       "vmUse": 0,
       "resSet": 0,
@@ -280,9 +222,7 @@
     "recoveredFromVersion": "",
     "setupTimestamp": 1794080647,
     "monitoredPerformanceModeActive": false,
-    "unmetPerformanceModeCriteria": [
-      "POWER"
-    ],
+    "unmetPerformanceModeCriteria": ["POWER"],
     "_id": "000000000000000000000000",
     "initErrors": [],
     "monitoredPerformanceModeLastChanged": 1794080647973,
@@ -296,14 +236,8 @@
   "supportedFeatures": {
     "providers": {
       "allSupportedProviders": {
-        "webrtc": [
-          "kvs",
-          "mist"
-        ],
-        "recording": [
-          "kvs",
-          "mist"
-        ],
+        "webrtc": ["kvs", "mist"],
+        "recording": ["kvs", "mist"],
         "live": []
       },
       "webrtc": "kvs",
@@ -351,14 +285,8 @@
     "cameraEventsWithSystemState": true,
     "granularObjectDetectionTypes": [],
     "videoEncoding": "h264",
-    "audioEncodings": [
-      "aac"
-    ],
-    "resolutions": [
-      "640p",
-      "960p",
-      "1536p"
-    ],
+    "audioEncodings": ["aac"],
+    "resolutions": ["640p", "960p", "1536p"],
     "monitoredLiveStream": true,
     "outdoorMonitoring": false,
     "videoTimestamp": true,

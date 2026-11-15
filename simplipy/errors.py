@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -37,6 +38,12 @@ class PinError(SimplipyError):
 
 class RequestError(SimplipyError):
     """An error related to invalid requests."""
+
+    pass
+
+
+class BaseStationUnreachableError(RequestError):
+    """An error related to the SimpliSafe cloud not reaching the base station."""
 
     pass
 
@@ -83,6 +90,23 @@ DATA_ERROR_MAP: dict[str, type[SimplipyError]] = {
 }
 
 
+@dataclass(frozen=True, kw_only=True)
+class DataErrorCode:
+    """Define an error type and code pair from an API response payload."""
+
+    error_type: str | None
+    code: str | None
+
+
+# Generic error types (like "NotFound") are only mapped for specific codes:
+DATA_ERROR_CODE_MAP: dict[DataErrorCode, type[SimplipyError]] = {
+    # Observed (undocumented) response to a forceUpdate=true request when the cloud
+    # can't reach the base station; a cached request may still succeed. See
+    # https://github.com/home-assistant/core/issues/96848 for the same 404 symptom.
+    DataErrorCode(error_type="NotFound", code="002"): BaseStationUnreachableError,
+}
+
+
 def raise_on_data_error(data: dict[str, Any] | None) -> None:
     """Raise a specific error if the data payload suggests there is one.
 
@@ -95,8 +119,9 @@ def raise_on_data_error(data: dict[str, Any] | None) -> None:
     if not data:
         return
 
-    if (error_type := data.get("type")) not in DATA_ERROR_MAP:
-        return
+    if (error_type := data.get("type")) in DATA_ERROR_MAP:
+        raise DATA_ERROR_MAP[error_type](data["message"])
 
-    error = DATA_ERROR_MAP[error_type](data["message"])
-    raise error
+    code = DataErrorCode(error_type=error_type, code=data.get("code"))
+    if code in DATA_ERROR_CODE_MAP:
+        raise DATA_ERROR_CODE_MAP[code](data["message"])

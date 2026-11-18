@@ -234,6 +234,12 @@ refresh:
 await system.async_update(include_system=False, include_settings=False, cached=False)
 ```
 
+If the SimpliSafe cloud can't reach the base station to fulfill a non-cached
+update, a
+{meth}`BaseStationUnreachableError <simplipy.errors.BaseStationUnreachableError>`
+(a subclass of {meth}`RequestError <simplipy.errors.RequestError>`) is raised; a
+cached update may still succeed.
+
 There are two crucial differences between V2 and V3 systems when updating:
 
 - V2 systems, which use only 2G cell connectivity, will be slower to update

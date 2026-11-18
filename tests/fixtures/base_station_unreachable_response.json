@@ -1,0 +1,7 @@
+{
+  "type": "NotFound",
+  "message": "Active sim not returned from comlink",
+  "code": "002",
+  "statusCode": 404,
+  "props": {}
+}

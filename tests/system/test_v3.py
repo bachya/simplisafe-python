@@ -12,6 +12,7 @@ from aresponses import ResponsesMockServer
 
 from simplipy import API
 from simplipy.errors import (
+    BaseStationUnreachableError,
     EndpointUnavailableError,
     InvalidCredentialsError,
     MaxUserPinsExceededError,
@@ -1719,6 +1720,50 @@ async def test_unavailable_endpoint(
                 await system.async_update(
                     include_subscription=False, include_devices=False
                 )
+
+    aresponses.assert_plan_strictly_followed()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("response_code", "expected_error"),
+    [
+        pytest.param("002", BaseStationUnreachableError, id="base_station_unreachable"),
+        pytest.param("999", RequestError, id="other_not_found"),
+    ],
+)
+async def test_live_update_not_found(
+    aresponses: ResponsesMockServer,
+    authenticated_simplisafe_server_v3: ResponsesMockServer,
+    base_station_unreachable_response: dict[str, Any],
+    response_code: str,
+    expected_error: type[RequestError],
+) -> None:
+    """Test the error raised when a live update returns an HTTP 404."""
+    async with authenticated_simplisafe_server_v3:
+        authenticated_simplisafe_server_v3.add(
+            "api.simplisafe.com",
+            f"/v1/ss3/subscriptions/{TEST_SUBSCRIPTION_ID}/settings/normal",
+            "get",
+            response=aiohttp.web_response.json_response(
+                {**base_station_unreachable_response, "code": response_code},
+                status=404,
+            ),
+        )
+
+        async with aiohttp.ClientSession() as session:
+            simplisafe = await API.async_from_auth(
+                TEST_AUTHORIZATION_CODE, TEST_CODE_VERIFIER, session=session
+            )
+            systems = await simplisafe.async_get_systems()
+            system = systems[TEST_SYSTEM_ID]
+
+            with pytest.raises(RequestError) as err:
+                await system.async_update(
+                    include_subscription=False, include_devices=False, cached=False
+                )
+
+            assert err.type is expected_error
 
     aresponses.assert_plan_strictly_followed()
 

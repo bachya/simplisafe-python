@@ -207,6 +207,19 @@ def subscriptions_response_fixture() -> dict[str, Any]:
     return cast(dict[str, Any], json.loads(load_fixture("subscriptions_response.json")))
 
 
+@pytest.fixture(name="base_station_unreachable_response", scope="session")
+def base_station_unreachable_response_fixture() -> dict[str, Any]:
+    """Define a fixture to return a base station unreachable response.
+
+    Returns:
+        An API response payload.
+    """
+    return cast(
+        dict[str, Any],
+        json.loads(load_fixture("base_station_unreachable_response.json")),
+    )
+
+
 @pytest.fixture(name="unavailable_endpoint_response", scope="session")
 def unavailable_endpoint_response_fixture() -> dict[str, Any]:
     """Define a fixture to return an unavailable endpoint response.
